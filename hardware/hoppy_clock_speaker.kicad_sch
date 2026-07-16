@@ -1465,7 +1465,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "2825f68b-44fb-4004-a0e7-d48d25f028df")
-		(property "Reference" "#PWR069"
+		(property "Reference" "#PWR072"
 			(at 76.2 62.23 0)
 			(hide yes)
 			(show_name no)
@@ -1526,7 +1526,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "#PWR069")
+					(reference "#PWR072")
 					(unit 1)
 				)
 			)
@@ -1544,7 +1544,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "35b8baf2-ce0e-4456-bdbc-561d7bb05ac3")
-		(property "Reference" "#PWR068"
+		(property "Reference" "#PWR071"
 			(at 95.25 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -1605,7 +1605,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "#PWR068")
+					(reference "#PWR071")
 					(unit 1)
 				)
 			)
@@ -1784,7 +1784,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "4f9c0fa4-c0a2-40e1-9810-1f631ce290e2")
-		(property "Reference" "C22"
+		(property "Reference" "C23"
 			(at 91.44 24.13 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1848,7 +1848,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "C22")
+					(reference "C23")
 					(unit 1)
 				)
 			)
@@ -1866,7 +1866,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "515a6d1d-3e2b-421e-94b1-ded2b7cf1d39")
-		(property "Reference" "#PWR067"
+		(property "Reference" "#PWR070"
 			(at 38.1 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -1927,7 +1927,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "#PWR067")
+					(reference "#PWR070")
 					(unit 1)
 				)
 			)
@@ -2108,7 +2108,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "6d282020-8d2a-458d-99db-fb90724d6596")
-		(property "Reference" "C23"
+		(property "Reference" "C24"
 			(at 104.14 24.13 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2172,7 +2172,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "C23")
+					(reference "C24")
 					(unit 1)
 				)
 			)
@@ -2190,7 +2190,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "727667fc-888a-4542-83f7-5c6bf8bee2d5")
-		(property "Reference" "#PWR066"
+		(property "Reference" "#PWR069"
 			(at 101.6 38.1 0)
 			(hide yes)
 			(show_name no)
@@ -2251,7 +2251,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "#PWR066")
+					(reference "#PWR069")
 					(unit 1)
 				)
 			)
@@ -2268,7 +2268,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "7dc254a8-7255-47c6-a71f-c67c86701294")
-		(property "Reference" "C25"
+		(property "Reference" "C26"
 			(at 44.45 38.1 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2330,7 +2330,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "C25")
+					(reference "C26")
 					(unit 1)
 				)
 			)
@@ -2432,7 +2432,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "a62bdca6-105e-470e-b562-bd424c1fc22a")
-		(property "Reference" "#PWR065"
+		(property "Reference" "#PWR068"
 			(at 101.6 22.86 0)
 			(hide yes)
 			(show_name no)
@@ -2492,7 +2492,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "#PWR065")
+					(reference "#PWR068")
 					(unit 1)
 				)
 			)
@@ -2509,7 +2509,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "c065fd09-420b-443f-9b34-408bd7894f96")
-		(property "Reference" "C24"
+		(property "Reference" "C25"
 			(at 44.45 25.4 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2571,7 +2571,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "C24")
+					(reference "C25")
 					(unit 1)
 				)
 			)
@@ -2768,7 +2768,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "fc31516d-d9a5-4c0f-bcd0-000527f7c2b5")
-		(property "Reference" "#PWR070"
+		(property "Reference" "#PWR073"
 			(at 63.5 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -2829,7 +2829,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/671a8c36-695d-4b22-8799-cc491e07d1df"
-					(reference "#PWR070")
+					(reference "#PWR073")
 					(unit 1)
 				)
 			)

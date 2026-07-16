@@ -6553,7 +6553,7 @@
 		(uuid "297994a3-b835-496d-a3e1-cb1007f8e63e")
 	)
 	(label "USBC_D+"
-		(at 97.79 55.88 0)
+		(at 97.79 58.42 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6773,7 +6773,7 @@
 		(uuid "9014475d-30b1-4e8f-a78d-226f3e161522")
 	)
 	(label "USB_D+"
-		(at 130.81 55.88 180)
+		(at 130.81 58.42 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6893,7 +6893,7 @@
 		(uuid "f5c0e482-8dc2-4be2-b0e1-eca8401ee470")
 	)
 	(label "USB_D-"
-		(at 130.81 58.42 180)
+		(at 130.81 55.88 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6903,7 +6903,7 @@
 		(uuid "f5d001d7-0b59-4a59-8885-607007496df1")
 	)
 	(label "USBC_D-"
-		(at 97.79 58.42 0)
+		(at 97.79 55.88 0)
 		(effects
 			(font
 				(size 1.27 1.27)
