@@ -7628,7 +7628,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "13fcaea6-fa42-4181-aced-de724b00daa8")
-		(property "Reference" "H3"
+		(property "Reference" "H2"
 			(at 54.61 186.6899 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7686,7 +7686,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
-					(reference "H3")
+					(reference "H2")
 					(unit 1)
 				)
 			)
@@ -8543,7 +8543,7 @@
 	)
 	(symbol
 		(lib_id "Mechanical:MountingHole")
-		(at 63.5 181.61 0)
+		(at 63.5 187.96 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -8553,8 +8553,8 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "3e59dc85-5578-45dc-8e70-c27b317feaf0")
-		(property "Reference" "H2"
-			(at 66.04 180.3399 0)
+		(property "Reference" "H3"
+			(at 66.04 186.6899 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -8565,7 +8565,7 @@
 			)
 		)
 		(property "Value" "M3"
-			(at 66.04 182.8799 0)
+			(at 66.04 189.2299 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -8576,7 +8576,7 @@
 			)
 		)
 		(property "Footprint" "MountingHole:MountingHole_3.2mm_M3"
-			(at 63.5 181.61 0)
+			(at 63.5 187.96 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8587,7 +8587,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 63.5 181.61 0)
+			(at 63.5 187.96 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8598,7 +8598,7 @@
 			)
 		)
 		(property "Description" "Mounting Hole without connection"
-			(at 63.5 181.61 0)
+			(at 63.5 187.96 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8611,7 +8611,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
-					(reference "H2")
+					(reference "H3")
 					(unit 1)
 				)
 			)
@@ -12198,82 +12198,6 @@
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
 					(reference "#PWR024")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Mechanical:MountingHole")
-		(at 63.5 187.96 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "d60ea16d-26bd-485b-a919-a113779a9752")
-		(property "Reference" "H4"
-			(at 66.04 186.6899 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "M3"
-			(at 66.04 189.2299 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "MountingHole:MountingHole_3.2mm_M3"
-			(at 63.5 187.96 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 63.5 187.96 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Mounting Hole without connection"
-			(at 63.5 187.96 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(instances
-			(project "hoppy_clock"
-				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
-					(reference "H4")
 					(unit 1)
 				)
 			)
