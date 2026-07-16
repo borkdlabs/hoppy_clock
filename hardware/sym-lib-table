@@ -1,0 +1,7 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "common")(type "KiCad")(uri "${KIPRJMOD}/component_local/common.kicad_sym")(options "")(descr ""))
+  (lib (name "stm32l4")(type "KiCad")(uri "${KIPRJMOD}/component_local/stm32l4.kicad_sym")(options "")(descr ""))
+  (lib (name "tag_connect")(type "KiCad")(uri "${KIPRJMOD}/component_local/tag_connect.kicad_sym")(options "")(descr ""))
+  (lib (name "ti_ldo")(type "KiCad")(uri "${KIPRJMOD}/component_local/ti_ldo.kicad_sym")(options "")(descr ""))
+)

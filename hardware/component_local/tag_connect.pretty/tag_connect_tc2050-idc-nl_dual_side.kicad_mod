@@ -1,0 +1,307 @@
+(footprint "tag_connect_tc2050-idc-nl_dual_side"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(descr "Tag-Connect programming header; http://www.tag-connect.com/Materials/TC2050-IDC-NL%20Datasheet.pdf")
+	(tags "tag connect programming header pogo pins")
+	(property "Reference" "REF**"
+		(at 0 -2.25 0)
+		(layer "F.SilkS")
+		(uuid "543e318c-0ba6-4bfe-a5ed-74b2bd118ca7")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+			(justify bottom)
+		)
+	)
+	(property "Value" "Val**"
+		(at 0 2.385 0)
+		(layer "F.Fab")
+		(uuid "762f0f04-c21d-4d87-b7f7-125e7f500089")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+			(justify top)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "02170a7e-21a1-45f0-a361-724505cfa35a")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "f4754544-e2c5-4545-a07c-043185402da0")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Manufacturer" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "2d7e8e94-04aa-42ca-bff6-8cf737e132ec")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Manufacturer Part Number" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "effd5c41-131a-4721-8777-c282177f8cb8")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr exclude_from_pos_files exclude_from_bom)
+	(fp_poly
+		(pts
+			(xy -5.08 -0.65) (xy -5.08 0.65) (xy -3.1 2.05) (xy 4.48 2.05) (xy 5.08 1.45) (xy 5.08 -1.45) (xy 4.48 -2.05)
+			(xy -3.1 -2.05)
+		)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "b0f7bf4b-136a-4a62-940b-2beb8a699855")
+	)
+	(fp_poly
+		(pts
+			(xy -5.08 -0.65) (xy -5.08 0.65) (xy -3.1 2.05) (xy 4.48 2.05) (xy 5.08 1.45) (xy 5.08 -1.45) (xy 4.48 -2.05)
+			(xy -3.1 -2.05)
+		)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "B.SilkS")
+		(uuid "2d856955-a18a-461f-89a4-425d61634ce4")
+	)
+	(fp_poly
+		(pts
+			(xy 4.48 -2.05) (xy -3.1 -2.05) (xy -5.08 -0.65) (xy -5.08 0.65) (xy -3.1 2.05) (xy 4.48 2.05) (xy 5.08 1.45)
+			(xy 5.08 -1.45)
+		)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "ecf9e704-76d8-4dcc-8c80-42f460778ca8")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(uuid "63caafb7-0674-4f0a-b1ad-98306c96db10")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "" np_thru_hole circle
+		(at -3.81 0)
+		(size 0.9906 0.9906)
+		(drill 0.9906)
+		(layers "*.Cu" "*.Mask")
+		(uuid "9787bfe1-2c93-4341-a4dc-1f0d5ec6c1a7")
+	)
+	(pad "" np_thru_hole circle
+		(at 3.81 -1.016)
+		(size 0.9906 0.9906)
+		(drill 0.9906)
+		(layers "*.Cu" "*.Mask")
+		(uuid "6e44cde5-765b-41fa-87c5-85b765da3dd5")
+	)
+	(pad "" np_thru_hole circle
+		(at 3.81 1.016)
+		(size 0.9906 0.9906)
+		(drill 0.9906)
+		(layers "*.Cu" "*.Mask")
+		(uuid "4598dd7e-c1f4-40ab-a133-ca6f32c0602c")
+	)
+	(pad "1" connect circle
+		(at -2.54 -0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "446af532-f0cb-4c72-9fb5-7c1a284002f6")
+	)
+	(pad "1" connect circle
+		(at -2.54 0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "450d103e-b2a8-41dc-9db1-3f6ef4199d02")
+	)
+	(pad "2" connect circle
+		(at -1.27 -0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "330fe2f8-f613-4b3a-bfa6-315c8ed6b81a")
+	)
+	(pad "2" connect circle
+		(at -1.27 0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "aa95a019-2cce-4c75-a32b-d72740da704f")
+	)
+	(pad "3" connect circle
+		(at 0 -0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "91db43d8-52e6-4806-8c73-b4e3c84aab6d")
+	)
+	(pad "3" connect circle
+		(at 0 0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "ffa617d6-95f5-4ff0-a9be-b1c3b63ee566")
+	)
+	(pad "4" connect circle
+		(at 1.27 -0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "febaa6a4-b6a6-4950-b2f9-72a876e99cbf")
+	)
+	(pad "4" connect circle
+		(at 1.27 0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "7f4f66e8-98ff-4708-aa58-840668d54d2a")
+	)
+	(pad "5" connect circle
+		(at 2.54 -0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "dab748cb-18c7-46a6-888f-7c58fcd76f2d")
+	)
+	(pad "5" connect circle
+		(at 2.54 0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "6582fb76-dad7-4c48-a598-16b96951d54a")
+	)
+	(pad "6" connect circle
+		(at 2.54 -0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "3e275ddf-677f-423e-8902-89c3f6e117ac")
+	)
+	(pad "6" connect circle
+		(at 2.54 0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "44e6a448-ae43-4d90-9acc-50ceea6b6307")
+	)
+	(pad "7" connect circle
+		(at 1.27 -0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "5173dc60-4745-4efc-8b2f-2dbe2bbea299")
+	)
+	(pad "7" connect circle
+		(at 1.27 0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "02f909ee-827e-4b47-9c7a-06af49b3b42a")
+	)
+	(pad "8" connect circle
+		(at 0 -0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "22a8fc86-6025-4c1e-bd6b-ae161daa5355")
+	)
+	(pad "8" connect circle
+		(at 0 0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "6b07bfac-ec6e-44c1-b486-a6e0b0561358")
+	)
+	(pad "9" connect circle
+		(at -1.27 -0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "2f7f3677-80b5-4bfe-b73d-a9ecc864c275")
+	)
+	(pad "9" connect circle
+		(at -1.27 0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "78b49248-37a6-4956-8985-000367109ec6")
+	)
+	(pad "10" connect circle
+		(at -2.54 -0.635)
+		(size 0.7874 0.7874)
+		(layers "F.Cu" "F.Mask")
+		(uuid "0490f742-c202-4bd7-8c0a-25a9bd959d25")
+	)
+	(pad "10" connect circle
+		(at -2.54 0.635)
+		(size 0.7874 0.7874)
+		(layers "B.Cu" "B.Mask")
+		(uuid "38f7a165-a66e-4a49-a46b-6b51b15e2cf5")
+	)
+	(zone
+		(net 0)
+		(net_name "")
+		(layers "F.Cu" "B.Cu")
+		(uuid "f559c4d6-733f-431c-8eeb-d76337ee4def")
+		(hatch full 0.508)
+		(connect_pads
+			(clearance 0)
+		)
+		(min_thickness 0.254)
+		(filled_areas_thickness no)
+		(keepout
+			(tracks allowed)
+			(vias not_allowed)
+			(pads allowed)
+			(copperpour not_allowed)
+			(footprints not_allowed)
+		)
+		(placement
+			(enabled no)
+			(sheetname "")
+		)
+		(fill
+			(thermal_gap 0.508)
+			(thermal_bridge_width 0.508)
+		)
+		(polygon
+			(pts
+				(xy -2.54 0.635) (xy 2.54 0.635) (xy 2.54 -0.635) (xy -2.54 -0.635)
+			)
+		)
+	)
+	(embedded_fonts no)
+)
