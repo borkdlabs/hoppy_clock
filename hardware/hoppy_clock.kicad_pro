@@ -424,7 +424,7 @@
         "uuid": "6806ffb7-7194-4885-9aaf-76852609c59e"
       }
     ],
-    "used_designators": "#PWR1-66,#PWR87-89,C1-24,C30,Y1,FM1-6,H1-4,#FLG1-2,R1-5,J1-5,U1-5,D1-10,SW1",
+    "used_designators": "H1-4,SW1-3,D1-10,#PWR1-67,J1-5,R1-9,#FLG1-2,C1-24,FM1-6,U1-5,Y1",
     "variants": []
   },
   "sheets": [
@@ -435,6 +435,10 @@
     [
       "483404b4-e5b1-4922-885a-f241e36719f3",
       "hoppy_clock_leds"
+    ],
+    [
+      "671a8c36-695d-4b22-8799-cc491e07d1df",
+      "hoppy_clock_speaker"
     ]
   ],
   "text_variables": {},
