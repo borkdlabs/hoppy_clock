@@ -2,7 +2,7 @@
 	(version 20260306)
 	(generator "eeschema")
 	(generator_version "10.0")
-	(uuid "0d5b0903-656f-42e7-9213-e2357211eea0")
+	(uuid "e5c4bacf-fc05-4c74-95f0-0d91b94a5bb3")
 	(paper "A4")
 	(title_block
 		(title "Hoppy Clock PCB")
@@ -1713,7 +1713,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100k"
+		(property "Value" "10k"
 			(at 60.96 55.88 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1955,7 +1955,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "5k1"
+		(property "Value" "10k"
 			(at 35.56 26.67 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2037,7 +2037,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "5k1"
+		(property "Value" "1k8"
 			(at 35.56 39.37 0)
 			(show_name no)
 			(do_not_autoplace no)
