@@ -2,5 +2,6 @@
   (version 7)
   (lib (name "common")(type "KiCad")(uri "${KIPRJMOD}/component_local/common.pretty")(options "")(descr ""))
   (lib (name "stm32l4")(type "KiCad")(uri "${KIPRJMOD}/component_local/stm32l4.pretty")(options "")(descr ""))
+  (lib (name "switch")(type "KiCad")(uri "${KIPRJMOD}/component_local/switch.pretty")(options "")(descr ""))
   (lib (name "tag_connect")(type "KiCad")(uri "${KIPRJMOD}/component_local/tag_connect.pretty")(options "")(descr ""))
 )

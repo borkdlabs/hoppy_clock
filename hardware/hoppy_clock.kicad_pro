@@ -501,7 +501,8 @@
   "libraries": {
     "pinned_footprint_libs": [
       "common",
-      "stm32l4"
+      "stm32l4",
+      "switch"
     ],
     "pinned_symbol_libs": [
       "common",
@@ -757,7 +758,7 @@
         "uuid": "6806ffb7-7194-4885-9aaf-76852609c59e"
       }
     ],
-    "used_designators": "D1,#PWR1-43,J1-5,R1-12,#FLG1-2,C1-16,FM1-6,H1-3,SW1-2,U1-5,Y1",
+    "used_designators": "SW3",
     "variants": []
   },
   "sheets": [

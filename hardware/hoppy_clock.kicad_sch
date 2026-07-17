@@ -4762,7 +4762,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "tag_connect:tag_connect_arm_swd_tc2050"
+		(symbol "tag_connect:tag_connect_arm_swd_tc2050-nl"
 			(exclude_from_sim no)
 			(in_bom no)
 			(on_board yes)
@@ -4788,7 +4788,7 @@
 					)
 				)
 			)
-			(property "Footprint" "tag_connect:tag_connect_tc2050-idc"
+			(property "Footprint" "tag_connect:tag_connect_tc2050-idc-nl"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -4799,7 +4799,7 @@
 					)
 				)
 			)
-			(property "Datasheet" "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/TC2050-IDC_Datasheet_7.pdf"
+			(property "Datasheet" "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/TC2050-IDC-NL_Datasheet_8.pdf"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -4832,7 +4832,7 @@
 					)
 				)
 			)
-			(property "Manufacturer Part Number" "TC2050-IDC"
+			(property "Manufacturer Part Number" "TC2050-IDC-NL"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -4898,7 +4898,7 @@
 					)
 				)
 			)
-			(symbol "tag_connect_arm_swd_tc2050_0_0"
+			(symbol "tag_connect_arm_swd_tc2050-nl_0_0"
 				(pin power_in line
 					(at -6.35 13.97 270)
 					(length 2.54)
@@ -5086,7 +5086,7 @@
 					)
 				)
 			)
-			(symbol "tag_connect_arm_swd_tc2050_0_1"
+			(symbol "tag_connect_arm_swd_tc2050-nl_0_1"
 				(rectangle
 					(start -8.89 11.43)
 					(end 8.89 -11.43)
@@ -5613,6 +5613,16 @@
 			(justify left)
 		)
 		(uuid "f38e367e-aa74-454d-9289-78b67c38e4ed")
+	)
+	(text "SWT0310-043025GSA"
+		(exclude_from_sim no)
+		(at 57.15 110.49 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "fb0633cd-30a8-406b-bd3c-01bf7f4a4152")
 	)
 	(text_box "The WS2812B is driven via 3.3 V logic PWM.\nComponent batch testing is required to validate 3.3 V logic compatibility."
 		(exclude_from_sim no)
@@ -8679,7 +8689,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Button_Switch_THT:SW_PUSH_6mm"
+		(property "Footprint" "switch:swt0310-0430xxgsa"
 			(at 57.15 102.87 0)
 			(hide yes)
 			(show_name no)
@@ -11159,166 +11169,6 @@
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
 					(reference "R5")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "tag_connect:tag_connect_arm_swd_tc2050")
-		(at 25.4 34.29 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "577e9dc9-0c75-46b8-9c41-deca68678d46")
-		(property "Reference" "J1"
-			(at 21.59 19.05 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "TC2050-IDC"
-			(at 21.59 21.59 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "tag_connect:tag_connect_tc2050-idc"
-			(at 25.4 34.29 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/TC2050-IDC_Datasheet_7.pdf"
-			(at 25.4 34.29 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Tag-Connect ARM Cortex SWD JTAG connector, 10 pin"
-			(at 25.4 34.29 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Manufacturer" "Tag-Connect"
-			(at 25.4 34.29 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Manufacturer Part Number" "TC2050-IDC"
-			(at 25.4 34.29 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Distributor" ""
-			(at 25.4 34.29 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Distributor Part Number" ""
-			(at 25.4 34.29 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Distributor Link" ""
-			(at 25.4 34.29 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "3dc063f6-502d-46e1-b442-27ce146f9ca3")
-		)
-		(pin "4"
-			(uuid "944309cd-220a-4eae-8fcc-1e7f3770f044")
-		)
-		(pin "3"
-			(uuid "78dccd44-78b1-4a17-8de2-695399426c00")
-		)
-		(pin "5"
-			(uuid "8ae0bfa5-84a1-4eb9-9c6b-feee62c861b6")
-		)
-		(pin "6"
-			(uuid "8fbbdc51-a208-4447-8605-d095082e0460")
-		)
-		(pin "8"
-			(uuid "67159454-043b-4b8b-826c-e09637033271")
-		)
-		(pin "7"
-			(uuid "487bcb72-c7a7-44cd-9020-2ba246408da5")
-		)
-		(pin "10"
-			(uuid "a19e7979-cec6-4f4e-a664-755f135e443e")
-		)
-		(pin "1"
-			(uuid "8f141221-711d-4e05-8afc-ec210a081202")
-		)
-		(pin "9"
-			(uuid "8be82617-a2a3-4aa8-8ec1-cac1756df678")
-		)
-		(instances
-			(project "hoppy_clock"
-				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
-					(reference "J1")
 					(unit 1)
 				)
 			)
@@ -14905,6 +14755,166 @@
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
 					(reference "#PWR08")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "tag_connect:tag_connect_arm_swd_tc2050-nl")
+		(at 25.4 34.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "cc130aa9-465f-4aa3-99bb-37ef984ba902")
+		(property "Reference" "J1"
+			(at 21.59 19.05 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "TC2050-IDC-NL"
+			(at 21.59 21.59 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "tag_connect:tag_connect_tc2050-idc-nl"
+			(at 25.4 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.tag-connect.com/wp-content/uploads/bsk-pdf-manager/TC2050-IDC-NL_Datasheet_8.pdf"
+			(at 25.4 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Tag-Connect ARM Cortex SWD JTAG connector, 10 pin"
+			(at 25.4 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "Tag-Connect"
+			(at 25.4 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer Part Number" "TC2050-IDC-NL"
+			(at 25.4 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Distributor" ""
+			(at 25.4 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Distributor Part Number" ""
+			(at 25.4 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Distributor Link" ""
+			(at 25.4 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "3"
+			(uuid "c76a2e3f-c944-49a1-bba0-3e5eb5932c52")
+		)
+		(pin "8"
+			(uuid "5ac8e347-7d14-41d7-9f3b-efc924d7c277")
+		)
+		(pin "4"
+			(uuid "38294466-ccf1-4738-94d3-50174d58aad2")
+		)
+		(pin "5"
+			(uuid "3aa4dbcf-901d-433f-82d2-2d5dbddcbcdd")
+		)
+		(pin "1"
+			(uuid "256fcfc5-c09f-4185-8b43-b6c21fc4c5b9")
+		)
+		(pin "7"
+			(uuid "1ae2bc2d-e924-4fe7-bd2c-c97463387350")
+		)
+		(pin "6"
+			(uuid "9d68b1d8-ae79-42ea-b797-a00757159f64")
+		)
+		(pin "2"
+			(uuid "a93d1c5d-0c33-4e79-b16d-d839c5340cd2")
+		)
+		(pin "9"
+			(uuid "997efa7f-9040-4a1e-bb61-8a2b48dc739f")
+		)
+		(pin "10"
+			(uuid "a42ea621-9d15-4d94-ad64-ce51d3992be1")
+		)
+		(instances
+			(project "hoppy_clock"
+				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
+					(reference "J1")
 					(unit 1)
 				)
 			)
