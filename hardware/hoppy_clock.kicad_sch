@@ -1839,7 +1839,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "common:molex_2169900001_usb_c_16p"
+		(symbol "common:molex_2171790001_usb_c_16p"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -1855,7 +1855,7 @@
 					)
 				)
 			)
-			(property "Value" "2169900001"
+			(property "Value" "2171790001"
 				(at 0 19.05 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1865,7 +1865,7 @@
 					)
 				)
 			)
-			(property "Footprint" "common:molex_2169900001_usb_c_16p"
+			(property "Footprint" "common:molex_2171790001_usb_c_16p"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1876,7 +1876,7 @@
 					)
 				)
 			)
-			(property "Datasheet" "https://www.molex.com/en-us/products/part-detail/2169900001"
+			(property "Datasheet" "https://www.molex.com/en-us/products/part-detail/2171790001"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1887,7 +1887,7 @@
 					)
 				)
 			)
-			(property "Description" "Universal Serial Bus (USB) Shielded I/O Receptacle, Type C, Right-Angle, Surface Mount, Mid-Mount, Center Height -0.52mm, Single Row, 16 Circuits, Gold (Au) Plating"
+			(property "Description" "USB-C (USB TYPE-C) USB 2.0 Receptacle Connector 24 (16+8 Dummy) Position Surface Mount, Right Angle; Through Hole"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1909,7 +1909,7 @@
 					)
 				)
 			)
-			(property "Manufacturer Part Number" "2169900001"
+			(property "Manufacturer Part Number" "2171790001"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1931,7 +1931,7 @@
 					)
 				)
 			)
-			(property "Distributor Part Number" "900-2169900001CT-ND"
+			(property "Distributor Part Number" "900-2171790001CT-ND"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1942,7 +1942,7 @@
 					)
 				)
 			)
-			(property "Distributor Link" "https://www.digikey.ca/en/products/detail/molex/2169900001/13913743"
+			(property "Distributor Link" "https://www.digikey.ca/en/products/detail/molex/2171790001/13913749"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1964,7 +1964,7 @@
 					)
 				)
 			)
-			(symbol "molex_2169900001_usb_c_16p_0_1"
+			(symbol "molex_2171790001_usb_c_16p_0_1"
 				(rectangle
 					(start -10.16 17.78)
 					(end 10.16 -17.78)
@@ -2165,7 +2165,7 @@
 					)
 				)
 			)
-			(symbol "molex_2169900001_usb_c_16p_1_1"
+			(symbol "molex_2171790001_usb_c_16p_1_1"
 				(pin passive line
 					(at 0 -25.4 90)
 					(length 7.62)
@@ -4801,10 +4801,6 @@
 		(uuid "413d602e-2d10-4f9e-a512-c2c4f0216469")
 	)
 	(no_connect
-		(at 101.6 123.19)
-		(uuid "5ea87d41-87a5-4455-9e69-9afadd1957cf")
-	)
-	(no_connect
 		(at 76.2 153.67)
 		(uuid "7175f88b-09a1-4f47-a380-78309a2155e0")
 	)
@@ -4819,6 +4815,10 @@
 	(no_connect
 		(at 81.28 52.07)
 		(uuid "cc0889b1-2e72-4076-a9db-75dd71e9945a")
+	)
+	(no_connect
+		(at 101.6 133.35)
+		(uuid "ce7fb9ff-3c4b-4785-9e36-cf092d0e5f93")
 	)
 	(no_connect
 		(at 76.2 151.13)
@@ -6104,6 +6104,16 @@
 	)
 	(wire
 		(pts
+			(xy 120.65 123.19) (xy 101.6 123.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ca9b6243-f5d4-482e-ae17-f3e7553a38d5")
+	)
+	(wire
+		(pts
 			(xy 120.65 146.05) (xy 101.6 146.05)
 		)
 		(stroke
@@ -6251,16 +6261,6 @@
 			(type default)
 		)
 		(uuid "dcd8a6db-9cbb-455e-a05a-55c3e3da5008")
-	)
-	(wire
-		(pts
-			(xy 120.65 133.35) (xy 101.6 133.35)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "de4a9f15-726b-46f8-8b2e-b1010b16c927")
 	)
 	(wire
 		(pts
@@ -6672,6 +6672,16 @@
 		)
 		(uuid "6471ad64-a134-4911-bd11-40b97461c624")
 	)
+	(label "SPEAKER_SD"
+		(at 120.65 123.19 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "656e2408-e5e6-4a11-905c-1533b451c648")
+	)
 	(label "USB_D+"
 		(at 120.65 151.13 180)
 		(effects
@@ -6801,16 +6811,6 @@
 			(justify right bottom)
 		)
 		(uuid "b61646b0-5ac9-48a6-87c6-af9633b4aef1")
-	)
-	(label "SPEAKER_SD"
-		(at 120.65 133.35 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "c5fa0af5-7fd7-4bcf-91a8-de6337aba7a5")
 	)
 	(label "QUADSPI_BK1_IO0"
 		(at 58.42 140.97 0)
@@ -11464,6 +11464,174 @@
 		)
 	)
 	(symbol
+		(lib_id "common:molex_2171790001_usb_c_16p")
+		(at 63.5 36.83 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c4ac947a-afa5-4fb4-8963-0484245c5707")
+		(property "Reference" "J2"
+			(at 63.5 15.24 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "2171790001"
+			(at 63.5 17.78 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "common:molex_2171790001_usb_c_16p"
+			(at 63.5 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.molex.com/en-us/products/part-detail/2171790001"
+			(at 63.5 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "USB-C (USB TYPE-C) USB 2.0 Receptacle Connector 24 (16+8 Dummy) Position Surface Mount, Right Angle; Through Hole"
+			(at 63.5 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "Molex"
+			(at 63.5 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer Part Number" "2171790001"
+			(at 63.5 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Distributor" "DigiKey"
+			(at 63.5 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Distributor Part Number" "900-2171790001CT-ND"
+			(at 63.5 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Distributor Link" "https://www.digikey.ca/en/products/detail/molex/2171790001/13913749"
+			(at 63.5 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "A1/B12"
+			(uuid "ac254939-c260-419b-9dbe-a340b0548336")
+		)
+		(pin "B1/A12"
+			(uuid "2245b3f8-336e-40d8-9f6f-cacff1d07bd4")
+		)
+		(pin "S1"
+			(uuid "873b6036-0a58-41bf-bee2-1b6b50e13bfd")
+		)
+		(pin "A5"
+			(uuid "8da1048c-9d95-48bb-8a40-e1d0d00cf870")
+		)
+		(pin "B5"
+			(uuid "abcaeafd-35b1-4735-991c-65043fbf11b0")
+		)
+		(pin "B7"
+			(uuid "b5c99660-7d82-42b5-bbdd-96885b220998")
+		)
+		(pin "B4/A9"
+			(uuid "b113b054-ac03-48b3-af11-5dffba6a19d8")
+		)
+		(pin "A6"
+			(uuid "991b0030-fa70-40ac-8dc7-4b42a8cd9f3a")
+		)
+		(pin "B8"
+			(uuid "ee90a120-ff15-40b0-8286-bdeb11b6aa04")
+		)
+		(pin "B6"
+			(uuid "7a9d31ce-ca0e-4408-af90-b4ba1c4be740")
+		)
+		(pin "A8"
+			(uuid "aeaa4dd0-f461-4744-a2db-82393fb6f100")
+		)
+		(pin "A4/B9"
+			(uuid "85be383c-1725-4ed4-997a-5f8667c5e9d9")
+		)
+		(pin "A7"
+			(uuid "d1d50c7f-b702-4f26-81c8-fe3cb86f66e0")
+		)
+		(instances
+			(project "hoppy_clock"
+				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
+					(reference "J2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R")
 		(at 265.43 144.78 0)
 		(mirror y)
@@ -11540,173 +11708,6 @@
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
 					(reference "R7")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "common:molex_2169900001_usb_c_16p")
-		(at 63.5 36.83 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "c994cb7d-5a28-4b48-93c9-c3ad3193b20d")
-		(property "Reference" "J2"
-			(at 63.5 15.24 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "2169900001"
-			(at 63.5 17.78 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "common:molex_2169900001_usb_c_16p"
-			(at 63.5 36.83 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" "https://www.molex.com/en-us/products/part-detail/2169900001"
-			(at 63.5 36.83 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Universal Serial Bus (USB) Shielded I/O Receptacle, Type C, Right-Angle, Surface Mount, Mid-Mount, Center Height -0.52mm, Single Row, 16 Circuits, Gold (Au) Plating"
-			(at 63.5 36.83 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Manufacturer" "Molex"
-			(at 63.5 36.83 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Manufacturer Part Number" "2169900001"
-			(at 63.5 36.83 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Distributor" "DigiKey"
-			(at 63.5 36.83 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Distributor Part Number" "900-2169900001CT-ND"
-			(at 63.5 36.83 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Distributor Link" "https://www.digikey.ca/en/products/detail/molex/2169900001/13913743"
-			(at 63.5 36.83 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "A1/B12"
-			(uuid "76dc7733-5409-4395-97d1-6c543f040e62")
-		)
-		(pin "A5"
-			(uuid "c27249ec-d0ef-4657-95b9-07bec79aeedf")
-		)
-		(pin "B5"
-			(uuid "cbc1da18-fe45-4367-9f06-6376052744e8")
-		)
-		(pin "A7"
-			(uuid "ea2eba7a-a4e7-4c21-bc94-af3358d82411")
-		)
-		(pin "S1"
-			(uuid "9a948fc5-b8a7-488e-b633-b56422d90a0e")
-		)
-		(pin "B1/A12"
-			(uuid "7e26728d-0aba-4939-bb27-e413350400e4")
-		)
-		(pin "B7"
-			(uuid "5f1088f1-b4bf-43ea-9c7a-d60ebf27bec1")
-		)
-		(pin "A4/B9"
-			(uuid "b05700de-df1e-47b6-a235-eedf59bf41ff")
-		)
-		(pin "B4/A9"
-			(uuid "82bee82b-e668-4436-9a5b-f1271764b4ed")
-		)
-		(pin "A6"
-			(uuid "6dddb154-e8cf-4f3a-905f-fd8d1a8692be")
-		)
-		(pin "B6"
-			(uuid "455cebbd-5fe9-4f76-85b5-4d2648c920cf")
-		)
-		(pin "A8"
-			(uuid "b6852ee2-7a5e-42ec-9493-232d386b659b")
-		)
-		(pin "B8"
-			(uuid "9b174d4b-adb7-440f-9be8-dbea96f03579")
-		)
-		(instances
-			(project "hoppy_clock"
-				(path "/6806ffb7-7194-4885-9aaf-76852609c59e"
-					(reference "J2")
 					(unit 1)
 				)
 			)
