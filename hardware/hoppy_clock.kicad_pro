@@ -758,13 +758,17 @@
         "uuid": "6806ffb7-7194-4885-9aaf-76852609c59e"
       }
     ],
-    "used_designators": "",
+    "used_designators": "D1,#PWR1-50,C1-19,R1-12,#FLG1-2,J1-5,U1-6,SW1-2,FM1-6,H1-3,Y1",
     "variants": []
   },
   "sheets": [
     [
       "6806ffb7-7194-4885-9aaf-76852609c59e",
       "Root"
+    ],
+    [
+      "41fe0565-683d-4537-a7f2-ad3db6d0e743",
+      "hoppy_clock_io"
     ]
   ],
   "text_variables": {},
