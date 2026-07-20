@@ -1,0 +1,90 @@
+################################################################################
+# kibot.yaml
+#
+# KiBot custom preflight checks and output release files workflow.
+#
+# Built for KiBot running KiCad 10.
+################################################################################
+
+name: KiBot Release
+
+on:
+  push:
+    paths:
+      - "*.kicad_sch"
+      - "*.kicad_pcb"
+      - "*.kicad_sym"
+      - "*.kicad_mod"
+      - "*.kibot.yaml"
+      - ".github/workflows/kibot.yaml"
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "*.kicad_sch"
+      - "*.kicad_pcb"
+      - "*.kicad_sym"
+      - "*.kicad_mod"
+      - "*.kibot.yaml"
+      - ".github/workflows/kibot.yaml"
+    branches:
+      - main
+
+jobs:
+  kibot:
+    name: KiBot
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Cache 3D models data
+        id: models-cache
+        uses: set-soft/cache@main
+        with:
+          path: ~/cache_3d
+          key: cache_3d
+
+      - name: Run ERC
+        uses: INTI-CMNB/KiBot@v2_k10
+        with:
+          config: config.kibot.yaml
+          cache3D: YES
+          skip: drc
+          targets: __NONE__
+
+      - name: Run DRC
+        uses: INTI-CMNB/KiBot@v2_k10
+        with:
+          config: config.kibot.yaml
+          cache3D: YES
+          skip: erc
+          targets: __NONE__
+
+      - name: Combine repo name and short hash
+        run: |
+          # Extract the repository name from $GITHUB_REPOSITORY.
+          REPO_NAME=$(echo "${{ github.repository }}" | awk -F'/' '{print $2}')
+          # Extract the short commit hash from $GITHUB_SHA.
+          SHORT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
+          # Combine the repo name and the short hash.
+          FILENAME="${REPO_NAME}-${SHORT_HASH}"
+          echo "FILENAME=$FILENAME" >> $GITHUB_ENV
+
+      - uses: INTI-CMNB/KiBot@v2_k10
+        with:
+          config: config.kibot.yaml
+          dir: default
+          cache3D: YES
+          variant: default
+          skip: erc,drc
+
+      - name: Upload result artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          # Repo name followed by commit SHA (7 character).
+          name: "${{ env.FILENAME }}"
+          path: default
