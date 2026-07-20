@@ -1,5 +1,7 @@
 # Hoppy Clock Firmware
 
+![arm_gcc_build](https://github.com/borkdlabs/hoppy_clock/actions/workflows/arm_gcc_build.yaml/badge.svg)
+
 STM32L432KC microcontroller firmware for the `hoppy_clock` project.
 
 ---

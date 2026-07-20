@@ -1,0 +1,166 @@
+################################################################################
+# config.kibot.yaml
+#
+# Based on the example KiBot config file for ardu_prog.pro.
+# https://github.com/INTI-CMNB/kibot_variants_arduprog/blob/master/ardu_prog.kibot.yaml
+#
+# Designed for KiCad 10 with KiBot GitHub Actions workflows.
+################################################################################
+
+kibot:
+  version: 1
+
+globals:
+  # Filters for KiBot warnings
+  filters:
+    - filter: Ignore PcbDraw missing components
+      number: 103
+    - filter: Ignore missing KiCad config, not in docker images
+      number: 8
+    - filter: Ignore missing KiCad 3D models, not in docker images
+      number: 10
+    - filter: Ignore missing KiCad config from KiAuto, not in docker images
+      number: 58
+      regex: kicad_common.json
+  # This will undo the `set_text_variables` when we run it locally
+  restore_project: true
+  # We will use a value externally formatted
+  time_reformat: false
+
+preflight:
+  check_zone_fills: true
+  erc: true
+  drc: true
+
+variants:
+  - name: "default"
+    comment: "default variant"
+    type: kibom
+
+outputs:
+  ##############################################################################
+  # Bill of Material and Assembly step-by-step docs:
+  - name: "bom_csv"
+    comment: "CSV for the Bill of Materials"
+    type: bom
+    dir: BoM
+    options:
+      csv:
+        separator: ","  # CSV delimiter.
+        quote_all: false  # Do not double quote everything.
+        hide_header: false  # Show column names.
+        hide_pcb_info: true  # Hide PCB info footer.
+        hide_stats_info: true  # Hide stats footer.
+      columns:
+        - Row
+        - References
+        - Quantity Per PCB
+        - field: Value
+          join: [ "voltage", "current", "power", "tolerance" ]
+        - field: Manufacturer
+          name: Manufacturer
+        - field: Manufacturer Part Number
+          name: Manufacturer Part Number
+        - field: Distributor
+          name: Distributor
+        - field: Distributor Part Number
+          name: Distributor Part Number
+        - field: Distributor Link
+          name: Distributor Link
+        - Footprint
+      normalize_values: true  # Try to make uniform R, L, C units.
+
+  - name: ibom
+    comment: "Assembly BoM guide"
+    type: ibom
+    dir: BoM
+    options:
+      layer_view: F
+  ##############################################################################
+
+  ##############################################################################
+  # Schematics:
+  - name: print_sch
+    comment: "Schematic PDF"
+    type: pdf_sch_print
+    dir: Schematic
+    options:
+      title: "+ (%V variant)"  # Append the variant to the title.
+  ##############################################################################
+
+  ##############################################################################
+  # Fabrication docs:
+  - name: gerbers
+    comment: Gerbers
+    type: gerber
+    dir: Gerbers
+    layers:
+      - copper  # General copper layers.
+      - Edge.Cuts
+      - F.Silkscreen
+      - B.Silkscreen
+      - F.Mask
+      - B.Mask
+      - F.Paste
+      - B.Paste
+      - F.Courtyard
+      - B.Courtyard
+
+  - name: drill
+    comment: Drill files
+    type: excellon
+    dir: Gerbers
+    options:
+      map:
+        type: pdf
+      pth_and_npth_single_file: false
+
+  - name: position
+    comment: Pick & Place
+    type: position
+    dir: Position
+    options:
+      separate_files_for_front_and_back: false
+
+  - name: print_pdf
+    comment: "PDF for the PCB"
+    type: pcb_print
+    dir: PCB
+    options:
+      force_edge_cuts: true
+      keep_temporal_files: false
+      title: "+ (%V variant)"  # Append the variant to the title.
+      scaling: 1.0
+      pages:
+        - layers: [ User.Drawings, User.Comments ]
+          sheet: "User drawings and comments"
+        - layers: [ F.Paste, F.Fab, User.Drawings, User.Comments ]
+          sheet: "Fabrication top layers"
+        - layers: [ B.Paste, B.Fab, User.Drawings, User.Comments ]
+          sheet: "Fabrication bottom layers"
+        - layers:
+            - layer: F.Cu
+            - layer: F.Mask
+              color: "#14332440"  # Yellow.
+            - layer: F.Silkscreen
+          sheet: "Top layer"
+        - layers: [ In1.Cu ]
+          sheet: "Inner layer 1"
+        - layers: [ In2.Cu ]
+          sheet: "Inner layer 2"
+        - layers:
+            - layer: B.Cu
+            - layer: B.Mask
+              color: "#14332440"  # Yellow.
+            - layer: B.Silkscreen
+          sheet: "Bottom layer"
+          mirror: false
+  ##############################################################################
+
+  ##############################################################################
+  # CAD related model files:
+  - name: step_model
+    comment: "STEP 3D model"
+    type: export_3d
+    dir: CAD
+  ##############################################################################

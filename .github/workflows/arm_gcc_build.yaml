@@ -1,0 +1,69 @@
+################################################################################
+# arm_gcc_build.yaml
+#
+# Build via CMake with ARM GCC using CMakeLists.txt at repo root directory.
+################################################################################
+
+name: ARM GCC CMake build
+
+on:
+  push:
+    paths:
+      - "**/*.c"
+      - "**/*.h"
+      - "**/*.s"
+      - "**/*.S"
+      - "**/*.ld"
+      - "**/CMakeLists.txt"                    # Any subdirectory CMake.
+      - "cmake/**"                             # Toolchain/cmake modules.
+      - ".github/workflows/arm_gcc_build.yaml" # Workflow file.
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "**/*.c"
+      - "**/*.h"
+      - "**/*.s"
+      - "**/*.S"
+      - "**/*.ld"
+      - "**/CMakeLists.txt"                    # Any subdirectory CMake.
+      - "cmake/**"                             # Toolchain/cmake modules.
+      - ".github/workflows/arm_gcc_build.yaml" # Workflow file.
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install ARM toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi
+          sudo apt-get install -y cmake
+          sudo apt-get install -y make
+
+      - name: Create build directory
+        run: mkdir -p build
+
+      - name: Run CMake
+        working-directory: ./build
+        run: cmake ..
+
+      - name: Build project
+        working-directory: ./build
+        run: make
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Binaries
+          path: |
+            build/*.elf
+            build/*.hex
+            build/*.bin
