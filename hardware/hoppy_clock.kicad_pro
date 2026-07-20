@@ -76,9 +76,9 @@
           "width": 0.0
         },
         {
-          "gap": 0.2,
-          "via_gap": 0.2,
-          "width": 0.2644
+          "gap": 0.26,
+          "via_gap": 0.26,
+          "width": 0.26
         }
       ],
       "drc_exclusions": [],
@@ -271,7 +271,7 @@
       "internal_id": "",
       "mfg": "",
       "mpn": "",
-      "sch_revision": "0.1.0"
+      "sch_revision": "0.1.0-alpha"
     },
     "layer_pairs": [],
     "layer_presets": [],
@@ -774,7 +774,7 @@
         "uuid": "6806ffb7-7194-4885-9aaf-76852609c59e"
       }
     ],
-    "used_designators": "D1,#PWR1-54,C1-21,R1-14,#FLG1-3,J1-6,U1-6,SW1-2,FM1-6,H1-3,Y1",
+    "used_designators": "D1,#PWR1-54,C1-21,R1-14,#FLG1-3,J1-6,U1-6,SW1-2,FM1-6,H1-3,Y1,TP1",
     "variants": []
   },
   "sheets": [

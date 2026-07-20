@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Hoppy Clock PCB")
-		(rev "0.1.0")
+		(rev "0.1.0-alpha")
 		(company "BorkdLabs")
 	)
 	(lib_symbols
