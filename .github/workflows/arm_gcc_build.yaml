@@ -1,7 +1,7 @@
 ################################################################################
 # arm_gcc_build.yaml
 #
-# Build via CMake with ARM GCC using CMakeLists.txt at repo root directory.
+# Build via CMake with ARM GCC using CMakeLists.txt in the firmware/ directory.
 ################################################################################
 
 name: ARM GCC CMake build
@@ -15,7 +15,7 @@ on:
       - "**/*.S"
       - "**/*.ld"
       - "**/CMakeLists.txt"                    # Any subdirectory CMake.
-      - "cmake/**"                             # Toolchain/cmake modules.
+      - "firmware/cmake/**"                    # Toolchain/cmake modules.
       - ".github/workflows/arm_gcc_build.yaml" # Workflow file.
     branches:
       - main
@@ -27,7 +27,7 @@ on:
       - "**/*.S"
       - "**/*.ld"
       - "**/CMakeLists.txt"                    # Any subdirectory CMake.
-      - "cmake/**"                             # Toolchain/cmake modules.
+      - "firmware/cmake/**"                    # Toolchain/cmake modules.
       - ".github/workflows/arm_gcc_build.yaml" # Workflow file.
     branches:
       - main
@@ -53,7 +53,7 @@ jobs:
 
       - name: Run CMake
         working-directory: ./build
-        run: cmake ..
+        run: cmake ../firmware
 
       - name: Build project
         working-directory: ./build

@@ -11,21 +11,21 @@ name: KiBot Release
 on:
   push:
     paths:
-      - "*.kicad_sch"
-      - "*.kicad_pcb"
-      - "*.kicad_sym"
-      - "*.kicad_mod"
-      - "*.kibot.yaml"
+      - "hardware/**.kicad_sch"
+      - "hardware/**.kicad_pcb"
+      - "hardware/**.kicad_sym"
+      - "hardware/**.kicad_mod"
+      - "hardware/**.kibot.yaml"
       - ".github/workflows/kibot.yaml"
     branches:
       - main
   pull_request:
     paths:
-      - "*.kicad_sch"
-      - "*.kicad_pcb"
-      - "*.kicad_sym"
-      - "*.kicad_mod"
-      - "*.kibot.yaml"
+      - "hardware/**.kicad_sch"
+      - "hardware/**.kicad_pcb"
+      - "hardware/**.kicad_sym"
+      - "hardware/**.kicad_mod"
+      - "hardware/**.kibot.yaml"
       - ".github/workflows/kibot.yaml"
     branches:
       - main
@@ -51,7 +51,9 @@ jobs:
       - name: Run ERC
         uses: INTI-CMNB/KiBot@v2_k10
         with:
-          config: config.kibot.yaml
+          config: hardware/config.kibot.yaml
+          schema: hardware/hoppy_clock.kicad_sch
+          board: hardware/hoppy_clock.kicad_pcb
           cache3D: YES
           skip: drc
           targets: __NONE__
@@ -59,7 +61,9 @@ jobs:
       - name: Run DRC
         uses: INTI-CMNB/KiBot@v2_k10
         with:
-          config: config.kibot.yaml
+          config: hardware/config.kibot.yaml
+          schema: hardware/hoppy_clock.kicad_sch
+          board: hardware/hoppy_clock.kicad_pcb
           cache3D: YES
           skip: erc
           targets: __NONE__
@@ -76,7 +80,9 @@ jobs:
 
       - uses: INTI-CMNB/KiBot@v2_k10
         with:
-          config: config.kibot.yaml
+          config: hardware/config.kibot.yaml
+          schema: hardware/hoppy_clock.kicad_sch
+          board: hardware/hoppy_clock.kicad_pcb
           dir: default
           cache3D: YES
           variant: default
