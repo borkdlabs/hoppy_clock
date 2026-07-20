@@ -1814,7 +1814,7 @@
 	)
 	(rectangle
 		(start 12.7 53.34)
-		(end 101.6 104.14)
+		(end 139.7 104.14)
 		(stroke
 			(width 0)
 			(type default)
@@ -1836,6 +1836,18 @@
 		)
 		(uuid "545dade3-8405-4d42-a04f-e73f5062f5e0")
 	)
+	(rectangle
+		(start 25.4 57.15)
+		(end 38.1 85.09)
+		(stroke
+			(width 0)
+			(type dot)
+		)
+		(fill
+			(type none)
+		)
+		(uuid "7aa5d1c5-5220-46da-9077-c126d255a5ad")
+	)
 	(text "Speaker Amplifier"
 		(exclude_from_sim no)
 		(at 13.97 102.87 0)
@@ -1850,7 +1862,7 @@
 	)
 	(text "Shutdown on startup"
 		(exclude_from_sim no)
-		(at 53.34 101.6 0)
+		(at 85.09 101.6 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1858,6 +1870,18 @@
 			(justify left)
 		)
 		(uuid "359934fe-1ed9-42df-8b7f-0b1743b1248b")
+	)
+	(text "Low pass\nfilter"
+		(exclude_from_sim no)
+		(at 26.67 82.55 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.1588)
+			)
+			(justify left)
+		)
+		(uuid "691e54d0-6a1f-45cd-a749-6c0a6dc8b27d")
 	)
 	(text "User Interface"
 		(exclude_from_sim no)
@@ -1907,7 +1931,7 @@
 		(uuid "4cec6bc3-bb0c-4b51-9046-bc2e0531225b")
 	)
 	(junction
-		(at 88.9 71.12)
+		(at 120.65 71.12)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "0261888b-0adf-4a27-8227-0bac960f1810")
@@ -1919,10 +1943,22 @@
 		(uuid "4474945b-5667-48cc-b7df-8d8d35b593e1")
 	)
 	(junction
-		(at 88.9 60.96)
+		(at 50.8 59.69)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "523e6ffb-5dd4-4ee2-af25-f5f0f834870e")
+	)
+	(junction
+		(at 120.65 60.96)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "55967f68-5d9b-4cb3-90db-00932633bfb2")
+	)
+	(junction
+		(at 50.8 72.39)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "8f330ade-19de-4d32-8a72-3adea00521f5")
 	)
 	(junction
 		(at 57.15 20.32)
@@ -1931,32 +1967,20 @@
 		(uuid "915c5e8c-db9e-4e71-b1b0-291124632d52")
 	)
 	(junction
-		(at 76.2 60.96)
+		(at 107.95 60.96)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "94d8cca8-2a66-440a-b376-a92dff8f2b17")
 	)
 	(junction
-		(at 25.4 72.39)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "af6d0482-9f79-406b-b802-92cf88b70297")
-	)
-	(junction
-		(at 50.8 90.17)
+		(at 82.55 90.17)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "bca8f59b-3296-43f8-8dcc-0adb08d6f09a")
 	)
-	(junction
-		(at 25.4 85.09)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "fb64b786-74c4-4762-9d3d-40591e729911")
-	)
 	(wire
 		(pts
-			(xy 76.2 81.28) (xy 83.82 81.28)
+			(xy 107.95 81.28) (xy 115.57 81.28)
 		)
 		(stroke
 			(width 0)
@@ -1966,13 +1990,23 @@
 	)
 	(wire
 		(pts
-			(xy 48.26 72.39) (xy 50.8 72.39)
+			(xy 80.01 72.39) (xy 82.55 72.39)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "03d42b7e-8e76-44b9-a948-b181af0d50c2")
+	)
+	(wire
+		(pts
+			(xy 27.94 72.39) (xy 27.94 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "04a5ad30-1b44-49d0-8cf9-475b011676e9")
 	)
 	(wire
 		(pts
@@ -1986,7 +2020,7 @@
 	)
 	(wire
 		(pts
-			(xy 25.4 86.36) (xy 25.4 85.09)
+			(xy 62.23 86.36) (xy 62.23 85.09)
 		)
 		(stroke
 			(width 0)
@@ -1996,7 +2030,7 @@
 	)
 	(wire
 		(pts
-			(xy 63.5 60.96) (xy 63.5 74.93)
+			(xy 95.25 60.96) (xy 95.25 74.93)
 		)
 		(stroke
 			(width 0)
@@ -2006,7 +2040,7 @@
 	)
 	(wire
 		(pts
-			(xy 48.26 85.09) (xy 53.34 85.09)
+			(xy 80.01 85.09) (xy 85.09 85.09)
 		)
 		(stroke
 			(width 0)
@@ -2036,7 +2070,7 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 60.96) (xy 63.5 60.96)
+			(xy 107.95 60.96) (xy 95.25 60.96)
 		)
 		(stroke
 			(width 0)
@@ -2056,17 +2090,17 @@
 	)
 	(wire
 		(pts
-			(xy 25.4 82.55) (xy 25.4 85.09)
+			(xy 27.94 72.39) (xy 29.21 72.39)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "40211116-e592-48e9-97b9-3978c833147e")
+		(uuid "29e9ecb2-773e-449c-8991-9361f57c1ec2")
 	)
 	(wire
 		(pts
-			(xy 76.2 80.01) (xy 76.2 81.28)
+			(xy 107.95 80.01) (xy 107.95 81.28)
 		)
 		(stroke
 			(width 0)
@@ -2076,7 +2110,17 @@
 	)
 	(wire
 		(pts
-			(xy 50.8 90.17) (xy 50.8 91.44)
+			(xy 35.56 59.69) (xy 40.64 59.69)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5382a833-6add-40b1-9e02-cf2d1a347e12")
+	)
+	(wire
+		(pts
+			(xy 82.55 90.17) (xy 82.55 91.44)
 		)
 		(stroke
 			(width 0)
@@ -2086,7 +2130,17 @@
 	)
 	(wire
 		(pts
-			(xy 73.66 80.01) (xy 76.2 80.01)
+			(xy 36.83 72.39) (xy 50.8 72.39)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "56ebdb72-d011-43f9-8b16-106c2fee35bc")
+	)
+	(wire
+		(pts
+			(xy 105.41 80.01) (xy 107.95 80.01)
 		)
 		(stroke
 			(width 0)
@@ -2096,7 +2150,7 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 71.12) (xy 88.9 71.12)
+			(xy 107.95 71.12) (xy 120.65 71.12)
 		)
 		(stroke
 			(width 0)
@@ -2106,7 +2160,7 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 83.82) (xy 83.82 83.82)
+			(xy 107.95 83.82) (xy 115.57 83.82)
 		)
 		(stroke
 			(width 0)
@@ -2116,7 +2170,17 @@
 	)
 	(wire
 		(pts
-			(xy 73.66 85.09) (xy 76.2 85.09)
+			(xy 50.8 72.39) (xy 63.5 72.39)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5f8cb289-bc58-4507-a07d-b5f644a7c180")
+	)
+	(wire
+		(pts
+			(xy 105.41 85.09) (xy 107.95 85.09)
 		)
 		(stroke
 			(width 0)
@@ -2126,7 +2190,7 @@
 	)
 	(wire
 		(pts
-			(xy 88.9 59.69) (xy 88.9 60.96)
+			(xy 120.65 59.69) (xy 120.65 60.96)
 		)
 		(stroke
 			(width 0)
@@ -2136,17 +2200,7 @@
 	)
 	(wire
 		(pts
-			(xy 25.4 72.39) (xy 27.94 72.39)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "65bb4fb3-2092-4ab5-9ab7-5aeb29b3acca")
-	)
-	(wire
-		(pts
-			(xy 88.9 69.85) (xy 88.9 71.12)
+			(xy 120.65 69.85) (xy 120.65 71.12)
 		)
 		(stroke
 			(width 0)
@@ -2156,7 +2210,7 @@
 	)
 	(wire
 		(pts
-			(xy 88.9 72.39) (xy 88.9 71.12)
+			(xy 120.65 72.39) (xy 120.65 71.12)
 		)
 		(stroke
 			(width 0)
@@ -2166,7 +2220,7 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 85.09) (xy 76.2 83.82)
+			(xy 107.95 85.09) (xy 107.95 83.82)
 		)
 		(stroke
 			(width 0)
@@ -2186,23 +2240,23 @@
 	)
 	(wire
 		(pts
-			(xy 24.13 60.96) (xy 25.4 60.96)
+			(xy 62.23 85.09) (xy 63.5 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6c1067ce-dacd-426e-8c34-6f5b8d560e35")
+	)
+	(wire
+		(pts
+			(xy 24.13 59.69) (xy 27.94 59.69)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "6d9fc83d-d0f1-48b6-84c0-efa1143d15a7")
-	)
-	(wire
-		(pts
-			(xy 25.4 74.93) (xy 25.4 72.39)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6f2738d9-c7a7-4112-9e96-93446dacafd3")
 	)
 	(wire
 		(pts
@@ -2216,7 +2270,7 @@
 	)
 	(wire
 		(pts
-			(xy 35.56 72.39) (xy 40.64 72.39)
+			(xy 71.12 72.39) (xy 72.39 72.39)
 		)
 		(stroke
 			(width 0)
@@ -2226,7 +2280,7 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 60.96) (xy 76.2 62.23)
+			(xy 107.95 60.96) (xy 107.95 62.23)
 		)
 		(stroke
 			(width 0)
@@ -2246,7 +2300,7 @@
 	)
 	(wire
 		(pts
-			(xy 50.8 80.01) (xy 53.34 80.01)
+			(xy 82.55 80.01) (xy 85.09 80.01)
 		)
 		(stroke
 			(width 0)
@@ -2256,7 +2310,7 @@
 	)
 	(wire
 		(pts
-			(xy 35.56 85.09) (xy 40.64 85.09)
+			(xy 71.12 85.09) (xy 72.39 85.09)
 		)
 		(stroke
 			(width 0)
@@ -2266,7 +2320,17 @@
 	)
 	(wire
 		(pts
-			(xy 50.8 72.39) (xy 50.8 80.01)
+			(xy 62.23 60.96) (xy 62.23 59.69)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8c3f0628-9fff-4916-8c93-9845be106d37")
+	)
+	(wire
+		(pts
+			(xy 82.55 72.39) (xy 82.55 80.01)
 		)
 		(stroke
 			(width 0)
@@ -2276,7 +2340,7 @@
 	)
 	(wire
 		(pts
-			(xy 50.8 90.17) (xy 53.34 90.17)
+			(xy 82.55 90.17) (xy 85.09 90.17)
 		)
 		(stroke
 			(width 0)
@@ -2296,7 +2360,7 @@
 	)
 	(wire
 		(pts
-			(xy 63.5 95.25) (xy 63.5 96.52)
+			(xy 95.25 95.25) (xy 95.25 96.52)
 		)
 		(stroke
 			(width 0)
@@ -2336,23 +2400,13 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 69.85) (xy 76.2 71.12)
+			(xy 107.95 69.85) (xy 107.95 71.12)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "a83ba267-f34d-44e5-b0e5-34d8c880cc2d")
-	)
-	(wire
-		(pts
-			(xy 25.4 69.85) (xy 25.4 72.39)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ac9db839-b7c5-4248-bb03-0e3ce215264c")
 	)
 	(wire
 		(pts
@@ -2386,7 +2440,7 @@
 	)
 	(wire
 		(pts
-			(xy 76.2 60.96) (xy 88.9 60.96)
+			(xy 107.95 60.96) (xy 120.65 60.96)
 		)
 		(stroke
 			(width 0)
@@ -2396,7 +2450,7 @@
 	)
 	(wire
 		(pts
-			(xy 48.26 90.17) (xy 50.8 90.17)
+			(xy 80.01 90.17) (xy 82.55 90.17)
 		)
 		(stroke
 			(width 0)
@@ -2406,7 +2460,7 @@
 	)
 	(wire
 		(pts
-			(xy 88.9 88.9) (xy 88.9 90.17)
+			(xy 120.65 88.9) (xy 120.65 90.17)
 		)
 		(stroke
 			(width 0)
@@ -2416,7 +2470,7 @@
 	)
 	(wire
 		(pts
-			(xy 50.8 99.06) (xy 50.8 100.33)
+			(xy 82.55 99.06) (xy 82.55 100.33)
 		)
 		(stroke
 			(width 0)
@@ -2426,23 +2480,23 @@
 	)
 	(wire
 		(pts
-			(xy 25.4 85.09) (xy 27.94 85.09)
+			(xy 50.8 59.69) (xy 50.8 72.39)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "e05f51e9-934a-4408-9eee-24ca8ede2455")
+		(uuid "df7eab11-0cde-44f5-b8d4-6a3556dcd322")
 	)
 	(wire
 		(pts
-			(xy 25.4 60.96) (xy 25.4 62.23)
+			(xy 48.26 59.69) (xy 50.8 59.69)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "e69b52f9-b138-4cf4-8957-54300ef54ae3")
+		(uuid "ea1310c0-7643-44eb-a81b-bed35513fab7")
 	)
 	(wire
 		(pts
@@ -2456,7 +2510,17 @@
 	)
 	(wire
 		(pts
-			(xy 88.9 60.96) (xy 88.9 62.23)
+			(xy 62.23 59.69) (xy 60.96 59.69)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ee3a3e0a-b025-4eed-9032-331d8f614984")
+	)
+	(wire
+		(pts
+			(xy 120.65 60.96) (xy 120.65 62.23)
 		)
 		(stroke
 			(width 0)
@@ -2484,8 +2548,18 @@
 		)
 		(uuid "fca4f925-8566-4fd4-8e04-85be1d08ee8a")
 	)
+	(wire
+		(pts
+			(xy 50.8 59.69) (xy 53.34 59.69)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "febbaede-f53a-48da-9f0f-f5455e8e372f")
+	)
 	(label "OUT+"
-		(at 78.74 81.28 0)
+		(at 110.49 81.28 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2495,7 +2569,7 @@
 		(uuid "7d0837c7-9258-4f33-951b-4464577d3046")
 	)
 	(label "OUT-"
-		(at 78.74 83.82 0)
+		(at 110.49 83.82 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2516,7 +2590,7 @@
 	)
 	(hierarchical_label "SPEAKER"
 		(shape input)
-		(at 24.13 60.96 180)
+		(at 24.13 59.69 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2538,7 +2612,7 @@
 	)
 	(hierarchical_label "SPEAKER_SD"
 		(shape input)
-		(at 48.26 90.17 180)
+		(at 80.01 90.17 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -2639,8 +2713,9 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:C")
-		(at 31.75 85.09 90)
+		(lib_id "Device:R")
+		(at 31.75 59.69 90)
+		(mirror x)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2648,9 +2723,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "16a80d86-0472-42e8-9ff4-478fe35bf1a4")
-		(property "Reference" "C19"
-			(at 31.75 78.74 90)
+		(uuid "16a4389a-e685-4297-84f4-b9fe183a2970")
+		(property "Reference" "R7"
+			(at 31.75 62.23 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2659,8 +2734,8 @@
 				)
 			)
 		)
-		(property "Value" "1u"
-			(at 31.75 81.28 90)
+		(property "Value" "1k"
+			(at 31.75 64.77 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2669,8 +2744,8 @@
 				)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 35.56 84.1248 0)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 31.75 57.912 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2681,7 +2756,86 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 31.75 85.09 0)
+			(at 31.75 59.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 31.75 59.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "75f4e9b9-1d12-4c31-8752-11800c9a99f2")
+		)
+		(pin "2"
+			(uuid "7d8e4bec-d3e2-4bc6-87a5-13aa98eb36ae")
+		)
+		(instances
+			(project "hoppy_clock"
+				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
+					(reference "R7")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 67.31 85.09 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "16a80d86-0472-42e8-9ff4-478fe35bf1a4")
+		(property "Reference" "C20"
+			(at 67.31 78.74 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "1u"
+			(at 67.31 81.28 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 71.12 84.1248 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 67.31 85.09 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2692,7 +2846,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
-			(at 31.75 85.09 0)
+			(at 67.31 85.09 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2711,7 +2865,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "C19")
+					(reference "C20")
 					(unit 1)
 				)
 			)
@@ -2879,7 +3033,7 @@
 	)
 	(symbol
 		(lib_id "Amplifier_Audio:PAM8302AAS")
-		(at 63.5 85.09 0)
+		(at 95.25 85.09 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2889,7 +3043,7 @@
 		(dnp no)
 		(uuid "2bd554f8-4f0c-4782-a447-4707be8a4df6")
 		(property "Reference" "U6"
-			(at 66.04 73.66 0)
+			(at 97.79 73.66 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2900,7 +3054,7 @@
 			)
 		)
 		(property "Value" "PAM8302AAS"
-			(at 66.04 76.2 0)
+			(at 97.79 76.2 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2911,7 +3065,7 @@
 			)
 		)
 		(property "Footprint" "Package_SO:MSOP-8_3x3mm_P0.65mm"
-			(at 63.5 85.09 0)
+			(at 95.25 85.09 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2922,7 +3076,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/PAM8302A.pdf"
-			(at 63.5 85.09 0)
+			(at 95.25 85.09 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2933,7 +3087,7 @@
 			)
 		)
 		(property "Description" "2.5W Filterless Class-D Mono Audio Amplifier, MSOP-8"
-			(at 63.5 85.09 0)
+			(at 95.25 85.09 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2978,8 +3132,8 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 25.4 66.04 0)
-		(mirror y)
+		(at 44.45 59.69 90)
+		(mirror x)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2988,30 +3142,28 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "308fd5e7-b545-414d-9d85-6f2f38e43541")
-		(property "Reference" "R7"
-			(at 22.86 64.77 0)
+		(property "Reference" "R8"
+			(at 44.45 62.23 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Value" "10k"
-			(at 22.86 67.31 0)
+			(at 44.45 64.77 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 27.178 66.04 90)
+			(at 44.45 57.912 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3022,7 +3174,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 25.4 66.04 0)
+			(at 44.45 59.69 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3033,7 +3185,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 25.4 66.04 0)
+			(at 44.45 59.69 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3052,7 +3204,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "R7")
+					(reference "R8")
 					(unit 1)
 				)
 			)
@@ -3060,7 +3212,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 63.5 96.52 0)
+		(at 95.25 96.52 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -3070,8 +3222,8 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "436fde18-de4e-41dc-a0dd-9d483f42c16c")
-		(property "Reference" "#PWR049"
-			(at 63.5 102.87 0)
+		(property "Reference" "#PWR051"
+			(at 95.25 102.87 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3082,7 +3234,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 63.5 101.6 0)
+			(at 95.25 101.6 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3093,7 +3245,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 63.5 96.52 0)
+			(at 95.25 96.52 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3104,7 +3256,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 63.5 96.52 0)
+			(at 95.25 96.52 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3115,7 +3267,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 63.5 96.52 0)
+			(at 95.25 96.52 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3131,7 +3283,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "#PWR049")
+					(reference "#PWR051")
 					(unit 1)
 				)
 			)
@@ -3307,7 +3459,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 44.45 85.09 90)
+		(at 76.2 85.09 90)
 		(mirror x)
 		(unit 1)
 		(body_style 1)
@@ -3317,8 +3469,8 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "654c989a-8592-43c6-a160-8040368c1052")
-		(property "Reference" "R10"
-			(at 44.45 80.01 90)
+		(property "Reference" "R11"
+			(at 76.2 80.01 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3328,7 +3480,7 @@
 			)
 		)
 		(property "Value" "100"
-			(at 44.45 82.55 90)
+			(at 76.2 82.55 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3338,7 +3490,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 44.45 83.312 90)
+			(at 76.2 83.312 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3349,7 +3501,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 44.45 85.09 0)
+			(at 76.2 85.09 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3360,7 +3512,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 44.45 85.09 0)
+			(at 76.2 85.09 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3379,7 +3531,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "R10")
+					(reference "R11")
 					(unit 1)
 				)
 			)
@@ -3387,7 +3539,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 50.8 95.25 0)
+		(at 82.55 95.25 0)
 		(mirror y)
 		(unit 1)
 		(body_style 1)
@@ -3397,8 +3549,8 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "6b979801-0053-4647-a36e-9ac184ca5847")
-		(property "Reference" "R11"
-			(at 48.26 93.98 0)
+		(property "Reference" "R12"
+			(at 80.01 93.98 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3409,7 +3561,7 @@
 			)
 		)
 		(property "Value" "10k"
-			(at 48.26 96.52 0)
+			(at 80.01 96.52 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3420,7 +3572,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 52.578 95.25 90)
+			(at 84.328 95.25 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3431,7 +3583,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 50.8 95.25 0)
+			(at 82.55 95.25 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3442,7 +3594,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 50.8 95.25 0)
+			(at 82.55 95.25 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3461,7 +3613,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "R11")
+					(reference "R12")
 					(unit 1)
 				)
 			)
@@ -3478,7 +3630,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "6cf2886a-20f4-4703-8d86-f9843dc5cdb3")
-		(property "Reference" "#PWR051"
+		(property "Reference" "#PWR053"
 			(at 31.75 118.11 0)
 			(hide yes)
 			(show_name no)
@@ -3538,7 +3690,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "#PWR051")
+					(reference "#PWR053")
 					(unit 1)
 				)
 			)
@@ -3546,7 +3698,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 44.45 72.39 90)
+		(at 76.2 72.39 90)
 		(mirror x)
 		(unit 1)
 		(body_style 1)
@@ -3556,8 +3708,8 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "6f084973-03e1-4225-a401-bfa7293da5c8")
-		(property "Reference" "R8"
-			(at 44.45 67.31 90)
+		(property "Reference" "R10"
+			(at 76.2 67.31 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3567,7 +3719,7 @@
 			)
 		)
 		(property "Value" "100"
-			(at 44.45 69.85 90)
+			(at 76.2 69.85 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3577,7 +3729,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 44.45 70.612 90)
+			(at 76.2 70.612 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3588,7 +3740,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 44.45 72.39 0)
+			(at 76.2 72.39 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3599,7 +3751,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 44.45 72.39 0)
+			(at 76.2 72.39 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3618,7 +3770,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "R8")
+					(reference "R10")
 					(unit 1)
 				)
 			)
@@ -3859,7 +4011,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 88.9 90.17 0)
+		(at 120.65 90.17 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -3869,8 +4021,8 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "8734a24d-3f05-43ef-98bb-e8924888c03e")
-		(property "Reference" "#PWR048"
-			(at 88.9 96.52 0)
+		(property "Reference" "#PWR050"
+			(at 120.65 96.52 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3881,7 +4033,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 88.9 95.25 0)
+			(at 120.65 95.25 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3892,7 +4044,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 88.9 90.17 0)
+			(at 120.65 90.17 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3903,7 +4055,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 88.9 90.17 0)
+			(at 120.65 90.17 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3914,7 +4066,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 88.9 90.17 0)
+			(at 120.65 90.17 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3930,7 +4082,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "#PWR048")
+					(reference "#PWR050")
 					(unit 1)
 				)
 			)
@@ -3938,7 +4090,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 76.2 66.04 0)
+		(at 107.95 66.04 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -3948,7 +4100,7 @@
 		(dnp no)
 		(uuid "92e4f9f0-f744-48ff-b226-04c30d2cf513")
 		(property "Reference" "C16"
-			(at 78.74 64.77 0)
+			(at 110.49 64.77 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3959,7 +4111,7 @@
 			)
 		)
 		(property "Value" "100n"
-			(at 78.74 67.31 0)
+			(at 110.49 67.31 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3970,7 +4122,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 77.1652 69.85 0)
+			(at 108.9152 69.85 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3981,7 +4133,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 76.2 66.04 0)
+			(at 107.95 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3992,7 +4144,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
-			(at 76.2 66.04 0)
+			(at 107.95 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4019,7 +4171,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 88.9 66.04 0)
+		(at 120.65 66.04 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4029,7 +4181,7 @@
 		(dnp no)
 		(uuid "948f2574-5d72-430a-a251-056bf2ee940e")
 		(property "Reference" "C17"
-			(at 91.44 64.77 0)
+			(at 123.19 64.77 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4040,7 +4192,7 @@
 			)
 		)
 		(property "Value" "10u"
-			(at 91.44 67.31 0)
+			(at 123.19 67.31 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4051,7 +4203,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 89.8652 69.85 0)
+			(at 121.6152 69.85 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4062,7 +4214,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 88.9 66.04 0)
+			(at 120.65 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4073,7 +4225,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
-			(at 88.9 66.04 0)
+			(at 120.65 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4099,8 +4251,9 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:C")
-		(at 31.75 72.39 90)
+		(lib_id "Device:R")
+		(at 57.15 59.69 90)
+		(mirror x)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4108,9 +4261,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "a0dd42dc-27ba-4134-97c0-9b40dca67c13")
-		(property "Reference" "C18"
-			(at 31.75 66.04 90)
+		(uuid "9fcaed06-ceaa-474e-a860-3df668726915")
+		(property "Reference" "R9"
+			(at 57.15 62.23 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4119,8 +4272,8 @@
 				)
 			)
 		)
-		(property "Value" "1u"
-			(at 31.75 68.58 90)
+		(property "Value" "1k8"
+			(at 57.15 64.77 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4129,8 +4282,8 @@
 				)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 35.56 71.4248 0)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 57.15 57.912 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4141,7 +4294,86 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 31.75 72.39 0)
+			(at 57.15 59.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 57.15 59.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "7377eedb-c83d-4f80-aa98-ac92f7fd94ab")
+		)
+		(pin "2"
+			(uuid "5e3e8e93-7260-444f-be0f-93dd90253431")
+		)
+		(instances
+			(project "hoppy_clock"
+				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
+					(reference "R9")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 67.31 72.39 90)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "a0dd42dc-27ba-4134-97c0-9b40dca67c13")
+		(property "Reference" "C19"
+			(at 67.31 66.04 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "1u"
+			(at 67.31 68.58 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 71.12 71.4248 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 67.31 72.39 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4152,7 +4384,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
-			(at 31.75 72.39 0)
+			(at 67.31 72.39 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4171,7 +4403,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "C18")
+					(reference "C19")
 					(unit 1)
 				)
 			)
@@ -4277,7 +4509,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "b087101a-85e4-4c88-b944-dffd2a022fd7")
-		(property "Reference" "#PWR052"
+		(property "Reference" "#PWR054"
 			(at 19.05 133.35 0)
 			(hide yes)
 			(show_name no)
@@ -4338,7 +4570,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "#PWR052")
+					(reference "#PWR054")
 					(unit 1)
 				)
 			)
@@ -4346,7 +4578,7 @@
 	)
 	(symbol
 		(lib_id "power:+5V")
-		(at 88.9 59.69 0)
+		(at 120.65 59.69 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4356,7 +4588,7 @@
 		(dnp no)
 		(uuid "b3f41af8-4737-44ee-9f74-e343ea811257")
 		(property "Reference" "#PWR045"
-			(at 88.9 63.5 0)
+			(at 120.65 63.5 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4367,7 +4599,7 @@
 			)
 		)
 		(property "Value" "+5V"
-			(at 88.9 55.88 0)
+			(at 120.65 55.88 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4377,7 +4609,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 88.9 59.69 0)
+			(at 120.65 59.69 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4388,7 +4620,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 88.9 59.69 0)
+			(at 120.65 59.69 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4399,7 +4631,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 88.9 59.69 0)
+			(at 120.65 59.69 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4423,7 +4655,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 88.9 72.39 0)
+		(at 27.94 73.66 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4432,9 +4664,9 @@
 		(in_pos_files yes)
 		(dnp no)
 		(fields_autoplaced yes)
-		(uuid "c66e0d84-8142-437b-9fe4-3928756006c6")
-		(property "Reference" "#PWR046"
-			(at 88.9 78.74 0)
+		(uuid "c3ad7388-4199-4319-8096-f8c3e8fa93c8")
+		(property "Reference" "#PWR048"
+			(at 27.94 80.01 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4445,7 +4677,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 88.9 77.47 0)
+			(at 27.94 78.74 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4456,7 +4688,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 88.9 72.39 0)
+			(at 27.94 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4467,7 +4699,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 88.9 72.39 0)
+			(at 27.94 73.66 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4478,7 +4710,86 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 88.9 72.39 0)
+			(at 27.94 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "e9bd97a6-8ac1-40ba-98a2-d7866d21cc39")
+		)
+		(instances
+			(project "hoppy_clock"
+				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
+					(reference "#PWR048")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 120.65 72.39 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c66e0d84-8142-437b-9fe4-3928756006c6")
+		(property "Reference" "#PWR047"
+			(at 120.65 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 120.65 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 120.65 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 120.65 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 120.65 72.39 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4494,7 +4805,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "#PWR046")
+					(reference "#PWR047")
 					(unit 1)
 				)
 			)
@@ -4580,90 +4891,8 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R")
-		(at 25.4 78.74 0)
-		(mirror y)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "d175afe4-4a4d-492c-a791-3d6dd39985c6")
-		(property "Reference" "R9"
-			(at 22.86 77.47 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "1k8"
-			(at 22.86 80.01 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 27.178 78.74 90)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 25.4 78.74 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 25.4 78.74 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "c119420a-baad-4026-81fd-90425dc9aa9c")
-		)
-		(pin "2"
-			(uuid "cca8c786-7562-42a0-a5ef-fb6cadd1cd6e")
-		)
-		(instances
-			(project "hoppy_clock"
-				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "R9")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Connector_Generic_MountingPin:Conn_01x02_MountingPin")
-		(at 88.9 81.28 0)
+		(at 120.65 81.28 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4674,7 +4903,7 @@
 		(fields_autoplaced yes)
 		(uuid "d8b154aa-bba6-43ed-87e7-56eb19337625")
 		(property "Reference" "J6"
-			(at 91.44 81.6355 0)
+			(at 123.19 81.6355 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4685,7 +4914,7 @@
 			)
 		)
 		(property "Value" "Speaker"
-			(at 91.44 84.1755 0)
+			(at 123.19 84.1755 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4696,7 +4925,7 @@
 			)
 		)
 		(property "Footprint" "Connector_JST:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal"
-			(at 88.9 81.28 0)
+			(at 120.65 81.28 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4707,7 +4936,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 88.9 81.28 0)
+			(at 120.65 81.28 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4718,7 +4947,7 @@
 			)
 		)
 		(property "Description" "Generic connectable mounting pin connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 88.9 81.28 0)
+			(at 120.65 81.28 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4747,8 +4976,9 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 50.8 100.33 0)
+		(lib_id "Device:C")
+		(at 33.02 72.39 270)
+		(mirror x)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4756,11 +4986,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "ea745861-9a59-4c7e-bcc1-021ed0c118f7")
-		(property "Reference" "#PWR050"
-			(at 50.8 106.68 0)
-			(hide yes)
+		(uuid "e2610744-39e0-408b-a03a-7f7763817139")
+		(property "Reference" "C18"
+			(at 33.02 76.2 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4769,9 +4997,8 @@
 				)
 			)
 		)
-		(property "Value" "GND"
-			(at 50.8 105.41 0)
-			(hide yes)
+		(property "Value" "4n7"
+			(at 33.02 78.74 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4780,8 +5007,8 @@
 				)
 			)
 		)
-		(property "Footprint" ""
-			(at 50.8 100.33 0)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 29.21 71.4248 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4792,7 +5019,89 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 50.8 100.33 0)
+			(at 33.02 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 33.02 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "7ad56735-41dd-4fe9-9a38-e2fb5818492c")
+		)
+		(pin "2"
+			(uuid "3869dd5b-16ee-4681-a5cd-c043ad0992ed")
+		)
+		(instances
+			(project "hoppy_clock"
+				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
+					(reference "C18")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 82.55 100.33 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "ea745861-9a59-4c7e-bcc1-021ed0c118f7")
+		(property "Reference" "#PWR052"
+			(at 82.55 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 82.55 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 82.55 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 82.55 100.33 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4803,7 +5112,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 50.8 100.33 0)
+			(at 82.55 100.33 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4819,7 +5128,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "#PWR050")
+					(reference "#PWR052")
 					(unit 1)
 				)
 			)
@@ -4836,7 +5145,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "f2864292-916c-4935-9fbb-14e1671fff26")
-		(property "Reference" "R12"
+		(property "Reference" "R13"
 			(at 34.29 118.11 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4900,7 +5209,7 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "R12")
+					(reference "R13")
 					(unit 1)
 				)
 			)
@@ -4908,7 +5217,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 25.4 86.36 0)
+		(at 62.23 86.36 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4918,8 +5227,8 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "f90ec476-94bd-4cd8-b217-bddffb5f9636")
-		(property "Reference" "#PWR047"
-			(at 25.4 92.71 0)
+		(property "Reference" "#PWR049"
+			(at 62.23 92.71 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4930,7 +5239,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 25.4 91.44 0)
+			(at 62.23 91.44 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4941,7 +5250,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 25.4 86.36 0)
+			(at 62.23 86.36 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4952,7 +5261,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 25.4 86.36 0)
+			(at 62.23 86.36 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4963,7 +5272,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 25.4 86.36 0)
+			(at 62.23 86.36 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4979,7 +5288,86 @@
 		(instances
 			(project "hoppy_clock"
 				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
-					(reference "#PWR047")
+					(reference "#PWR049")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 62.23 60.96 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "fcd498cd-a15f-4ff9-8592-27dcee9268a9")
+		(property "Reference" "#PWR046"
+			(at 62.23 67.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 62.23 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 62.23 60.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 62.23 60.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 62.23 60.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b4fa6f49-8dcf-4583-b95a-73a881643667")
+		)
+		(instances
+			(project "hoppy_clock"
+				(path "/6806ffb7-7194-4885-9aaf-76852609c59e/41fe0565-683d-4537-a7f2-ad3db6d0e743"
+					(reference "#PWR046")
 					(unit 1)
 				)
 			)
