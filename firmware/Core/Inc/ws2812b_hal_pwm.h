@@ -9,8 +9,8 @@
  *******************************************************************************
  */
 
-#ifndef MOMENTUM__WS2812B_HAL_PWM_H
-#define MOMENTUM__WS2812B_HAL_PWM_H
+#ifndef HOPPY_CLOCK__WS2812B_HAL_PWM_H
+#define HOPPY_CLOCK__WS2812B_HAL_PWM_H
 
 /** Includes. *****************************************************************/
 
