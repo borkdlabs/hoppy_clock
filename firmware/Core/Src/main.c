@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "mcu_temp_hal_adc.h"
+#include "pam8302a_hal_dac.h"
 #include "ws2812b_hal_pwm.h"
 /* USER CODE END Includes */
 
@@ -137,6 +138,56 @@ int main(void)
   // MCU temperature.
   mcu_temp_init();
   mcu_temp_start();
+
+  // Speaker amp.
+  amp_init();
+
+  // TODO ------------------------------------------------------------ TEST CODE
+  // Bring-up sequence to gauge the amp: a rising volume staircase, then a short
+  // melody. "Volume" is just a scalar on the sample amplitude (mid-scale +/-
+  // peak); "pitch" is the sample rate feeding one cycle of a sine, so tone
+  // frequency = sample_rate / TEST_CYCLE_LEN. Blocking, runs once at boot.
+#define TEST_CYCLE_LEN 32u
+
+  // One cycle of a sine, signed, full-scale peak ~2047 (scaled down per step).
+  static const int16_t test_sine[TEST_CYCLE_LEN] = {
+      0,     399,   783,   1137,  1447,  1702,  1891,  2008,
+      2047,  2008,  1891,  1702,  1447,  1137,  783,   399,
+      0,     -399,  -783,  -1137, -1447, -1702, -1891, -2008,
+      -2047, -2008, -1891, -1702, -1447, -1137, -783,  -399};
+  static uint16_t test_wave[TEST_CYCLE_LEN];
+
+  amp_enable();
+
+  // --- Volume staircase: same 440 Hz note, rising amplitude. ---
+  amp_set_sample_rate(TEST_CYCLE_LEN * 440u); // 440 Hz from a 32-sample cycle.
+  static const uint8_t vol_pct[] = {5, 10, 20, 40, 70, 100};
+  for (uint32_t v = 0; v < sizeof(vol_pct) / sizeof(vol_pct[0]); v++) {
+    for (uint32_t i = 0; i < TEST_CYCLE_LEN; i++) {
+      test_wave[i] =
+          (uint16_t)(2048 + (int32_t)test_sine[i] * vol_pct[v] / 100);
+    }
+    amp_play(test_wave, TEST_CYCLE_LEN, true);
+    HAL_Delay(600);
+  }
+
+  HAL_Delay(2000);
+
+  // --- Short melody at full volume: only the sample rate (pitch) changes. ---
+  for (uint32_t i = 0; i < TEST_CYCLE_LEN; i++) {
+    test_wave[i] = (uint16_t)(2048 + test_sine[i]); // ~full-scale.
+  }
+  amp_play(test_wave, TEST_CYCLE_LEN, true);
+  static const uint16_t melody_hz[] = {523, 587, 659, 784, 659, 523, 784, 523};
+  for (uint32_t n = 0; n < sizeof(melody_hz) / sizeof(melody_hz[0]); n++) {
+    amp_set_sample_rate(TEST_CYCLE_LEN * melody_hz[n]);
+    HAL_Delay(250);
+  }
+
+  // Done: fade to mid-scale and mute.
+  amp_stop();
+  amp_disable();
+  // TODO ------------------------------------------------------------ TEST CODE
 
   while (1) {
     // float temperature = get_mcu_temp(); // TODO: Internal temp reading.
