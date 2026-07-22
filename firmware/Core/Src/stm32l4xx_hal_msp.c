@@ -26,6 +26,8 @@ extern DMA_HandleTypeDef hdma_adc1;
 
 extern DMA_HandleTypeDef hdma_dac_ch1;
 
+extern DMA_HandleTypeDef hdma_quadspi;
+
 extern DMA_HandleTypeDef hdma_tim1_ch1;
 
 /* Private typedef -----------------------------------------------------------*/
@@ -273,6 +275,27 @@ void HAL_QSPI_MspInit(QSPI_HandleTypeDef* hqspi)
     GPIO_InitStruct.Alternate = GPIO_AF10_QUADSPI;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /* QUADSPI DMA Init */
+    /* QUADSPI Init */
+    hdma_quadspi.Instance = DMA1_Channel5;
+    hdma_quadspi.Init.Request = DMA_REQUEST_5;
+    hdma_quadspi.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_quadspi.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_quadspi.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_quadspi.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_quadspi.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma_quadspi.Init.Mode = DMA_NORMAL;
+    hdma_quadspi.Init.Priority = DMA_PRIORITY_LOW;
+    if (HAL_DMA_Init(&hdma_quadspi) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(hqspi,hdma,hdma_quadspi);
+
+    /* QUADSPI interrupt Init */
+    HAL_NVIC_SetPriority(QUADSPI_IRQn, 2, 0);
+    HAL_NVIC_EnableIRQ(QUADSPI_IRQn);
     /* USER CODE BEGIN QUADSPI_MspInit 1 */
 
     /* USER CODE END QUADSPI_MspInit 1 */
@@ -309,6 +332,11 @@ void HAL_QSPI_MspDeInit(QSPI_HandleTypeDef* hqspi)
 
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0|GPIO_PIN_1);
 
+    /* QUADSPI DMA DeInit */
+    HAL_DMA_DeInit(hqspi->hdma);
+
+    /* QUADSPI interrupt DeInit */
+    HAL_NVIC_DisableIRQ(QUADSPI_IRQn);
     /* USER CODE BEGIN QUADSPI_MspDeInit 1 */
 
     /* USER CODE END QUADSPI_MspDeInit 1 */
