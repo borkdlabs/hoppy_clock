@@ -1,6 +1,6 @@
 /*******************************************************************************
  * @file pam8302a_hal_dac.c
- * @brief PAM8302A speaker amplifier: SD control + DAC/TIM6/DMA audio output.
+ * @brief PAM8302A functions: abstracting STM32 HAL: DAC.
  *******************************************************************************
  * @note:
  * DAC1_OUT1 (PA4) is triggered by TIM6 TRGO at the sample rate and fed by a
@@ -10,7 +10,7 @@
  * clips, normal for one-shot clips (so the transfer-complete interrupt can drop
  * cleanly back to mid-scale idle without a wrap-around click).
  *
- * The pop-free enable/disable ordering and the mid-scale glide live here; all
+ * The pop-free enable/disable ordering and the mid-scale glide live here, all
  * amplitude/volume shaping stays in higher layers. See the header for the
  * hardware and format contract.
  *******************************************************************************
