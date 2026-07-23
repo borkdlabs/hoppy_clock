@@ -45,6 +45,7 @@ STM32L432KC alarm clock lamp with optional backup source.
 | WS2812B                  | (Various)           | PWM Addressable RGB LED |        1 |       |
 | PAM8302AAS               | Diodes Incorporated | Audio Amplifier         |        1 |       |
 | W25Q128JVSIQ             | Winbond Electronics | 128 Mbit NOR Memory     |        1 |       |
+| Generic Push Button      |                     |                         |        1 |       |
 
 ### 1.2 Block Diagram
 
