@@ -51,6 +51,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         Core/Src/callbacks.c
         Core/Src/mcu_temp_hal_adc.c
         Core/Src/pam8302a_hal_dac.c
+        Core/Src/w25q128jv_hal_qspi.c
         Core/Src/ws2812b_hal_pwm.c
 )
 
