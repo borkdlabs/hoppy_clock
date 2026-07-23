@@ -30,9 +30,10 @@ static volatile float s_mcu_temp_c = 0;
 /** User implementations into STM32 HAL (overwrite weak HAL functions). *******/
 
 void HAL_ADC_ConvCpltCallback_mcu_temp(ADC_HandleTypeDef *hadc) {
-  if (hadc->Instance != MCU_TEMP_HADC.Instance) {
+  if (hadc->Instance != MCU_TEMP_ADC_INSTANCE) {
     return;
   }
+
   // Get actual VDDA from VREFINT, then convert the temperature count using the
   // factory calibration.
   const uint32_t vdda_mv =

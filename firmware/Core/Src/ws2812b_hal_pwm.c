@@ -22,9 +22,11 @@ volatile uint8_t dma_complete_flag;
 /** User implementations into STM32 HAL (overwrite weak HAL functions). *******/
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
-  if (htim == &WS2812B_TIM) {
-    ws2812b_callback();
+  if (htim->Instance != WS2812B_TIM_INSTANCE) {
+    return;
   }
+
+  ws2812b_callback();
 }
 
 /** Public functions. *********************************************************/
