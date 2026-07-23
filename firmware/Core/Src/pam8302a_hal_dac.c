@@ -113,9 +113,10 @@ static void amp_return_to_idle_from_isr(void) {
 /** User implementations into STM32 HAL (overwrite weak HAL functions). *******/
 
 void HAL_DAC_ConvHalfCpltCallbackCh1_pam8302a(DAC_HandleTypeDef *hdac) {
-  if (hdac->Instance != AMP_HDAC.Instance) {
+  if (hdac->Instance != AMP_DAC_INSTANCE) {
     return;
   }
+
   // First half drained: refill it with the next chunk.
   if (s_refill != NULL) {
     s_refill(s_stream_buf, s_stream_half);
@@ -123,9 +124,10 @@ void HAL_DAC_ConvHalfCpltCallbackCh1_pam8302a(DAC_HandleTypeDef *hdac) {
 }
 
 void HAL_DAC_ConvCpltCallbackCh1_pam8302a(DAC_HandleTypeDef *hdac) {
-  if (hdac->Instance != AMP_HDAC.Instance) {
+  if (hdac->Instance != AMP_DAC_INSTANCE) {
     return;
   }
+
   if (s_refill != NULL) {
     // Second half drained: refill it. DMA wraps (circular) and streaming
     // continues.
@@ -139,9 +141,10 @@ void HAL_DAC_ConvCpltCallbackCh1_pam8302a(DAC_HandleTypeDef *hdac) {
 }
 
 void HAL_DAC_ErrorCallbackCh1_pam8302a(DAC_HandleTypeDef *hdac) {
-  if (hdac->Instance != AMP_HDAC.Instance) {
+  if (hdac->Instance != AMP_DAC_INSTANCE) {
     return;
   }
+
   // Underrun or DMA error: fail safe to mid-scale idle so the amp input does
   // not sit at a stuck level.
   amp_return_to_idle_from_isr();

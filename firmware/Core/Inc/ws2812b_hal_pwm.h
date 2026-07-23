@@ -21,6 +21,7 @@
 extern TIM_HandleTypeDef htim1;
 
 // PWM timer channel.
+#define WS2812B_TIM_INSTANCE TIM1
 #define WS2812B_TIM htim1
 #define WS2812B_TIM_CHANNEL TIM_CHANNEL_1
 

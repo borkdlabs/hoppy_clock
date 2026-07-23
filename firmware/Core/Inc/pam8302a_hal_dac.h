@@ -31,6 +31,7 @@ extern DAC_HandleTypeDef hdac1;
 extern TIM_HandleTypeDef htim6;
 
 // DAC channel feeding the amp (DAC1_OUT1 on PA4).
+#define AMP_DAC_INSTANCE DAC1
 #define AMP_HDAC hdac1
 #define AMP_DAC_CHANNEL DAC_CHANNEL_1
 

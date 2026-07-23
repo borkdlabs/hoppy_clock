@@ -24,6 +24,7 @@
 extern ADC_HandleTypeDef hadc1;
 
 // ADC.
+#define MCU_TEMP_ADC_INSTANCE ADC1
 #define MCU_TEMP_HADC hadc1
 
 /** Definitions. **************************************************************/
