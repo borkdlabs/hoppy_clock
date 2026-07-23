@@ -17,7 +17,7 @@
             <mxPoint x="690" y="450" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="mg4E7LpBteK27wxoRJoA-4" connectable="0" parent="mg4E7LpBteK27wxoRJoA-3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;fontSize=12;labelBackgroundColor=#FFAB2E;labelBorderColor=#FFAB2E;" value="CAN1" vertex="1">
+        <mxCell id="mg4E7LpBteK27wxoRJoA-4" connectable="0" parent="mg4E7LpBteK27wxoRJoA-3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;fontSize=12;labelBackgroundColor=#FFAB2E;labelBorderColor=#FFAB2E;" value="USB (FS)" vertex="1">
           <mxGeometry relative="1" x="-0.0333" as="geometry">
             <mxPoint x="-3" as="offset" />
           </mxGeometry>
@@ -74,7 +74,7 @@
             <mxPoint x="3" y="18" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="mg4E7LpBteK27wxoRJoA-19" edge="1" parent="1" source="mg4E7LpBteK27wxoRJoA-40" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;startArrow=classic;startFill=1;fontSize=12;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;strokeWidth=2;strokeColor=#FFAB2E;curved=0;" target="mg4E7LpBteK27wxoRJoA-32">
+        <mxCell id="mg4E7LpBteK27wxoRJoA-19" edge="1" parent="1" source="mg4E7LpBteK27wxoRJoA-40" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;startArrow=none;startFill=0;fontSize=12;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;strokeWidth=2;strokeColor=#FFAB2E;curved=0;endArrow=classic;endFill=1;" target="mg4E7LpBteK27wxoRJoA-32">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="520" y="480" as="sourcePoint" />
           </mxGeometry>
@@ -124,7 +124,7 @@
         <mxCell id="mg4E7LpBteK27wxoRJoA-31" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;fillColor=#f9f7ed;strokeColor=#36393d;" value="&lt;div&gt;W25Q128JVSIQ&lt;/div&gt;&lt;div&gt;128 Mbit NOR Memory&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="120" x="540" y="720" as="geometry" />
         </mxCell>
-        <mxCell id="mg4E7LpBteK27wxoRJoA-32" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;fillColor=#eeeeee;strokeColor=#36393d;" value="&lt;div&gt;PAM8302AAS&lt;/div&gt;&lt;div&gt;Audio Amplifier&lt;/div&gt;" vertex="1">
+        <mxCell id="mg4E7LpBteK27wxoRJoA-32" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;" value="&lt;div&gt;PAM8302AAS&lt;/div&gt;&lt;div&gt;Audio Amplifier&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="120" x="360" y="640" as="geometry" />
         </mxCell>
         <mxCell id="mg4E7LpBteK27wxoRJoA-34" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontSize=12;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;" value="&lt;div&gt;WS2812B&lt;/div&gt;&lt;div&gt;PWM RGB LED&lt;/div&gt;" vertex="1">
