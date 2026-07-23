@@ -11,12 +11,19 @@ STM32L432KC alarm clock lamp with optional backup source.
   <summary>Table of Contents</summary>
 
 <!-- TOC -->
-* [Hoppy Clock Firmware](#hoppy-clock-firmware)
+* [hoppy_clock](#hoppy_clock)
   * [1 Overview](#1-overview)
     * [1.1 Bill of Materials (BOM)](#11-bill-of-materials-bom)
     * [1.2 Block Diagram](#12-block-diagram)
     * [1.3 Pin Configurations](#13-pin-configurations)
     * [1.4 Clock Configurations](#14-clock-configurations)
+  * [2 Board Specifications](#2-board-specifications)
+    * [2.1 Connectors](#21-connectors)
+    * [2.2 Switches & Jumpers](#22-switches--jumpers)
+    * [2.3 LEDs](#23-leds)
+    * [2.4 Test Pads](#24-test-pads)
+    * [2.5 Power Supply](#25-power-supply)
+    * [2.6 Speaker](#26-speaker)
   * [Third-Party Licenses](#third-party-licenses)
 <!-- TOC -->
 
@@ -25,6 +32,10 @@ STM32L432KC alarm clock lamp with optional backup source.
 ---
 
 ## 1 Overview
+
+|                           Top                            |                             Bottom                             |
+|:--------------------------------------------------------:|:--------------------------------------------------------------:|
+| ![hoppy_clock_pcb-top.png](docs/hoppy_clock_pcb-top.png) | ![hoppy_clock_pcb-bottom.png](docs/hoppy_clock_pcb-bottom.png) |
 
 ### 1.1 Bill of Materials (BOM)
 
@@ -91,6 +102,61 @@ STM32L432KC alarm clock lamp with optional backup source.
 32.768 kHz Low Speed External (LSE)
      -> 32.768 kHz RTC
 ```
+
+## 2 Board Specifications
+
+### 2.1 Connectors
+
+Connectors fixed by hardware (PCB traces or the connector itself).
+
+| Connector            | Ref | Description                                                     |
+|----------------------|:---:|-----------------------------------------------------------------|
+| `Tag-Connect TC2050` | J1  | SWD programming/debug connector                                 |
+| `USB-C`              | J2  | USB-C 5 V power & data source                                   |
+| `Backup supply`      | J3  | 1x2 JST XH (2.5 mm pitch), Pin 1: Backup 5 V, Pin 2: ground     |
+| `Qwiic`              | J4  | 1x4 JST SH, Pin 1: ground, Pin 2: 3.3 V, Pin 3: SDA, Pin 4: SCL |
+| `WS2812B breakout`   | J5  | 1x3 JST PH, Pin 1: ground, Pin 2: DOUT, Pin 3: 5 V              |
+| `Speaker`            | J6  | 1x2 JST PH, Pin 1: OUT+, Pin 2: OUT-                            |
+
+### 2.2 Switches & Jumpers
+
+User controllable hardware and/or firmware driven inputs.
+
+| Switch/Jumper  | Ref | Description                           |
+|----------------|:---:|---------------------------------------|
+| `BOOT0 button` | SW1 | Push to pull `BOOT0` high             |
+| `User button`  | SW2 | Generic 6 mm TH button, push to reset |
+
+### 2.3 LEDs
+
+LEDs used to show board status and/or user controllable.
+
+| LED           | Mark | Description         |
+|---------------|------|---------------------|
+| `WS2812B LED` | None | RGB addressable LED |
+
+### 2.4 Test Pads
+
+| Test Point   | Ref | Description                   |
+|--------------|:---:|-------------------------------|
+| `TPS2116 ST` | TP1 | `ST` pin from onboard TPS2116 |
+
+### 2.5 Power Supply
+
+By default, the board is powered from the `USB-C` 5 V source. An onboard
+TPS2116 priority power mux allows a backup 5 V supply to be connected via
+the `Backup supply` connector (for example, a regulated battery pack
+output). If the USB-C supply drops below the mux threshold, the TPS2116
+automatically switches the board over to the backup supply, and switches back
+when USB-C power returns. The mux status pin (`ST`) is exposed on the
+`TPS2116 ST` test pad and is pulled low whenever the backup supply is in use,
+allowing a probe to detect the active source during development/testing.
+
+### 2.6 Speaker
+
+An 8 ohm, >= 1 W speaker can be connected via the `Speaker` connector.
+The amplifier output is bridge-tied (BTL): both terminals are driven, so
+neither may be connected to ground.
 
 ---
 
