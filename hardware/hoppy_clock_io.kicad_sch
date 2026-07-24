@@ -2641,7 +2641,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(in_pos_files yes)
-		(dnp yes)
+		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "0a6fc5d6-76ae-4256-b66b-3644f3e3112c")
 		(property "Reference" "SW2"

@@ -9477,7 +9477,7 @@
 		(in_bom yes)
 		(on_board yes)
 		(in_pos_files yes)
-		(dnp yes)
+		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "3f74b8c8-4cfd-47a6-945a-2b22794b200c")
 		(property "Reference" "J3"

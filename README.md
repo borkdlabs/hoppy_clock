@@ -33,9 +33,9 @@ STM32L432KC alarm clock lamp with optional backup source.
 
 ## 1 Overview
 
-|                           Top                            |                             Bottom                             |
-|:--------------------------------------------------------:|:--------------------------------------------------------------:|
-| ![hoppy_clock_pcb-top.png](docs/hoppy_clock_pcb-top.png) | ![hoppy_clock_pcb-bottom.png](docs/hoppy_clock_pcb-bottom.png) |
+|                       Top                        |                         Bottom                         |
+|:------------------------------------------------:|:------------------------------------------------------:|
+| ![hoppy_clock-top.png](docs/hoppy_clock-top.png) | ![hoppy_clock-bottom.png](docs/hoppy_clock-bottom.png) |
 
 ### 1.1 Bill of Materials (BOM)
 
