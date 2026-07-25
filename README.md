@@ -118,7 +118,7 @@ Connectors fixed by hardware (PCB traces or the connector itself).
 | `USB-C`              | J2  | USB-C 5 V power & data source                                   |
 | `Backup supply`      | J3  | 1x2 JST XH (2.5 mm pitch), Pin 1: Backup 5 V, Pin 2: ground     |
 | `Qwiic`              | J4  | 1x4 JST SH, Pin 1: ground, Pin 2: 3.3 V, Pin 3: SDA, Pin 4: SCL |
-| `WS2812B breakout`   | J5  | 1x3 JST PH, Pin 1: ground, Pin 2: DOUT, Pin 3: 5 V              |
+| `WS2812B breakout`   | J5  | 1x3 JST PH, Pin 1: 5 V, Pin 2: DOUT, Pin 3: ground              |
 | `Speaker`            | J6  | 1x2 JST PH, Pin 1: OUT+, Pin 2: OUT-                            |
 
 ### 2.2 Switches & Jumpers

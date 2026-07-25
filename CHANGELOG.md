@@ -8,6 +8,7 @@
 <!-- TOC -->
 * [Changelog](#changelog)
   * [v0.1.0-alpha (2026-07-25)](#v010-alpha--2026-07-25-)
+  * [v0.1.0 (TBD)](#v010--tbd-)
 <!-- TOC -->
 
 </details>
@@ -21,3 +22,24 @@
 - Order date: 2026/07/21.
     - Note: Minor DNP status changes included (changes made after order
       placement and before official release). No Gerber files affected.
+
+Manual corrections:
+
+1. The silkscreen labelling the pins on the `WS2812B breakout` connector is
+   incorrect (**_5 V and ground are flipped!_**). The true pinout is: 1x3 JST
+   PH, Pin 1: ground, Pin 2: DOUT, Pin 3: 5 V.
+    - The silkscreen represents the intended design (matching most WS2812B LED
+      strip pinouts), but the connector pinout was ordered incorrectly. To be
+      corrected in the following release.
+
+---
+
+## [v0.1.0 (TBD)](https://github.com/borkdlabs/hobby_clock/releases/tag/v0.1.0)
+
+- 4-layer board variant.
+- **Modifications:**
+    - Fix `WS2812B breakout` connector pinout to match silkscreen and expected
+      WS2812B LED strip pinouts.
+        - Update `README.md` docs accordingly.
+    - Minor silkscreen cleanup.
+- Order date: **_TBD_**.
