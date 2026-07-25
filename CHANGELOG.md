@@ -7,7 +7,7 @@
 
 <!-- TOC -->
 * [Changelog](#changelog)
-  * [v0.1.0-alpha (2026-07-25)](#v010-alpha--2026-07-24-)
+  * [v0.1.0-alpha (2026-07-25)](#v010-alpha--2026-07-25-)
 <!-- TOC -->
 
 </details>
