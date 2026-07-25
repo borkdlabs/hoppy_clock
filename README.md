@@ -104,6 +104,8 @@ STM32L432KC alarm clock lamp with optional backup source.
      -> 32.768 kHz RTC
 ```
 
+---
+
 ## 2 Board Specifications
 
 ### 2.1 Connectors
