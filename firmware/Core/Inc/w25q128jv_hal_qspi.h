@@ -3,24 +3,13 @@
  * @brief W25Q128JV functions: abstracting STM32 HAL: QUADSPI.
  *******************************************************************************
  * @note:
- * Non-blocking: w25q_read()/w25q_write()/w25q_erase_sector() launch an
- * operation and return immediately, with completion observed through
- * w25q_get_state(). The data phase of a read/write is moved by DMA and the
- * erase/program BUSY wait runs on the QUADSPI interrupt via auto-polling. The
- * short command setup (and the per-page hand-off during a multi-page write)
- * runs in the QUADSPI IRQ context. (w25q_init() and w25q_read_id() are the
- * exception: blocking init-time probes.)
+ * Read/write/erase are non-blocking (DMA + QUADSPI IRQ), poll w25q_get_state()
+ * for completion. Init/read_id are blocking init-time probes. Transfers use the
+ * quad lines (0xEB read, 0x32 program), quad mode is enabled at init.
  *
- * Data transport uses the quad lines (IO0-IO3): reads use Quad I/O Fast Read
- * (0xEB) and writes use Quad Input Page Program (0x32). The instruction phase,
- * address-only commands (erase, write-enable) and status polling stay single-
- * line, which is standard for this part. Quad mode is enabled at init by
- * setting the QE bit in Status Register-2; the IO2/IO3 pull-ups keep /WP and
- * /HOLD deasserted until then. Memory-mapped playback is left for a later
- * layer.
- *
- * Requires QUADSPI DMA on DMA1 Channel 5 and the QUADSPI global interrupt to be
- * enabled (see HAL_QSPI_MspInit / MX_DMA_Init).
+ * w25q_mmap_enable() exposes the flash read-only at W25Q_MMAP_BASE for direct
+ * pointer access, mutually exclusive with the indirect ops (which return
+ * HAL_ERROR while mapped). The caller decides when to switch.
  *******************************************************************************
  */
 
@@ -30,6 +19,7 @@
 /** Includes. *****************************************************************/
 
 #include "stm32l4xx_hal.h"
+#include <stdbool.h>
 
 /** STM32 port and pin configs. ***********************************************/
 
@@ -52,6 +42,11 @@ extern QSPI_HandleTypeDef hqspi;
 // Maximum bytes moved by a single w25q_read(): the DMA transfer counter (CNDTR)
 // is 16-bit, so one transfer is capped at 65535 bytes.
 #define W25Q_READ_MAX 65535U
+
+// QUADSPI memory-mapped window. Once w25q_mmap_enable() is active, flash byte N
+// is readable directly at (const uint8_t *)(W25Q_MMAP_BASE + N).
+#define W25Q_MMAP_BASE QSPI_BASE
+#define W25Q_MMAP_PTR(addr) ((const void *)(W25Q_MMAP_BASE + (uint32_t)(addr)))
 
 // Instruction set. Reads/writes use the quad-line variants; the remainder are
 // single-line.
@@ -173,5 +168,35 @@ HAL_StatusTypeDef w25q_erase_sector(uint32_t address);
  * flight, W25Q_STATE_ERROR if the last operation failed.
  */
 w25q_state_t w25q_get_state(void);
+
+/**
+ * @brief Enter memory-mapped mode: flash becomes readable at W25Q_MMAP_BASE.
+ *
+ * Configures the Quad I/O Fast Read (0xEB) recipe as a memory-mapped read so
+ * any CPU/DMA access to W25Q_MMAP_BASE + offset returns flash data directly. No
+ * indirect read/write/erase may be issued while mapped. Requires quad mode
+ * (w25q_init()). Idempotent.
+ *
+ * @return HAL_OK on success (or already mapped), HAL_BUSY if an indirect
+ * operation is in flight, HAL error status otherwise.
+ */
+HAL_StatusTypeDef w25q_mmap_enable(void);
+
+/**
+ * @brief Leave memory-mapped mode and return the peripheral to indirect mode.
+ *
+ * Aborts the memory-mapped decode so w25q_read()/w25q_write()/w25q_erase_sector()
+ * can be used again. Call this before programming. Idempotent.
+ *
+ * @return HAL_OK on success (or already indirect), HAL error status otherwise.
+ */
+HAL_StatusTypeDef w25q_mmap_disable(void);
+
+/**
+ * @brief Whether the peripheral is currently in memory-mapped mode.
+ *
+ * @return true if mapped (indirect ops unavailable), false if indirect.
+ */
+bool w25q_is_memory_mapped(void);
 
 #endif

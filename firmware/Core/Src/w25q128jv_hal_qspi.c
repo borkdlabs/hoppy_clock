@@ -3,24 +3,13 @@
  * @brief W25Q128JV functions: abstracting STM32 HAL: QUADSPI.
  *******************************************************************************
  * @note:
- * Non-blocking: w25q_read()/w25q_write()/w25q_erase_sector() launch an
- * operation and return immediately, with completion observed through
- * w25q_get_state(). The data phase of a read/write is moved by DMA and the
- * erase/program BUSY wait runs on the QUADSPI interrupt via auto-polling. The
- * short command setup (and the per-page hand-off during a multi-page write)
- * runs in the QUADSPI IRQ context. (w25q_init() and w25q_read_id() are the
- * exception: blocking init-time probes.)
+ * Read/write/erase are non-blocking (DMA + QUADSPI IRQ), poll w25q_get_state()
+ * for completion. Init/read_id are blocking init-time probes. Transfers use the
+ * quad lines (0xEB read, 0x32 program), quad mode is enabled at init.
  *
- * Data transport uses the quad lines (IO0-IO3): reads use Quad I/O Fast Read
- * (0xEB) and writes use Quad Input Page Program (0x32). The instruction phase,
- * address-only commands (erase, write-enable) and status polling stay single-
- * line, which is standard for this part. Quad mode is enabled at init by
- * setting the QE bit in Status Register-2; the IO2/IO3 pull-ups keep /WP and
- * /HOLD deasserted until then. Memory-mapped playback is left for a later
- * layer.
- *
- * Requires QUADSPI DMA on DMA1 Channel 5 and the QUADSPI global interrupt to be
- * enabled (see HAL_QSPI_MspInit / MX_DMA_Init).
+ * w25q_mmap_enable() exposes the flash read-only at W25Q_MMAP_BASE for direct
+ * pointer access, mutually exclusive with the indirect ops (which return
+ * HAL_ERROR while mapped). The caller decides when to switch.
  *******************************************************************************
  */
 
@@ -41,6 +30,10 @@ typedef enum {
 
 static volatile w25q_state_t s_state = W25Q_STATE_IDLE;
 static volatile w25q_op_t s_op = W25Q_OP_NONE;
+
+// True while the peripheral is in memory-mapped mode; indirect read/write/erase
+// are then rejected until w25q_mmap_disable().
+static volatile bool s_mmapped = false;
 
 // Multi-page write cursor, advanced from the QUADSPI interrupt as each page
 // completes. s_wr_ptr points into the caller's buffer (no internal copy).
@@ -295,6 +288,9 @@ HAL_StatusTypeDef w25q_read_id(uint8_t id[3]) {
 
 HAL_StatusTypeDef w25q_read(uint32_t address, uint8_t *buffer,
                             uint32_t length) {
+  if (s_mmapped) {
+    return HAL_ERROR; // Indirect read unavailable while memory-mapped.
+  }
   if (s_state == W25Q_STATE_BUSY) {
     return HAL_BUSY;
   }
@@ -330,6 +326,9 @@ HAL_StatusTypeDef w25q_read(uint32_t address, uint8_t *buffer,
 
 HAL_StatusTypeDef w25q_write(uint32_t address, const uint8_t *buffer,
                              uint32_t length) {
+  if (s_mmapped) {
+    return HAL_ERROR; // Must w25q_mmap_disable() before programming.
+  }
   if (s_state == W25Q_STATE_BUSY) {
     return HAL_BUSY;
   }
@@ -348,6 +347,9 @@ HAL_StatusTypeDef w25q_write(uint32_t address, const uint8_t *buffer,
 }
 
 HAL_StatusTypeDef w25q_erase_sector(uint32_t address) {
+  if (s_mmapped) {
+    return HAL_ERROR; // Must w25q_mmap_disable() before erasing.
+  }
   if (s_state == W25Q_STATE_BUSY) {
     return HAL_BUSY;
   }
@@ -382,3 +384,53 @@ HAL_StatusTypeDef w25q_erase_sector(uint32_t address) {
 }
 
 w25q_state_t w25q_get_state(void) { return s_state; }
+
+HAL_StatusTypeDef w25q_mmap_enable(void) {
+  if (s_state == W25Q_STATE_BUSY) {
+    return HAL_BUSY;
+  }
+  if (s_mmapped) {
+    return HAL_OK; // Already mapped.
+  }
+
+  // Same Quad I/O Fast Read (0xEB) recipe as w25q_read(), minus the per-call
+  // Address/NbData -- in memory-mapped mode the AHB access supplies those.
+  QSPI_CommandTypeDef cmd;
+  w25q_cmd_defaults(&cmd);
+  cmd.Instruction = W25Q_CMD_FAST_READ_QUAD_IO;
+  cmd.AddressMode = QSPI_ADDRESS_4_LINES;
+  cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_4_LINES;
+  cmd.AlternateBytes = W25Q_QUAD_READ_MODE_BITS;
+  cmd.AlternateBytesSize = QSPI_ALTERNATE_BYTES_8_BITS;
+  cmd.DummyCycles = W25Q_QUAD_READ_DUMMY_CYCLES;
+  cmd.DataMode = QSPI_DATA_4_LINES;
+
+  QSPI_MemoryMappedTypeDef mmap_cfg;
+  mmap_cfg.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE;
+  mmap_cfg.TimeOutPeriod = 0;
+
+  const HAL_StatusTypeDef hal_status =
+      HAL_QSPI_MemoryMapped(&W25Q_HQSPI, &cmd, &mmap_cfg);
+  if (hal_status == HAL_OK) {
+    s_mmapped = true;
+  }
+  return hal_status;
+}
+
+HAL_StatusTypeDef w25q_mmap_disable(void) {
+  if (!s_mmapped) {
+    return HAL_OK; // Already indirect.
+  }
+
+  // Abort tears down the memory-mapped decode and frees the peripheral for
+  // indirect commands again.
+  const HAL_StatusTypeDef hal_status = HAL_QSPI_Abort(&W25Q_HQSPI);
+  if (hal_status == HAL_OK) {
+    s_mmapped = false;
+    s_op = W25Q_OP_NONE;
+    s_state = W25Q_STATE_IDLE;
+  }
+  return hal_status;
+}
+
+bool w25q_is_memory_mapped(void) { return s_mmapped; }
