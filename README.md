@@ -70,6 +70,7 @@ STM32L432KC alarm clock lamp with optional backup source.
 | PA14        | `SYS_JTCK-SWCLK`  |                      | TC2050 SWD Pin 4: `SWCLK`             |                                                              |
 | PA13        | `SYS_JTMS-SWDIO`  |                      | TC2050 SWD Pin 2: `SWDIO`             |                                                              |
 | PB3         | `SYS_JTDO-SWO`    |                      | TC2050 SWD Pin 2: `SWO`               |                                                              |
+|             | `TIM2_CH1`        | PWM no output        | Scheduling                            | Scheduler timer.                                             |
 |             | `TIM6`            | TRGO update event    |                                       | `DAC1_OUT1` TRGO.                                            |
 |             | `ADC1` `VREFINT`  | Scan conversion mode | VDDA Sense                            | Configured in ADC1 rank 1.                                   |
 |             | `ADC1_IN17`       | Scan conversion mode | Temperature Sensor Channel            | Configured in ADC1 rank 2.                                   |

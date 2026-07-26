@@ -22,9 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "mcu_temp_hal_adc.h"
-#include "pam8302a_hal_dac.h"
-#include "ws2812b_hal_pwm.h"
+#include "init.h"
+#include "run.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +54,7 @@ DMA_HandleTypeDef hdma_quadspi;
 RTC_HandleTypeDef hrtc;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim6;
 DMA_HandleTypeDef hdma_tim1_ch1;
 
@@ -73,6 +73,7 @@ static void MX_RTC_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -122,75 +123,18 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM6_Init();
   MX_USB_DEVICE_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
-  // Addressable LEDs.
-  ws2812b_init();
-  ws2812b_set_colour(0, 1, 1, 1); // Init colour.
-  ws2812b_update();
-
-  // MCU temperature.
-  mcu_temp_init();
-  mcu_temp_start();
-
-  // Speaker amp.
-  amp_init();
-
-  // TODO ------------------------------------------------------------ TEST CODE
-  // Bring-up sequence to gauge the amp: a rising volume staircase, then a short
-  // melody. "Volume" is just a scalar on the sample amplitude (mid-scale +/-
-  // peak); "pitch" is the sample rate feeding one cycle of a sine, so tone
-  // frequency = sample_rate / TEST_CYCLE_LEN. Blocking, runs once at boot.
-#define TEST_CYCLE_LEN 32u
-
-  // One cycle of a sine, signed, full-scale peak ~2047 (scaled down per step).
-  static const int16_t test_sine[TEST_CYCLE_LEN] = {
-      0,     399,   783,   1137,  1447,  1702,  1891,  2008,
-      2047,  2008,  1891,  1702,  1447,  1137,  783,   399,
-      0,     -399,  -783,  -1137, -1447, -1702, -1891, -2008,
-      -2047, -2008, -1891, -1702, -1447, -1137, -783,  -399};
-  static uint16_t test_wave[TEST_CYCLE_LEN];
-
-  amp_enable();
-
-  // --- Volume staircase: same 440 Hz note, rising amplitude. ---
-  amp_set_sample_rate(TEST_CYCLE_LEN * 440u); // 440 Hz from a 32-sample cycle.
-  static const uint8_t vol_pct[] = {5, 10, 20, 40, 70, 100};
-  for (uint32_t v = 0; v < sizeof(vol_pct) / sizeof(vol_pct[0]); v++) {
-    for (uint32_t i = 0; i < TEST_CYCLE_LEN; i++) {
-      test_wave[i] =
-          (uint16_t)(2048 + (int32_t)test_sine[i] * vol_pct[v] / 100);
-    }
-    amp_play(test_wave, TEST_CYCLE_LEN, true);
-    HAL_Delay(600);
-  }
-
-  HAL_Delay(2000);
-
-  // --- Short melody at full volume: only the sample rate (pitch) changes. ---
-  for (uint32_t i = 0; i < TEST_CYCLE_LEN; i++) {
-    test_wave[i] = (uint16_t)(2048 + test_sine[i]); // ~full-scale.
-  }
-  amp_play(test_wave, TEST_CYCLE_LEN, true);
-  static const uint16_t melody_hz[] = {523, 587, 659, 784, 659, 523, 784, 523};
-  for (uint32_t n = 0; n < sizeof(melody_hz) / sizeof(melody_hz[0]); n++) {
-    amp_set_sample_rate(TEST_CYCLE_LEN * melody_hz[n]);
-    HAL_Delay(250);
-  }
-
-  // Done: fade to mid-scale and mute.
-  amp_stop();
-  amp_disable();
-  // TODO ------------------------------------------------------------ TEST CODE
+  hoppy_clock_init();
 
   while (1) {
     // float temperature = get_mcu_temp(); // TODO: Internal temp reading.
-
+    hoppy_clock_run();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -532,6 +476,54 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 2 */
   HAL_TIM_MspPostInit(&htim1);
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 80-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 4294967295;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
 
 }
 

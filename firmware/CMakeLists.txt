@@ -48,9 +48,13 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         # Add user sources here
+        Core/Src/button_hal_gpio.c
         Core/Src/callbacks.c
+        Core/Src/init.c
         Core/Src/mcu_temp_hal_adc.c
         Core/Src/pam8302a_hal_dac.c
+        Core/Src/run.c
+        Core/Src/scheduler.c
         Core/Src/w25q128jv_hal_qspi.c
         Core/Src/ws2812b_hal_pwm.c
 )
