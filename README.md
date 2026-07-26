@@ -86,6 +86,7 @@ STM32L432KC alarm clock lamp with optional backup source.
 | PB0         | `QUADSPI_BK1_IO1` |                      | W25Q128JVSIQ Pin 2: `IO1`             |                                                              |
 | PA7         | `QUADSPI_BK1_IO2` | Hardware pull-up     | W25Q128JVSIQ Pin 3: `IO2`             | Hardware pull-up for potential bringup from SPI single-line. |
 | PA6         | `QUADSPI_BK1_IO3` | Hardware pull-up     | W25Q128JVSIQ Pin 7: `IO3`             | Hardware pull-up for potential bringup from SPI single-line. |
+| PB4         | `GPIO_EXTI4`      | Hardware pull-up     | Generic Push Button Active Low pin    |                                                              |
 
 </details>
 
