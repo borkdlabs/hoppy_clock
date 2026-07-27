@@ -49,3 +49,22 @@ void get_time_date(char *time, char *date) {
   snprintf(date, 11, "%02d-%02d-%04d", gDate.Date, gDate.Month,
            2000 + gDate.Year);
 }
+
+void get_date_time_fields(uint8_t *year, uint8_t *month, uint8_t *date,
+                          uint8_t *day, uint8_t *hours, uint8_t *minutes,
+                          uint8_t *seconds) {
+  RTC_TimeTypeDef gTime;
+  RTC_DateTypeDef gDate;
+
+  // Read time first, then date (unlocks the RTC shadow registers).
+  HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
+
+  *year = gDate.Year;
+  *month = gDate.Month;
+  *date = gDate.Date;
+  *day = gDate.WeekDay;
+  *hours = gTime.Hours;
+  *minutes = gTime.Minutes;
+  *seconds = gTime.Seconds;
+}
