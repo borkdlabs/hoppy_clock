@@ -11,6 +11,7 @@
 #include "mcu_temp_hal_adc.h"
 #include "pam8302a_hal_dac.h"
 #include "scheduler.h"
+#include "usb_cmd.h"
 #include "ws2812b_hal_pwm.h"
 
 /** Definitions. **************************************************************/
@@ -103,6 +104,10 @@ void hoppy_clock_init(void) {
   // Button.
   button_init();
 
+  // USB CDC command layer. USB itself is brought up by MX_USB_DEVICE_Init() in
+  // main() before this runs.
+  usb_cmd_init();
+
   // Build the alarm beep by tiling one sine cycle (starts/ends at mid-scale).
   for (uint32_t i = 0; i < BEEP_SAMPLES; i++) {
     s_beep[i] = s_sine_cycle[i % BEEP_CYCLE_LEN];
@@ -111,4 +116,5 @@ void hoppy_clock_init(void) {
   // Scheduler.
   scheduler_init(); // Initialize scheduler.
   scheduler_add_task(state_machine, 10);
+  scheduler_add_task(usb_cmd_task, 10);
 }

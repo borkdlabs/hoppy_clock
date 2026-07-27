@@ -56,6 +56,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         Core/Src/rtc.c
         Core/Src/run.c
         Core/Src/scheduler.c
+        Core/Src/usb_cmd.c
         Core/Src/w25q128jv_hal_qspi.c
         Core/Src/ws2812b_hal_pwm.c
 )
