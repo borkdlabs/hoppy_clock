@@ -35,6 +35,7 @@
 #define USB_CMD_PING 0x01u     // No payload, replies [status].
 #define USB_CMD_SET_TIME 0x10u // Payload: year,month,date,weekday,h,m,s (7 B).
 #define USB_CMD_GET_TIME 0x11u // No payload, replies [status + same 7 fields].
+#define USB_CMD_SET_LED 0x20u  // Payload: index,r,g,b (4 B), replies [status].
 
 // Response status codes (payload[0] of a response frame).
 #define USB_CMD_STATUS_OK 0x00u

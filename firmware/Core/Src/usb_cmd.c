@@ -23,6 +23,7 @@
 #include "usb_cmd.h"
 #include "rtc.h"
 #include "usbd_cdc_if.h"
+#include "ws2812b_hal_pwm.h"
 #include <stdbool.h>
 
 /** Private variables. ********************************************************/
@@ -124,6 +125,22 @@ static void handle_get_time(void) {
   send_frame(USB_CMD_GET_TIME, resp, sizeof(resp));
 }
 
+static void handle_set_led(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  // Payload: index, red, green, blue.
+  if (len != 4u || p[0] >= LED_COUNT) {
+    status = USB_CMD_STATUS_ERR;
+  } else {
+    ws2812b_set_colour(p[0], p[1], p[2], p[3]);
+    if (ws2812b_update() != HAL_OK) {
+      status = USB_CMD_STATUS_ERR; // Prior LED DMA still in flight.
+    }
+  }
+
+  send_frame(USB_CMD_SET_LED, &status, 1u);
+}
+
 static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
   switch (cmd) {
   case USB_CMD_PING: {
@@ -136,6 +153,9 @@ static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
     break;
   case USB_CMD_GET_TIME:
     handle_get_time();
+    break;
+  case USB_CMD_SET_LED:
+    handle_set_led(payload, len);
     break;
   default: {
     const uint8_t status = USB_CMD_STATUS_ERR; // Unknown command.
