@@ -98,6 +98,19 @@ void hoppy_clock_init(void) {
   // Addressable LEDs.
   ws2812b_init();
 
+  // LED startup R, G, B flash test sequence.
+  ws2812b_set_colour(0, 1, 0, 0);
+  ws2812b_update();
+  HAL_Delay(500);
+  ws2812b_set_colour(0, 0, 1, 0);
+  ws2812b_update();
+  HAL_Delay(500);
+  ws2812b_set_colour(0, 0, 0, 1);
+  ws2812b_update();
+  HAL_Delay(500);
+  ws2812b_set_colour(0, 0, 0, 0);
+  ws2812b_update();
+
   // Speaker amp.
   amp_init();
 
