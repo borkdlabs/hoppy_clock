@@ -1,0 +1,46 @@
+################################################################################
+# black_formatter.yaml
+#
+# Check for Black formatting (line length 80) in adherence to conventions.
+################################################################################
+
+name: Black Formatter
+
+on:
+  push:
+    paths:
+      - "software/**/*.py"
+      - ".github/workflows/black_formatter.yaml"
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "software/**/*.py"
+      - ".github/workflows/black_formatter.yaml"
+    branches:
+      - main
+
+jobs:
+  black:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black
+
+      - name: Check Black formatting
+        run: |
+          black --check --line-length 80 software
+        shell: bash
