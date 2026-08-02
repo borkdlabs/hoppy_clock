@@ -42,4 +42,6 @@ Manual corrections:
       WS2812B LED strip pinouts.
         - Update `README.md` docs accordingly.
     - Minor silkscreen cleanup.
+    - Add voltage divider on TPS2116DRL for improved supply mux threshold.
+        - Previously used default 1 V threshold.
 - Order date: **_TBD_**.
