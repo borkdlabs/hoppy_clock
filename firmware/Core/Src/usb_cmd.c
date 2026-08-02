@@ -22,6 +22,7 @@
 
 #include "usb_cmd.h"
 #include "alarm_rt.h"
+#include "light.h"
 #include "manifest.h"
 #include "rtc.h"
 #include "sound.h"
@@ -56,14 +57,20 @@ static uint8_t s_payload[USB_CMD_MAX_PAYLOAD];
 // Static TX frame (must persist: the USB stack sends it asynchronously).
 static uint8_t s_tx[3u + USB_CMD_MAX_PAYLOAD + 1u];
 
-// Staging area for a whole-table replace: CFG_BEGIN clears it, CFG_SET_ALARM
-// fills entries by index, CFG_COMMIT hands it to the manifest and persists.
+// Staging for a whole-config replace: CFG_BEGIN clears it, CFG_SET_* fill it,
+// CFG_COMMIT hands it to the manifest and persists.
 static alarm_record_t s_stage[MANIFEST_MAX_ALARMS];
+static light_seq_t s_stage_lights[MANIFEST_MAX_LIGHTS];
+static uint8_t s_stage_lamp_on;
+static uint8_t s_stage_lamp_off;
+static uint8_t s_stage_led_count;
 
-// The config frames must fit the payload budget: index (1) + record (12), and a
-// GET_ALARM reply of status (1) + record (12).
+// The config frames must fit the payload budget: index (1) + record (12), a
+// GET_ALARM reply of status (1) + record (12), and id (1) + light_seq (8).
 _Static_assert(1u + sizeof(alarm_record_t) <= USB_CMD_MAX_PAYLOAD,
                "alarm config frame exceeds USB_CMD_MAX_PAYLOAD");
+_Static_assert(1u + sizeof(light_seq_t) <= USB_CMD_MAX_PAYLOAD,
+               "light config frame exceeds USB_CMD_MAX_PAYLOAD");
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
@@ -143,7 +150,7 @@ static void handle_set_led(const uint8_t *p, uint8_t len) {
   uint8_t status = USB_CMD_STATUS_OK;
 
   // Payload: index, red, green, blue.
-  if (len != 4u || p[0] >= LED_COUNT) {
+  if (len != 4u || p[0] >= ws2812b_get_count()) {
     status = USB_CMD_STATUS_ERR;
   } else {
     ws2812b_set_colour(p[0], p[1], p[2], p[3]);
@@ -157,6 +164,10 @@ static void handle_set_led(const uint8_t *p, uint8_t len) {
 
 static void handle_cfg_begin(void) {
   memset(s_stage, 0, sizeof(s_stage));
+  memset(s_stage_lights, 0, sizeof(s_stage_lights));
+  s_stage_lamp_on = 0u;
+  s_stage_lamp_off = 0u;
+  s_stage_led_count = 1u; // Default; the host resends the real count.
   const uint8_t status = USB_CMD_STATUS_OK;
   send_frame(USB_CMD_CFG_BEGIN, &status, 1u);
 }
@@ -174,16 +185,64 @@ static void handle_cfg_set_alarm(const uint8_t *p, uint8_t len) {
   send_frame(USB_CMD_CFG_SET_ALARM, &status, 1u);
 }
 
+static void handle_cfg_set_light(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  // Payload: id (1 B) followed by an 8-byte light_seq.
+  if (len != 1u + sizeof(light_seq_t) || p[0] >= MANIFEST_MAX_LIGHTS) {
+    status = USB_CMD_STATUS_ERR;
+  } else {
+    memcpy(&s_stage_lights[p[0]], &p[1], sizeof(light_seq_t));
+  }
+
+  send_frame(USB_CMD_CFG_SET_LIGHT, &status, 1u);
+}
+
+static void handle_cfg_set_lamp(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  // Payload: lamp on id, lamp off id.
+  if (len != 2u) {
+    status = USB_CMD_STATUS_ERR;
+  } else {
+    s_stage_lamp_on = p[0];
+    s_stage_lamp_off = p[1];
+  }
+
+  send_frame(USB_CMD_CFG_SET_LAMP, &status, 1u);
+}
+
+static void handle_cfg_set_leds(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  // Payload: active LED count.
+  if (len != 1u) {
+    status = USB_CMD_STATUS_ERR;
+  } else {
+    s_stage_led_count = p[0];
+  }
+
+  send_frame(USB_CMD_CFG_SET_LEDS, &status, 1u);
+}
+
 static void handle_cfg_commit(const uint8_t *p, uint8_t len) {
   uint8_t status = USB_CMD_STATUS_OK;
 
-  // Payload: alarm count. Applies the staged table and persists it (blocking
-  // erase + program; the cooperative loop is stalled briefly during the save).
-  if (len != 1u || !manifest_set_alarms(s_stage, p[0]) ||
-      manifest_save() != HAL_OK) {
+  // Payload: alarm_count, light_count. Applies the staged config and persists
+  // it (blocking erase + program, the cooperative loop stalls briefly).
+  if (len != 2u || !manifest_set_alarms(s_stage, p[0]) ||
+      !manifest_set_lights(s_stage_lights, p[1])) {
     status = USB_CMD_STATUS_ERR;
   } else {
-    alarm_rt_rearm(); // New alarm table; re-arm to the soonest entry.
+    manifest_set_lamp(s_stage_lamp_on, s_stage_lamp_off);
+    manifest_set_led_count(s_stage_led_count);
+    if (manifest_save() != HAL_OK) {
+      status = USB_CMD_STATUS_ERR;
+    } else {
+      ws2812b_set_count(s_stage_led_count); // Apply the new chain length.
+      light_lamp_reapply(); // Refresh the strip at the new size.
+      alarm_rt_rearm();     // Re-arm to the soonest entry.
+    }
   }
 
   send_frame(USB_CMD_CFG_COMMIT, &status, 1u);
@@ -191,7 +250,12 @@ static void handle_cfg_commit(const uint8_t *p, uint8_t len) {
 
 static void handle_cfg_get_count(void) {
   const manifest_t *m = manifest_get();
-  const uint8_t resp[2] = {USB_CMD_STATUS_OK, (uint8_t)m->header.alarm_count};
+  const uint8_t resp[6] = {USB_CMD_STATUS_OK,
+                           (uint8_t)m->header.alarm_count,
+                           (uint8_t)m->header.light_count,
+                           m->header.lamp_on_light,
+                           m->header.lamp_off_light,
+                           m->header.led_count};
   send_frame(USB_CMD_CFG_GET_COUNT, resp, sizeof(resp));
 }
 
@@ -208,6 +272,21 @@ static void handle_cfg_get_alarm(const uint8_t *p, uint8_t len) {
   resp[0] = USB_CMD_STATUS_OK;
   memcpy(&resp[1], &m->alarms[p[0]], sizeof(alarm_record_t));
   send_frame(USB_CMD_CFG_GET_ALARM, resp, sizeof(resp));
+}
+
+static void handle_cfg_get_light(const uint8_t *p, uint8_t len) {
+  const manifest_t *m = manifest_get();
+
+  if (len != 1u || p[0] >= m->header.light_count) {
+    const uint8_t status = USB_CMD_STATUS_ERR;
+    send_frame(USB_CMD_CFG_GET_LIGHT, &status, 1u);
+    return;
+  }
+
+  uint8_t resp[1u + sizeof(light_seq_t)];
+  resp[0] = USB_CMD_STATUS_OK;
+  memcpy(&resp[1], &m->lights[p[0]], sizeof(light_seq_t));
+  send_frame(USB_CMD_CFG_GET_LIGHT, resp, sizeof(resp));
 }
 
 static uint16_t le16(const uint8_t *p) {
@@ -232,9 +311,9 @@ static void handle_snd_begin(const uint8_t *p, uint8_t len) {
 }
 
 static void handle_snd_data(const uint8_t *p, uint8_t len) {
-  const uint8_t status =
-      (sound_write_data(p, len) == HAL_OK) ? USB_CMD_STATUS_OK
-                                           : USB_CMD_STATUS_ERR;
+  const uint8_t status = (sound_write_data(p, len) == HAL_OK)
+                             ? USB_CMD_STATUS_OK
+                             : USB_CMD_STATUS_ERR;
   send_frame(USB_CMD_SND_DATA, &status, 1u);
 }
 
@@ -304,6 +383,18 @@ static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
     break;
   case USB_CMD_CFG_GET_ALARM:
     handle_cfg_get_alarm(payload, len);
+    break;
+  case USB_CMD_CFG_SET_LIGHT:
+    handle_cfg_set_light(payload, len);
+    break;
+  case USB_CMD_CFG_SET_LAMP:
+    handle_cfg_set_lamp(payload, len);
+    break;
+  case USB_CMD_CFG_GET_LIGHT:
+    handle_cfg_get_light(payload, len);
+    break;
+  case USB_CMD_CFG_SET_LEDS:
+    handle_cfg_set_leds(payload, len);
     break;
   case USB_CMD_SND_BEGIN:
     handle_snd_begin(payload, len);
