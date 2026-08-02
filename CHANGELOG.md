@@ -44,4 +44,6 @@ Manual corrections:
     - Minor silkscreen cleanup.
     - Add voltage divider on TPS2116DRL for improved supply mux threshold.
         - Previously used default 1 V threshold.
+    - Add copper clearance on top layer below USB-C connector.
+    - Add 1 mm fillet on USB-C area neck.
 - Order date: **_TBD_**.
