@@ -7,11 +7,15 @@
 /** Includes. *****************************************************************/
 
 #include "init.h"
+#include "alarm_rt.h"
 #include "button_hal_gpio.h"
+#include "manifest.h"
 #include "mcu_temp_hal_adc.h"
 #include "pam8302a_hal_dac.h"
 #include "scheduler.h"
+#include "sound.h"
 #include "usb_cmd.h"
+#include "w25q128jv_hal_qspi.h"
 #include "ws2812b_hal_pwm.h"
 
 /** Definitions. **************************************************************/
@@ -63,7 +67,13 @@ static void state_machine(void) {
 
   switch (button_get_event()) {
   case BUTTON_EVENT_LONG:
-    // Alarm on: enable the amp and sound a short beep.
+    // A long press shuts off a ringing alarm; otherwise it is the amp beep
+    // bring-up test.
+    if (alarm_rt_is_ringing()) {
+      alarm_rt_cancel();
+      s_state = STATE_IDLE;
+      break;
+    }
     amp_enable();
     amp_set_sample_rate(BEEP_RATE_HZ);
     amp_play(s_beep, BEEP_SAMPLES, false); // One-shot, auto-returns to idle.
@@ -71,6 +81,10 @@ static void state_machine(void) {
     break;
 
   case BUTTON_EVENT_SHORT:
+    // Ignore the lamp toggle while an alarm owns the LED.
+    if (alarm_rt_is_ringing()) {
+      break;
+    }
     // Toggle the lamp on/off.
     s_lamp_on = !s_lamp_on;
     if (s_lamp_on) {
@@ -117,9 +131,19 @@ void hoppy_clock_init(void) {
   // Button.
   button_init();
 
+  // External NOR flash, then load the persisted settings. A probe failure or a
+  // blank/corrupt flash leaves manifest_load() returning empty defaults, so the
+  // system still boots (just with no alarms).
+  w25q_init();
+  manifest_load();
+  sound_init();
+
   // USB CDC command layer. USB itself is brought up by MX_USB_DEVICE_Init() in
   // main() before this runs.
   usb_cmd_init();
+
+  // Alarm runtime: arm RTC Alarm A for the soonest alarm in the manifest.
+  alarm_rt_init();
 
   // Build the alarm beep by tiling one sine cycle (starts/ends at mid-scale).
   for (uint32_t i = 0; i < BEEP_SAMPLES; i++) {
@@ -130,4 +154,6 @@ void hoppy_clock_init(void) {
   scheduler_init(); // Initialize scheduler.
   scheduler_add_task(state_machine, 10);
   scheduler_add_task(usb_cmd_task, 10);
+  scheduler_add_task(alarm_rt_task, 20);
+  scheduler_add_task(sound_task, 10);
 }
