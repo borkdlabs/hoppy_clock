@@ -21,10 +21,14 @@
 /** Includes. *****************************************************************/
 
 #include "usb_cmd.h"
+#include "alarm_rt.h"
+#include "manifest.h"
 #include "rtc.h"
+#include "sound.h"
 #include "usbd_cdc_if.h"
 #include "ws2812b_hal_pwm.h"
 #include <stdbool.h>
+#include <string.h>
 
 /** Private variables. ********************************************************/
 
@@ -51,6 +55,15 @@ static uint8_t s_payload[USB_CMD_MAX_PAYLOAD];
 
 // Static TX frame (must persist: the USB stack sends it asynchronously).
 static uint8_t s_tx[3u + USB_CMD_MAX_PAYLOAD + 1u];
+
+// Staging area for a whole-table replace: CFG_BEGIN clears it, CFG_SET_ALARM
+// fills entries by index, CFG_COMMIT hands it to the manifest and persists.
+static alarm_record_t s_stage[MANIFEST_MAX_ALARMS];
+
+// The config frames must fit the payload budget: index (1) + record (12), and a
+// GET_ALARM reply of status (1) + record (12).
+_Static_assert(1u + sizeof(alarm_record_t) <= USB_CMD_MAX_PAYLOAD,
+               "alarm config frame exceeds USB_CMD_MAX_PAYLOAD");
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
@@ -112,6 +125,7 @@ static void handle_set_time(const uint8_t *p, uint8_t len) {
   } else {
     set_date(p[0], p[1], p[2], p[3]);
     set_time(p[4], p[5], p[6]);
+    alarm_rt_rearm(); // "Now" moved; the next-alarm time may have changed.
   }
 
   send_frame(USB_CMD_SET_TIME, &status, 1u);
@@ -141,6 +155,125 @@ static void handle_set_led(const uint8_t *p, uint8_t len) {
   send_frame(USB_CMD_SET_LED, &status, 1u);
 }
 
+static void handle_cfg_begin(void) {
+  memset(s_stage, 0, sizeof(s_stage));
+  const uint8_t status = USB_CMD_STATUS_OK;
+  send_frame(USB_CMD_CFG_BEGIN, &status, 1u);
+}
+
+static void handle_cfg_set_alarm(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  // Payload: index (1 B) followed by a 12-byte alarm record.
+  if (len != 1u + sizeof(alarm_record_t) || p[0] >= MANIFEST_MAX_ALARMS) {
+    status = USB_CMD_STATUS_ERR;
+  } else {
+    memcpy(&s_stage[p[0]], &p[1], sizeof(alarm_record_t));
+  }
+
+  send_frame(USB_CMD_CFG_SET_ALARM, &status, 1u);
+}
+
+static void handle_cfg_commit(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  // Payload: alarm count. Applies the staged table and persists it (blocking
+  // erase + program; the cooperative loop is stalled briefly during the save).
+  if (len != 1u || !manifest_set_alarms(s_stage, p[0]) ||
+      manifest_save() != HAL_OK) {
+    status = USB_CMD_STATUS_ERR;
+  } else {
+    alarm_rt_rearm(); // New alarm table; re-arm to the soonest entry.
+  }
+
+  send_frame(USB_CMD_CFG_COMMIT, &status, 1u);
+}
+
+static void handle_cfg_get_count(void) {
+  const manifest_t *m = manifest_get();
+  const uint8_t resp[2] = {USB_CMD_STATUS_OK, (uint8_t)m->header.alarm_count};
+  send_frame(USB_CMD_CFG_GET_COUNT, resp, sizeof(resp));
+}
+
+static void handle_cfg_get_alarm(const uint8_t *p, uint8_t len) {
+  const manifest_t *m = manifest_get();
+
+  if (len != 1u || p[0] >= m->header.alarm_count) {
+    const uint8_t status = USB_CMD_STATUS_ERR;
+    send_frame(USB_CMD_CFG_GET_ALARM, &status, 1u);
+    return;
+  }
+
+  uint8_t resp[1u + sizeof(alarm_record_t)];
+  resp[0] = USB_CMD_STATUS_OK;
+  memcpy(&resp[1], &m->alarms[p[0]], sizeof(alarm_record_t));
+  send_frame(USB_CMD_CFG_GET_ALARM, resp, sizeof(resp));
+}
+
+static uint16_t le16(const uint8_t *p) {
+  return (uint16_t)((uint16_t)p[0] | ((uint16_t)p[1] << 8));
+}
+
+static uint32_t le32(const uint8_t *p) {
+  return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) |
+         ((uint32_t)p[3] << 24);
+}
+
+static void handle_snd_begin(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  // Payload: id (1), format (1), sample_rate (2), total_len (4).
+  if (len != 8u ||
+      sound_write_begin(p[0], p[1], le16(&p[2]), le32(&p[4])) != HAL_OK) {
+    status = USB_CMD_STATUS_ERR;
+  }
+
+  send_frame(USB_CMD_SND_BEGIN, &status, 1u);
+}
+
+static void handle_snd_data(const uint8_t *p, uint8_t len) {
+  const uint8_t status =
+      (sound_write_data(p, len) == HAL_OK) ? USB_CMD_STATUS_OK
+                                           : USB_CMD_STATUS_ERR;
+  send_frame(USB_CMD_SND_DATA, &status, 1u);
+}
+
+static void handle_snd_end(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  if (len != 4u || sound_write_end(le32(p)) != HAL_OK) {
+    status = USB_CMD_STATUS_ERR;
+  }
+
+  send_frame(USB_CMD_SND_END, &status, 1u);
+}
+
+static void handle_snd_info(const uint8_t *p, uint8_t len) {
+  sound_entry_t e;
+
+  if (len != 1u || !sound_get_info(p[0], &e)) {
+    const uint8_t status = USB_CMD_STATUS_ERR;
+    send_frame(USB_CMD_SND_INFO, &status, 1u);
+    return;
+  }
+
+  // Reply: status, format, sample_rate (2), length (4), crc32 (4).
+  uint8_t resp[12];
+  resp[0] = USB_CMD_STATUS_OK;
+  resp[1] = e.format;
+  resp[2] = (uint8_t)e.sample_rate;
+  resp[3] = (uint8_t)(e.sample_rate >> 8);
+  resp[4] = (uint8_t)e.length;
+  resp[5] = (uint8_t)(e.length >> 8);
+  resp[6] = (uint8_t)(e.length >> 16);
+  resp[7] = (uint8_t)(e.length >> 24);
+  resp[8] = (uint8_t)e.crc32;
+  resp[9] = (uint8_t)(e.crc32 >> 8);
+  resp[10] = (uint8_t)(e.crc32 >> 16);
+  resp[11] = (uint8_t)(e.crc32 >> 24);
+  send_frame(USB_CMD_SND_INFO, resp, sizeof(resp));
+}
+
 static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
   switch (cmd) {
   case USB_CMD_PING: {
@@ -156,6 +289,33 @@ static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
     break;
   case USB_CMD_SET_LED:
     handle_set_led(payload, len);
+    break;
+  case USB_CMD_CFG_BEGIN:
+    handle_cfg_begin();
+    break;
+  case USB_CMD_CFG_SET_ALARM:
+    handle_cfg_set_alarm(payload, len);
+    break;
+  case USB_CMD_CFG_COMMIT:
+    handle_cfg_commit(payload, len);
+    break;
+  case USB_CMD_CFG_GET_COUNT:
+    handle_cfg_get_count();
+    break;
+  case USB_CMD_CFG_GET_ALARM:
+    handle_cfg_get_alarm(payload, len);
+    break;
+  case USB_CMD_SND_BEGIN:
+    handle_snd_begin(payload, len);
+    break;
+  case USB_CMD_SND_DATA:
+    handle_snd_data(payload, len);
+    break;
+  case USB_CMD_SND_END:
+    handle_snd_end(payload, len);
+    break;
+  case USB_CMD_SND_INFO:
+    handle_snd_info(payload, len);
     break;
   default: {
     const uint8_t status = USB_CMD_STATUS_ERR; // Unknown command.

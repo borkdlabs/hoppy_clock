@@ -6,10 +6,19 @@
 
 /** Includes. *****************************************************************/
 
+#include "alarm_rt.h"
 #include "mcu_temp_hal_adc.h"
 #include "pam8302a_hal_dac.h"
+#include "stm32l4xx_hal.h"
 
 /** Collection of user implementations into STM32 HAL (overwriting HAL). ******/
+
+/** RTC. */
+
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc) {
+  (void)hrtc;
+  alarm_rt_notify_fired();
+}
 
 /** ADC. */
 
