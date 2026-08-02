@@ -13,15 +13,24 @@ Examples:
   python main.py set-time                   # Sync device to local "now".
   python main.py set-led 0 60 0 0           # LED index 0 -> red (r g b, 0-255).
   python main.py set-led 0 green            # LED index 0 -> named colour.
+  python main.py set-led-count 12           # Set LED count to 12.
 
-  # End-to-end alarm test (fires ~1 min out, plays sound id 0):
+  # Define light looks (effect + params) and the lamp idle:
+  python main.py set-light 0 --effect solid --color warm --brightness 1
+  python main.py set-light 1 --effect solid --color warm --brightness 5 --curve flicker
+  python main.py set-lamp --on 1 --off 0         # off idle = dim ambient.
+
+  # Animated effects (loop until the ring/lamp ends):
+  python main.py set-light 3 --effect rainbow --period 4000 --spread 24 --brightness 5
+  python main.py set-light 4 --effect breathe --color blue --period 3000 --brightness 5
+
+  # End-to-end alarm test (fires ~1 min out, sunrise look + sound):
   python main.py upload-sound 0 --tone 880 --seconds 1 --gain 0.05
-  python main.py set-alarm --in 1 --sound 0 --brightness 10 --ramp 10 --timeout 20
+  python main.py upload-sound 1 example_file.wav --gain 0.4
+  python main.py set-light 2 --effect solid --color amber --brightness 200 \
+      --period 10000
+  python main.py set-alarm --in 1 --sound 0 --light 2 --timeout 20
   python main.py list-alarms
-
-  # Upload a WAV (converted to 8-bit 8 kHz mono) or a raw .u8 file:
-  python main.py upload-sound 2 chime.wav
-  python main.py set-alarm --at 06:30 --days weekdays --sound 2 --brightness 200
 """
 
 import argparse
@@ -51,15 +60,35 @@ CMD_CFG_SET_ALARM = 0x31
 CMD_CFG_COMMIT = 0x32
 CMD_CFG_GET_COUNT = 0x33
 CMD_CFG_GET_ALARM = 0x34
+CMD_CFG_SET_LIGHT = 0x35
+CMD_CFG_SET_LAMP = 0x36
+CMD_CFG_GET_LIGHT = 0x37
+CMD_CFG_SET_LEDS = 0x38
 CMD_SND_BEGIN = 0x40
 CMD_SND_DATA = 0x41
 CMD_SND_END = 0x42
 CMD_SND_INFO = 0x43
 
 # Alarm record (must match manifest.h): 12 bytes, little-endian.
-ALARM_STRUCT = "<BBBBBHHBBB"  # flags,day,h,m,s,ramp,timeout,sound,bright,rsv.
+# flags, day, h, m, s, timeout, sound, light, reserved(3).
+ALARM_STRUCT = "<BBBBBHBBBBB"
 ALARM_FLAG_ENABLED = 0x01
 ALARM_FLAG_MONTHLY = 0x02
+
+# Light sequence (must match manifest.h): 12 bytes, little-endian.
+# effect, r, g, b, brightness, period_ms, curve, spread, reserved(3).
+LIGHT_STRUCT = "<BBBBBHBBBBB"
+LIGHT_FX = {"solid": 0, "rainbow": 1, "sweep": 2, "breathe": 3}
+LIGHT_CURVES = {"linear": 0, "ease": 1, "flicker": 2}
+# Base colours for light looks (full-intensity hues; brightness scales them).
+BASE_COLORS = {
+    "warm": (255, 200, 120),
+    "white": (255, 255, 255),
+    "red": (255, 0, 0),
+    "green": (0, 255, 0),
+    "blue": (0, 0, 255),
+    "amber": (255, 140, 0),
+}
 DAY_BITS = {
     "mon": 0,
     "tue": 1,
@@ -238,6 +267,23 @@ def _parse_days(spec: str) -> int:
     return mask
 
 
+def _parse_color(vals) -> tuple:
+    """Parse a colour: a name, or three 0-255 ints. Default warm."""
+    if not vals:
+        return BASE_COLORS["warm"]
+    if len(vals) == 1:
+        name = vals[0].lower()
+        if name not in BASE_COLORS:
+            raise ValueError(f"unknown colour '{name}'")
+        return BASE_COLORS[name]
+    if len(vals) == 3:
+        rgb = tuple(int(x) for x in vals)
+        if any(not 0 <= c <= 255 for c in rgb):
+            raise ValueError("r g b must be 0-255")
+        return rgb
+    raise ValueError("colour must be a name or three r g b values")
+
+
 def _build_alarm(args) -> bytes:
     """Build a 12-byte alarm record from parsed set-alarm args."""
     if args.in_minutes is not None:
@@ -264,12 +310,88 @@ def _build_alarm(args) -> bytes:
         hh,
         mm,
         ss,
-        args.ramp,
         args.timeout,
         args.sound,
-        args.brightness,
+        args.light,
+        0,
+        0,
         0,
     )
+
+
+# The manifest is one atomic image, so every editing command reads the whole
+# config, changes one part, and writes it back (a bare BEGIN/COMMIT would wipe
+# the parts it did not resend).
+
+
+def _read_config(ser):
+    """Fetch (alarms, lights, lamp_on/off, led_count) or None on failure."""
+    r = txn(ser, CMD_CFG_GET_COUNT)
+    if not (r and ok(r[1]) and len(r[1]) >= 6):
+        print("GET_COUNT ->", _status(r))
+        return None
+    n_alarm, n_light = r[1][1], r[1][2]
+    lamp_on, lamp_off, led_count = r[1][3], r[1][4], r[1][5]
+
+    alarms = []
+    for i in range(n_alarm):
+        r = txn(ser, CMD_CFG_GET_ALARM, bytes([i]))
+        if not (r and ok(r[1]) and len(r[1]) >= 13):
+            print(f"GET_ALARM {i} ->", _status(r))
+            return None
+        alarms.append(bytes(r[1][1:13]))
+
+    lights = []
+    for i in range(n_light):
+        r = txn(ser, CMD_CFG_GET_LIGHT, bytes([i]))
+        if not (r and ok(r[1]) and len(r[1]) >= 13):
+            print(f"GET_LIGHT {i} ->", _status(r))
+            return None
+        lights.append(bytes(r[1][1:13]))
+
+    return {
+        "alarms": alarms,
+        "lights": lights,
+        "lamp_on": lamp_on,
+        "lamp_off": lamp_off,
+        "led_count": led_count,
+    }
+
+
+def _write_config(ser, cfg) -> bool:
+    """Push a whole config back atomically (begin / set* / commit)."""
+    r = txn(ser, CMD_CFG_BEGIN)
+    if not (r and ok(r[1])):
+        print("CFG_BEGIN ->", _status(r))
+        return False
+    for i, rec in enumerate(cfg["alarms"]):
+        r = txn(ser, CMD_CFG_SET_ALARM, bytes([i]) + rec)
+        if not (r and ok(r[1])):
+            print(f"CFG_SET_ALARM {i} ->", _status(r))
+            return False
+    for i, seq in enumerate(cfg["lights"]):
+        r = txn(ser, CMD_CFG_SET_LIGHT, bytes([i]) + seq)
+        if not (r and ok(r[1])):
+            print(f"CFG_SET_LIGHT {i} ->", _status(r))
+            return False
+    r = txn(ser, CMD_CFG_SET_LAMP, bytes([cfg["lamp_on"], cfg["lamp_off"]]))
+    if not (r and ok(r[1])):
+        print("CFG_SET_LAMP ->", _status(r))
+        return False
+    r = txn(ser, CMD_CFG_SET_LEDS, bytes([cfg["led_count"]]))
+    if not (r and ok(r[1])):
+        print("CFG_SET_LEDS ->", _status(r))
+        return False
+    r = txn(
+        ser,
+        CMD_CFG_COMMIT,
+        bytes([len(cfg["alarms"]), len(cfg["lights"])]),
+        timeout=5.0,
+    )
+    if not (r and ok(r[1])):
+        print("CFG_COMMIT ->", _status(r))
+        return False
+    return True
 
 
 def cmd_set_alarm(ser, args):
@@ -286,34 +408,89 @@ def cmd_set_alarm(ser, args):
         print(f"bad alarm spec: {e}", file=sys.stderr)
         return 2
 
-    # Replace the whole table with this single alarm (begin / set / commit).
-    for label, r in (
-        ("BEGIN", txn(ser, CMD_CFG_BEGIN)),
-        ("SET", txn(ser, CMD_CFG_SET_ALARM, bytes([0]) + record)),
-        ("COMMIT", txn(ser, CMD_CFG_COMMIT, bytes([1]), timeout=5.0)),
-    ):
-        if not (r and ok(r[1])):
-            print(f"CFG_{label} ->", _status(r))
-            return 1
-    print("set-alarm -> OK (1 alarm committed)")
+    cfg = _read_config(ser)
+    if cfg is None:
+        return 1
+    cfg["alarms"] = [record]  # Replace the table with this one alarm.
+    if not _write_config(ser, cfg):
+        return 1
+    print("set-alarm -> OK (1 alarm, lights/lamp preserved)")
+    return 0
+
+
+def cmd_set_light(ser, args):
+    try:
+        r, g, b = _parse_color(args.color)
+        effect = LIGHT_FX[args.effect]
+        curve = LIGHT_CURVES[args.curve]
+    except (ValueError, KeyError) as e:
+        print(f"bad light spec: {e}", file=sys.stderr)
+        return 2
+
+    seq = struct.pack(
+        LIGHT_STRUCT,
+        effect,
+        r,
+        g,
+        b,
+        args.brightness,
+        args.period,
+        curve,
+        args.spread,
+        0,
+        0,
+        0,
+    )
+    cfg = _read_config(ser)
+    if cfg is None:
+        return 1
+    off = struct.pack(LIGHT_STRUCT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    while len(cfg["lights"]) <= args.id:  # Grow with blanks up to the id.
+        cfg["lights"].append(off)
+    cfg["lights"][args.id] = seq
+    if not _write_config(ser, cfg):
+        return 1
+    print(f"set-light -> OK (light {args.id}, {args.effect})")
+    return 0
+
+
+def cmd_set_lamp(ser, args):
+    if args.on is None and args.off is None:
+        print("set-lamp needs --on ID and/or --off ID", file=sys.stderr)
+        return 2
+    cfg = _read_config(ser)
+    if cfg is None:
+        return 1
+    if args.on is not None:
+        cfg["lamp_on"] = args.on
+    if args.off is not None:
+        cfg["lamp_off"] = args.off
+    if not _write_config(ser, cfg):
+        return 1
+    print(f"set-lamp -> OK (on={cfg['lamp_on']} off={cfg['lamp_off']})")
+    return 0
+
+
+def cmd_set_led_count(ser, args):
+    cfg = _read_config(ser)
+    if cfg is None:
+        return 1
+    cfg["led_count"] = args.count
+    if not _write_config(ser, cfg):
+        return 1
+    print(f"set-led-count -> OK ({args.count} LEDs)")
     return 0
 
 
 def cmd_list_alarms(ser, args):
-    r = txn(ser, CMD_CFG_GET_COUNT)
-    if not (r and ok(r[1]) and len(r[1]) >= 2):
-        print("GET_COUNT ->", _status(r))
+    cfg = _read_config(ser)
+    if cfg is None:
         return 1
 
-    count = r[1][1]
-    print(f"{count} alarm(s):")
-    for i in range(count):
-        r = txn(ser, CMD_CFG_GET_ALARM, bytes([i]))
-        if not (r and ok(r[1]) and len(r[1]) >= 13):
-            print(f"  [{i}] ->", _status(r))
-            continue
-        flags, day, hh, mm, ss, ramp, timeout, sound, bright, _rsv = (
-            struct.unpack(ALARM_STRUCT, r[1][1:13])
+    print(f"{len(cfg['alarms'])} alarm(s):")
+    for i, rec in enumerate(cfg["alarms"]):
+        flags, day, hh, mm, ss, timeout, sound, light, *_ = struct.unpack(
+            ALARM_STRUCT, rec
         )
         if flags & ALARM_FLAG_MONTHLY:
             when = f"day-of-month {day}"
@@ -323,8 +500,24 @@ def cmd_list_alarms(ser, args):
         state = "on " if flags & ALARM_FLAG_ENABLED else "off"
         print(
             f"  [{i}] {state} {hh:02d}:{mm:02d}:{ss:02d} {when} "
-            f"sound={sound} ramp={ramp}s timeout={timeout}s bright={bright}"
+            f"sound={sound} light={light} timeout={timeout}s"
         )
+
+    fx = {v: k for k, v in LIGHT_FX.items()}
+    curves = {v: k for k, v in LIGHT_CURVES.items()}
+    print(f"{len(cfg['lights'])} light(s):")
+    for i, seq in enumerate(cfg["lights"]):
+        effect, r, g, b, bright, period, curve, spread, *_ = struct.unpack(
+            LIGHT_STRUCT, seq
+        )
+        name = fx.get(effect, effect)
+        extra = f"{curves.get(curve, curve)} " if name == "solid" else ""
+        print(
+            f"  [{i}] {name} rgb=({r},{g},{b}) bright={bright} "
+            f"{period}ms {extra}spread={spread}"
+        )
+    print(f"lamp: on=light {cfg['lamp_on']}  off=light {cfg['lamp_off']}")
+    print(f"led-count: {cfg['led_count']}")
     return 0
 
 
@@ -488,17 +681,65 @@ def build_parser() -> argparse.ArgumentParser:
     al.add_argument("--days", help="weekly days: mon,tue,... or weekdays/daily")
     al.add_argument("--dom", type=int, help="monthly day-of-month (1-31)")
     al.add_argument("--sound", type=int, default=0, help="sound id (default 0)")
-    al.add_argument("--ramp", type=int, default=0, help="LED ramp seconds")
+    al.add_argument("--light", type=int, default=0, help="light id (default 0)")
     al.add_argument(
         "--timeout", type=int, default=60, help="auto-quiet seconds (0 = never)"
     )
-    al.add_argument(
-        "--brightness", type=int, default=128, help="LED target 0-255"
-    )
     al.set_defaults(func=cmd_set_alarm)
 
+    lt = sub.add_parser("set-light", help="define a light look (id)")
+    lt.add_argument("id", type=int, help="light id")
+    lt.add_argument(
+        "--effect",
+        choices=list(LIGHT_FX),
+        default="solid",
+        help="solid, rainbow, sweep, or breathe",
+    )
+    lt.add_argument(
+        "--color",
+        nargs="*",
+        default=[],
+        metavar="NAME|R G B",
+        help="base colour name or r g b (default warm)",
+    )
+    lt.add_argument(
+        "--brightness", type=int, default=160, help="master level 0-255"
+    )
+    lt.add_argument(
+        "--period",
+        type=int,
+        default=1500,
+        help="solid: fade ms; animated: cycle ms",
+    )
+    lt.add_argument(
+        "--curve",
+        choices=list(LIGHT_CURVES),
+        default="linear",
+        help="solid ramp shape: linear, ease, flicker",
+    )
+    lt.add_argument(
+        "--spread",
+        type=int,
+        default=40,
+        help="flicker amplitude / rainbow hue-step / sweep width",
+    )
+    lt.set_defaults(func=cmd_set_light)
+
+    lp = sub.add_parser("set-lamp", help="set the lamp on/off idle light ids")
+    lp.add_argument("--on", type=int, help="light id for lamp-on idle")
+    lp.add_argument("--off", type=int, help="light id for lamp-off idle")
+    lp.set_defaults(func=cmd_set_lamp)
+
+    lc = sub.add_parser(
+        "set-led-count", help="set the number of LEDs in the chain"
+    )
+    lc.add_argument(
+        "count", type=int, help="active LED count (1..LED_COUNT_MAX)"
+    )
+    lc.set_defaults(func=cmd_set_led_count)
+
     sub.add_parser(
-        "list-alarms", help="read back the alarm table"
+        "list-alarms", help="read back alarms, lights, lamp, led-count"
     ).set_defaults(func=cmd_list_alarms)
 
     up = sub.add_parser(

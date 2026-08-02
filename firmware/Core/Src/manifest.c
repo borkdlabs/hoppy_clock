@@ -1,23 +1,27 @@
 /*******************************************************************************
  * @file manifest.c
- * @brief Persisted clock settings (alarm table) in external W25Q NOR flash.
+ * @brief Persisted clock settings (alarms + light looks) in W25Q NOR flash.
  *******************************************************************************
  * @note:
- * Firmware is fixed, the user-editable settings (alarms, and later sound
- * assets) live in the NOR flash and are written over USB at firmware runtime.
+ * Firmware is fixed; the user-editable settings live in NOR flash and are
+ * written over USB at runtime.
  *
- * The alarm table is stored as a fixed-size image in one 4 KB sector, kept in
- * two slots (A/B) for power-safe updates. A save writes the idle slot, bumps a
- * monotonic sequence number, and writes the CRC last. On boot the valid slot
- * with the higher sequence number wins. A blank or corrupt pair yields empty
- * defaults, so a half-finished write can never brick the clock.
+ * The image is a fixed-size struct in one 4 KB sector, kept in two slots (A/B)
+ * for power-safe updates. A save writes the idle slot, bumps a monotonic
+ * sequence number, and writes the CRC last; on boot the valid slot with the
+ * higher sequence number wins. A blank or corrupt pair yields empty defaults.
  *
- *   Header (16 B): magic | version | alarm_count | seq_no | crc32
+ *   Header (22 B): magic | version | alarm_count | light_count |
+ *                  lamp_on_light | lamp_off_light | led_count | reserved |
+ *                  seq_no | crc32
  *   Alarms[MANIFEST_MAX_ALARMS] x 12 B
+ *   Lights[MANIFEST_MAX_LIGHTS] x 12 B
  *
- * crc32 is the standard reflected CRC-32 (poly 0xEDB88320, init/final
- * 0xFFFFFFFF), matching zlib/Python's zlib.crc32 so the host webapp can compute
- * it identically. It covers the whole image except the crc32 field itself.
+ * A light_seq_t is a strip-aware parametric "look": a procedural effect (solid
+ * fade, rainbow, sweep, breathe) rendered across all LEDs. Alarms and the two
+ * lamp idle states reference one by id. crc32 is the reflected CRC-32 (poly
+ * 0xEDB88320, init/final 0xFFFFFFFF, == zlib.crc32) over the image except
+ * crc32.
  *******************************************************************************
  */
 
@@ -43,10 +47,11 @@
 // Compile-time layout guarantees (the on-flash image is contract, not luck).
 _Static_assert(sizeof(alarm_record_t) == 12u,
                "alarm_record_t must be 12 bytes");
-_Static_assert(sizeof(manifest_header_t) == 16u, "header must be 16 bytes");
+_Static_assert(sizeof(light_seq_t) == 12u, "light_seq_t must be 12 bytes");
+_Static_assert(sizeof(manifest_header_t) == 22u, "header must be 22 bytes");
 _Static_assert(sizeof(manifest_t) <= W25Q_SECTOR_SIZE,
                "manifest must fit in one sector");
-_Static_assert(offsetof(manifest_header_t, crc32) == 12u,
+_Static_assert(offsetof(manifest_header_t, crc32) == 18u,
                "crc32 must be the last header field");
 
 /** Private variables. ********************************************************/
@@ -86,11 +91,11 @@ static uint32_t crc32_update(uint32_t crc, const uint8_t *data, size_t len) {
 static uint32_t manifest_crc(const manifest_t *m) {
   const uint8_t *base = (const uint8_t *)m;
   uint32_t crc = 0xFFFFFFFFu;
-  // Everything before crc32 (magic, version, alarm_count, seq_no).
+  // Header up to (but not including) the crc32 field.
   crc = crc32_update(crc, base, offsetof(manifest_t, header.crc32));
-  // Skip crc32, resume at the alarm table (which follows the header).
-  crc =
-      crc32_update(crc, base + offsetof(manifest_t, alarms), sizeof(m->alarms));
+  // Then the alarm and light tables (skipping the crc32 field itself).
+  crc = crc32_update(crc, (const uint8_t *)m->alarms, sizeof(m->alarms));
+  crc = crc32_update(crc, (const uint8_t *)m->lights, sizeof(m->lights));
   return crc ^ 0xFFFFFFFFu;
 }
 
@@ -105,6 +110,9 @@ static bool slot_valid(const manifest_t *m) {
     return false;
   }
   if (m->header.alarm_count > MANIFEST_MAX_ALARMS) {
+    return false;
+  }
+  if (m->header.light_count > MANIFEST_MAX_LIGHTS) {
     return false;
   }
   return manifest_crc(m) == m->header.crc32;
@@ -157,6 +165,10 @@ static void manifest_set_defaults(void) {
   s_manifest.header.magic = MANIFEST_MAGIC;
   s_manifest.header.version = MANIFEST_VERSION;
   s_manifest.header.alarm_count = 0u;
+  s_manifest.header.light_count = 0u;
+  s_manifest.header.lamp_on_light = 0u;
+  s_manifest.header.lamp_off_light = 0u;
+  s_manifest.header.led_count = 1u; // Onboard LED until configured.
   s_manifest.header.seq_no = 0u;
   s_manifest.header.crc32 = manifest_crc(&s_manifest);
 }
@@ -202,6 +214,25 @@ bool manifest_set_alarms(const alarm_record_t *alarms, uint16_t count) {
   memcpy(s_manifest.alarms, alarms, (size_t)count * sizeof(alarm_record_t));
   s_manifest.header.alarm_count = count;
   return true;
+}
+
+bool manifest_set_lights(const light_seq_t *lights, uint16_t count) {
+  if (count > MANIFEST_MAX_LIGHTS) {
+    return false;
+  }
+  memset(s_manifest.lights, 0, sizeof(s_manifest.lights));
+  memcpy(s_manifest.lights, lights, (size_t)count * sizeof(light_seq_t));
+  s_manifest.header.light_count = count;
+  return true;
+}
+
+void manifest_set_lamp(uint8_t on_light, uint8_t off_light) {
+  s_manifest.header.lamp_on_light = on_light;
+  s_manifest.header.lamp_off_light = off_light;
+}
+
+void manifest_set_led_count(uint8_t led_count) {
+  s_manifest.header.led_count = led_count;
 }
 
 HAL_StatusTypeDef manifest_save(void) {

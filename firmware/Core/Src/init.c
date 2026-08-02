@@ -9,6 +9,7 @@
 #include "init.h"
 #include "alarm_rt.h"
 #include "button_hal_gpio.h"
+#include "light.h"
 #include "manifest.h"
 #include "mcu_temp_hal_adc.h"
 #include "pam8302a_hal_dac.h"
@@ -27,11 +28,6 @@
 #define BEEP_SAMPLES (BEEP_CYCLES * BEEP_CYCLE_LEN)
 #define BEEP_RATE_HZ (BEEP_CYCLE_LEN * 1000u) // 1 kHz tone.
 
-// Lamp colour when toggled on.
-#define LAMP_ON_R 1u
-#define LAMP_ON_G 1u
-#define LAMP_ON_B 1u
-
 /** STM32 port and pin configs. ***********************************************/
 
 /** Private types. ************************************************************/
@@ -48,7 +44,6 @@ typedef enum {
 /** Private variables. ********************************************************/
 
 static hoppy_clock_state_machine_t s_state = STATE_IDLE;
-static bool s_lamp_on = false;
 
 // One cycle of a sine, 12-bit codes centred on mid-scale (2048 +/- ~1800).
 static const uint16_t s_sine_cycle[BEEP_CYCLE_LEN] = {
@@ -81,20 +76,10 @@ static void state_machine(void) {
     break;
 
   case BUTTON_EVENT_SHORT:
-    // Ignore the lamp toggle while an alarm owns the LED.
-    if (alarm_rt_is_ringing()) {
-      break;
+    // Toggle the lamp idle look; ignored while an alarm owns the LED.
+    if (!alarm_rt_is_ringing()) {
+      light_lamp_toggle();
     }
-    // Toggle the lamp on/off.
-    s_lamp_on = !s_lamp_on;
-    if (s_lamp_on) {
-      ws2812b_set_colour(0, LAMP_ON_R, LAMP_ON_G, LAMP_ON_B);
-      s_state = STATE_LAMP_ON;
-    } else {
-      ws2812b_set_colour(0, 0, 0, 0);
-      s_state = STATE_IDLE;
-    }
-    ws2812b_update();
     break;
 
   default:
@@ -138,6 +123,12 @@ void hoppy_clock_init(void) {
   manifest_load();
   sound_init();
 
+  // Apply the configured LED-chain length, then bring up the LED owner and
+  // settle on the lamp-off idle look (a programmed ambient, if any).
+  ws2812b_set_count(manifest_get()->header.led_count);
+  light_init();
+  light_lamp_reapply();
+
   // USB CDC command layer. USB itself is brought up by MX_USB_DEVICE_Init() in
   // main() before this runs.
   usb_cmd_init();
@@ -156,4 +147,5 @@ void hoppy_clock_init(void) {
   scheduler_add_task(usb_cmd_task, 10);
   scheduler_add_task(alarm_rt_task, 20);
   scheduler_add_task(sound_task, 10);
+  scheduler_add_task(light_task, 20);
 }

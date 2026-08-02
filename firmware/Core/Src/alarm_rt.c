@@ -20,25 +20,22 @@
 
 #include "alarm_rt.h"
 #include "alarm.h"
+#include "light.h"
 #include "manifest.h"
 #include "pam8302a_hal_dac.h"
 #include "rtc.h"
 #include "sound.h"
-#include "ws2812b_hal_pwm.h"
 
 /** Private variables. ********************************************************/
 
 // Set by the RTC Alarm A ISR callback, consumed by alarm_rt_task().
 static volatile bool s_fired = false;
 
-// Ring state. Durations are held in milliseconds (ramp/timeout seconds scale up
-// past 16 bits) and timed against HAL_GetTick().
+// Ring state. The LED look is owned by the light module; here we only track the
+// auto-quiet timeout (ms, seconds scale up past 16 bits) against HAL_GetTick().
 static bool s_ringing = false;
 static uint32_t s_ring_start_ms = 0u;
-static uint32_t s_ring_ramp_ms = 0u;    // 0 = jump straight to full brightness.
 static uint32_t s_ring_timeout_ms = 0u; // 0 = no auto-quiet (cancel only).
-static uint8_t s_ring_brightness = 0u;  // Target LED level 0..255.
-static uint8_t s_last_level = 0u;       // Last level pushed to the LED.
 static bool s_ring_has_sound = false;   // Amp was enabled for this ring.
 
 /** Private functions. ********************************************************/
@@ -52,28 +49,16 @@ static void read_now(alarm_time_t *now) {
 }
 
 /**
- * @brief Drive LED 0 to a white level (only touches hardware on change).
- */
-static void led_set_level(uint8_t level) {
-  if (level == s_last_level) {
-    return;
-  }
-  s_last_level = level;
-  ws2812b_set_colour(0u, level, level, level);
-  ws2812b_update();
-}
-
-/**
- * @brief End the current ring: LED off, mark idle.
+ * @brief End the current ring: stop sound, return the LED to the lamp idle.
  */
 static void stop_ring(void) {
   s_ringing = false;
-  led_set_level(0u);
   if (s_ring_has_sound) {
     sound_stop();
     amp_disable();
     s_ring_has_sound = false;
   }
+  light_lamp_reapply(); // Back to the current lamp on/off idle look.
 }
 
 /**
@@ -89,12 +74,14 @@ static void start_ring(void) {
     if (!alarm_record_matches(a, &now)) {
       continue;
     }
-    s_ring_brightness = a->brightness_max;
-    s_ring_ramp_ms = (uint32_t)a->ramp_time_s * 1000u;
     s_ring_timeout_ms = (uint32_t)a->timeout_s * 1000u;
     s_ring_start_ms = HAL_GetTick();
-    s_last_level = 0u;
     s_ringing = true;
+
+    // Play the alarm's light look (LED-only ring if the id is unprogrammed).
+    if (a->light_id < m->header.light_count) {
+      light_play(&m->lights[a->light_id]);
+    }
 
     // Play the alarm's sound if one is stored, otherwise ring LED-only.
     sound_entry_t se;
@@ -114,23 +101,13 @@ static void start_ring(void) {
 }
 
 /**
- * @brief Advance the ring: update the brightness ramp, honour the timeout.
+ * @brief Advance the ring: honour the auto-quiet timeout.
  */
 static void update_ring(void) {
   const uint32_t elapsed = HAL_GetTick() - s_ring_start_ms;
-
   if (s_ring_timeout_ms != 0u && elapsed >= s_ring_timeout_ms) {
     stop_ring();
-    return;
   }
-
-  uint8_t level;
-  if (s_ring_ramp_ms == 0u || elapsed >= s_ring_ramp_ms) {
-    level = s_ring_brightness;
-  } else {
-    level = (uint8_t)((uint32_t)s_ring_brightness * elapsed / s_ring_ramp_ms);
-  }
-  led_set_level(level);
 }
 
 /** Public functions. *********************************************************/
@@ -138,7 +115,6 @@ static void update_ring(void) {
 void alarm_rt_init(void) {
   s_fired = false;
   s_ringing = false;
-  s_last_level = 0u;
   alarm_rt_rearm();
 }
 

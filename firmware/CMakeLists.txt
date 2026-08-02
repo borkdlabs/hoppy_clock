@@ -53,6 +53,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         Core/Src/button_hal_gpio.c
         Core/Src/callbacks.c
         Core/Src/init.c
+        Core/Src/light.c
         Core/Src/manifest.c
         Core/Src/mcu_temp_hal_adc.c
         Core/Src/pam8302a_hal_dac.c

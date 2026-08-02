@@ -27,7 +27,11 @@ extern TIM_HandleTypeDef htim1;
 
 /** Definitions. **************************************************************/
 
-#define LED_COUNT 1
+// Maximum LEDs the DMA buffer and colour arrays are sized for (compile-time).
+// The active count is a runtime value (ws2812b_set_count), 1..LED_COUNT_MAX,
+// since a WS2812B chain is write-only and can't be auto-probed.
+#define LED_COUNT_MAX 64u
+#define LED_COUNT_DEFAULT 1u // Onboard LED only, until configured.
 
 // Based on 80 MHz peripheral clock at 25-1 prescaler and 25-1 ARR with time
 // period of 1.25 us. See README.md calculations.
@@ -37,7 +41,7 @@ extern TIM_HandleTypeDef htim1;
 #define WS2812B_BITS_PER_LED 24    // (8 * 3 = 24) 1 byte per R, G and B value.
 
 #define WS2812B_DMA_BUF_LEN                                                    \
-  ((uint16_t)((LED_COUNT * WS2812B_BITS_PER_LED) + WS2812B_RST_VAL_PERIODS))
+  ((uint16_t)((LED_COUNT_MAX * WS2812B_BITS_PER_LED) + WS2812B_RST_VAL_PERIODS))
 
 /** Public types. *************************************************************/
 
@@ -83,9 +87,9 @@ typedef union {
 
 /** Public variables. *********************************************************/
 
-extern ws2812b_led_data_t led_data[LED_COUNT];   // Stores individual LED data.
-extern uint16_t dma_buffer[WS2812B_DMA_BUF_LEN]; // Stores duty cycle values.
-extern volatile uint8_t dma_complete_flag;       // Flag for DMA send complete.
+extern ws2812b_led_data_t led_data[LED_COUNT_MAX]; // Individual LED data.
+extern uint16_t dma_buffer[WS2812B_DMA_BUF_LEN];   // Stores duty cycle values.
+extern volatile uint8_t dma_complete_flag; // Flag for DMA send complete.
 
 /** Public functions. *********************************************************/
 
@@ -95,6 +99,23 @@ extern volatile uint8_t dma_complete_flag;       // Flag for DMA send complete.
  * @return HAL_StatusTypeDef: status of initialization.
  */
 HAL_StatusTypeDef ws2812b_init(void);
+
+/**
+ * @brief Set the active number of LEDs in the chain (1..LED_COUNT_MAX).
+ *
+ * Only this many LEDs are clocked out by ws2812b_update(). Clamped to the valid
+ * range. Persisted config drives this at boot, the value cannot be auto-probed.
+ *
+ * @param count Active LED count.
+ */
+void ws2812b_set_count(uint16_t count);
+
+/**
+ * @brief Get the active number of LEDs in the chain.
+ *
+ * @return Active LED count (1..LED_COUNT_MAX).
+ */
+uint16_t ws2812b_get_count(void);
 
 /**
  * @brief  Sets the color of a specific WS2812B LED.
