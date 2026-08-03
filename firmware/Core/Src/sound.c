@@ -378,3 +378,30 @@ HAL_StatusTypeDef sound_write_end(uint32_t host_crc) {
   s_wr_active = false;
   return st;
 }
+
+HAL_StatusTypeDef sound_wipe(bool full) {
+  sound_stop();        // Stop any playback (returns flash to indirect mode).
+  w25q_mmap_disable(); // Ensure indirect mode for erase.
+  s_wr_active = false; // Cancel any open write.
+
+  // Erase the index first so sounds are invalid immediately (a power loss
+  // during the optional data wipe still leaves the device with no sounds).
+  HAL_StatusTypeDef st = flash_erase_sector(SOUND_INDEX_ADDR);
+  if (st != HAL_OK) {
+    return st;
+  }
+  memset(&s_index, 0, sizeof(s_index));
+
+  // Optionally scrub the audio data region too (slow: the whole region in
+  // 64 KB blocks). Otherwise the stale bytes stay but are unreferenced.
+  if (full) {
+    const uint32_t bytes = (uint32_t)SOUND_MAX_COUNT * SOUND_SLOT_SIZE;
+    for (uint32_t off = 0u; off < bytes; off += W25Q_BLOCK_SIZE) {
+      st = flash_erase_block(SOUND_REGION_ADDR + off);
+      if (st != HAL_OK) {
+        return st;
+      }
+    }
+  }
+  return HAL_OK;
+}

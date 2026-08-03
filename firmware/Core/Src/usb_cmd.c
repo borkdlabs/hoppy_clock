@@ -373,6 +373,23 @@ static void handle_snd_stop(void) {
   send_frame(USB_CMD_SND_STOP, &status, 1u);
 }
 
+static void handle_wipe(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  // Payload: optional full flag (scrub the audio data region too).
+  const bool full = (len >= 1u) && (p[0] != 0u);
+  if (manifest_wipe() != HAL_OK || sound_wipe(full) != HAL_OK) {
+    status = USB_CMD_STATUS_ERR;
+  } else {
+    // Apply the blank defaults live: chain length, lamp idle, and re-arm.
+    ws2812b_set_count(manifest_get()->header.led_count);
+    light_lamp_reapply();
+    alarm_rt_rearm();
+  }
+
+  send_frame(USB_CMD_WIPE, &status, 1u);
+}
+
 static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
   switch (cmd) {
   case USB_CMD_PING: {
@@ -433,6 +450,9 @@ static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
     break;
   case USB_CMD_SND_STOP:
     handle_snd_stop();
+    break;
+  case USB_CMD_WIPE:
+    handle_wipe(payload, len);
     break;
   default: {
     const uint8_t status = USB_CMD_STATUS_ERR; // Unknown command.
