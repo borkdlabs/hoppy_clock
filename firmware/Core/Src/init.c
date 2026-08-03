@@ -144,7 +144,7 @@ void hoppy_clock_init(void) {
   // Scheduler.
   scheduler_init(); // Initialize scheduler.
   scheduler_add_task(state_machine, 10);
-  scheduler_add_task(usb_cmd_task, 10);
+  scheduler_add_task(usb_cmd_task, 2);
   scheduler_add_task(alarm_rt_task, 20);
   scheduler_add_task(sound_task, 10);
   scheduler_add_task(light_task, 20);

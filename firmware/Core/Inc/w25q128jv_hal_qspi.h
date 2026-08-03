@@ -38,6 +38,7 @@ extern QSPI_HandleTypeDef hqspi;
 // Memory geometry.
 #define W25Q_PAGE_SIZE 256U    // Bytes per programmable page.
 #define W25Q_SECTOR_SIZE 4096U // Bytes per erasable sector.
+#define W25Q_BLOCK_SIZE 65536U // Bytes per erasable 64 KB block.
 
 // Maximum bytes moved by a single w25q_read(): the DMA transfer counter (CNDTR)
 // is 16-bit, so one transfer is capped at 65535 bytes.
@@ -58,6 +59,7 @@ extern QSPI_HandleTypeDef hqspi;
 #define W25Q_CMD_FAST_READ_QUAD_IO 0xEB
 #define W25Q_CMD_QUAD_PAGE_PROGRAM 0x32
 #define W25Q_CMD_SECTOR_ERASE 0x20
+#define W25Q_CMD_BLOCK_ERASE_64K 0xD8
 
 // Quad I/O Fast Read (0xEB): 8 mode bits (M7-M0) then 4 dummy clocks follow the
 // address. Mode bits of 0x00 keep continuous-read mode disabled so every read
@@ -160,6 +162,21 @@ HAL_StatusTypeDef w25q_write(uint32_t address, const uint8_t *buffer,
  * flight, HAL error status otherwise.
  */
 HAL_StatusTypeDef w25q_erase_sector(uint32_t address);
+
+/**
+ * @brief Launch an erase of the 64 KB block at an address (blocking-on-IRQ).
+ *
+ * Issues Write Enable then Block Erase (0xD8, single-line) and waits for
+ * completion on the QUADSPI interrupt. The whole 64 KB block is set to 0xFF --
+ * ~16x fewer commands than sector-erasing the same span. Complete once
+ * w25q_get_state() returns W25Q_STATE_IDLE.
+ *
+ * @param address Any byte address within the 64 KB block to erase.
+ *
+ * @return HAL_OK if the erase was launched, HAL_BUSY if another operation is in
+ * flight, HAL error status otherwise.
+ */
+HAL_StatusTypeDef w25q_erase_block_64k(uint32_t address);
 
 /**
  * @brief Get the current driver state.

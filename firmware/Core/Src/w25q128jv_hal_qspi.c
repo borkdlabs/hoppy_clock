@@ -346,7 +346,9 @@ HAL_StatusTypeDef w25q_write(uint32_t address, const uint8_t *buffer,
   return hal_status;
 }
 
-HAL_StatusTypeDef w25q_erase_sector(uint32_t address) {
+// Issue an erase (sector or block) and wait for it on the interrupt. The only
+// difference between erase sizes is the opcode; the address selects the region.
+static HAL_StatusTypeDef w25q_erase(uint8_t instruction, uint32_t address) {
   if (s_mmapped) {
     return HAL_ERROR; // Must w25q_mmap_disable() before erasing.
   }
@@ -365,7 +367,7 @@ HAL_StatusTypeDef w25q_erase_sector(uint32_t address) {
 
   QSPI_CommandTypeDef cmd;
   w25q_cmd_defaults(&cmd);
-  cmd.Instruction = W25Q_CMD_SECTOR_ERASE;
+  cmd.Instruction = instruction;
   cmd.AddressMode = QSPI_ADDRESS_1_LINE;
   cmd.Address = address;
 
@@ -375,12 +377,21 @@ HAL_StatusTypeDef w25q_erase_sector(uint32_t address) {
     return hal_status;
   }
 
-  // Wait for the erase to complete on the interrupt (tSE up to 400 ms).
+  // Wait for the erase to complete on the interrupt (tSE ~400 ms sector, tBE
+  // ~2 s for a 64 KB block).
   hal_status = w25q_wait_busy_it();
   if (hal_status != HAL_OK) {
     w25q_finish(hal_status);
   }
   return hal_status;
+}
+
+HAL_StatusTypeDef w25q_erase_sector(uint32_t address) {
+  return w25q_erase(W25Q_CMD_SECTOR_ERASE, address);
+}
+
+HAL_StatusTypeDef w25q_erase_block_64k(uint32_t address) {
+  return w25q_erase(W25Q_CMD_BLOCK_ERASE_64K, address);
 }
 
 w25q_state_t w25q_get_state(void) { return s_state; }
