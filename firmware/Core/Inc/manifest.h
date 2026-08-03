@@ -207,6 +207,16 @@ void manifest_set_led_count(uint8_t led_count);
 HAL_StatusTypeDef manifest_save(void);
 
 /**
+ * @brief Erase both flash slots and reset the RAM copy to empty defaults.
+ *
+ * Factory-reset of the config (no alarms/lights, lamp fallbacks, led_count 1).
+ * Blocking.
+ *
+ * @return HAL_OK on success, HAL error status otherwise.
+ */
+HAL_StatusTypeDef manifest_wipe(void);
+
+/**
  * @brief Read-only view of the current RAM manifest.
  *
  * @return Pointer to the in-RAM manifest (valid after manifest_load()).

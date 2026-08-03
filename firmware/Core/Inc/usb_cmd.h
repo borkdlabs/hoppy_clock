@@ -64,6 +64,9 @@
 #define USB_CMD_SND_PLAY 0x44u // Payload: id (1 B) [+ fade-in seconds (1 B)].
 #define USB_CMD_SND_STOP 0x45u // No payload; stop playback.
 
+// Factory reset: wipe the flash (config + sounds) back to blank defaults.
+#define USB_CMD_WIPE 0x50u // Payload: [full (1 B): 0 index only, 1 scrub data].
+
 // Response status codes (payload[0] of a response frame).
 #define USB_CMD_STATUS_OK 0x00u
 #define USB_CMD_STATUS_ERR 0x01u

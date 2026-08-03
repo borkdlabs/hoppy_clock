@@ -36,6 +36,9 @@ Examples:
   python main.py set-light 2 --effect solid --color amber --brightness 200 --period 10000
   python main.py set-alarm --in 1 --sound 1 --light 2 --timeout 60 --fade 20
   python main.py list-alarms
+
+  python main.py wipe            # factory reset (erase all config + sounds)
+  python main.py wipe --full     # also scrub the raw audio bytes (slow)
 """
 
 import argparse
@@ -77,6 +80,7 @@ CMD_SND_END = 0x42
 CMD_SND_INFO = 0x43
 CMD_SND_PLAY = 0x44
 CMD_SND_STOP = 0x45
+CMD_WIPE = 0x50
 
 # Alarm record (must match manifest.h): 12 bytes, little-endian.
 # flags, day, h, m, s, timeout, sound, light, sound_fade_s, reserved(2).
@@ -754,6 +758,22 @@ def cmd_stop_sound(ser, args):
     return 0 if r and ok(r[1]) else 1
 
 
+def cmd_wipe(ser, args):
+    scope = "config + all sounds" + (" (full data scrub)" if args.full else "")
+    if not args.yes:
+        print(f"This erases {scope}. It cannot be undone.")
+        if input("Type 'wipe' to confirm: ").strip().lower() != "wipe":
+            print("aborted")
+            return 1
+    # A full scrub erases the whole ~15 MB audio region -- allow minutes.
+    timeout = 300.0 if args.full else 10.0
+    print(f"wiping {scope}...")
+    payload = bytes([1]) if args.full else b""
+    r = txn(ser, CMD_WIPE, payload, timeout=timeout)
+    print("wipe ->", _status(r))
+    return 0 if r and ok(r[1]) else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Hoppy Clock USB CDC test tool.",
@@ -916,6 +936,19 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("stop-sound", help="stop playback").set_defaults(
         func=cmd_stop_sound
     )
+
+    w = sub.add_parser(
+        "wipe", help="factory-reset flash (erase all config + sounds)"
+    )
+    w.add_argument(
+        "--full",
+        action="store_true",
+        help="also scrub the audio data region (slow, minutes)",
+    )
+    w.add_argument(
+        "--yes", action="store_true", help="skip the confirmation prompt"
+    )
+    w.set_defaults(func=cmd_wipe)
     return p
 
 

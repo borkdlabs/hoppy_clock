@@ -272,4 +272,24 @@ HAL_StatusTypeDef manifest_save(void) {
   return HAL_OK;
 }
 
+HAL_StatusTypeDef manifest_wipe(void) {
+  w25q_mmap_disable(); // Indirect mode required for erase.
+
+  HAL_StatusTypeDef st = flash_erase_sector(MANIFEST_SLOT_A_ADDR);
+  if (st != HAL_OK) {
+    return st;
+  }
+  st = flash_erase_sector(MANIFEST_SLOT_B_ADDR);
+  if (st != HAL_OK) {
+    return st;
+  }
+
+  // Both slots blank: reset the RAM copy and slot tracking so the next save
+  // starts fresh in slot A, and a reboot would load defaults.
+  manifest_set_defaults();
+  s_active_slot = MANIFEST_SLOT_NONE;
+  s_active_seq = 0u;
+  return HAL_OK;
+}
+
 const manifest_t *manifest_get(void) { return &s_manifest; }

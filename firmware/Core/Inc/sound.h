@@ -150,4 +150,14 @@ HAL_StatusTypeDef sound_write_data(const uint8_t *data, uint8_t len);
  */
 HAL_StatusTypeDef sound_write_end(uint32_t host_crc);
 
+/**
+ * @brief Erase stored sounds. Always clears the index (all sounds invalid),
+ * with full, also scrubs the audio data region (slow but thorough).
+ *
+ * @param full true to also erase the whole data region byte-for-byte.
+ *
+ * @return HAL_OK on success, HAL error status otherwise.
+ */
+HAL_StatusTypeDef sound_wipe(bool full);
+
 #endif
