@@ -44,20 +44,21 @@ own songs, configured over USB.
 
 **Features**:
 
-- **Alarms**: up to 64, each either weekly (any set of weekdays) or monthly (a
-  day of the month) at a chosen time. Every alarm has its own light look, sound,
-  volume fade-in, and auto-quiet timeout.
-- **Lamp**: the single button toggles a warm lamp look on/off, the "off" state
-  can settle to a dim ambient rather than fully dark.
-- **Lights**: parametric looks (`solid` fade, `rainbow`, `sweep`, `breathe`)
+- ⏰ **Alarms**: up to 64, each either weekly (any set of weekdays) or monthly
+  (a day of the month) at a chosen time. Every alarm has its own light look,
+  sound, volume fade-in, and auto-quiet timeout.
+- 💡 **Lamp**: the single button toggles a warm lamp look on/off, the "off"
+  state can settle to a dim ambient rather than fully dark.
+- ✨ **Lights**: parametric looks (`solid` fade, `rainbow`, `sweep`, `breathe`)
   rendered across the onboard LED and any chained via the `WS2812B breakout`
   connector.
-- **Sounds**: two slots of ~4 minutes each (16-bit PCM @ 16 kHz), streamed from
-  flash. Alarms play them with an optional fade-in.
-- **Low power**: the MCU sleeps between events and drops into STOP2 when fully
-  idle, waking on the next alarm or a button press (useful on backup supply).
-- **Clock-unset cue**: if the time has never been set (for example after a full
-  power loss), the onboard LED (index 0) blinks dim red until you set it.
+- 🔊 **Sounds**: two slots of ~4 minutes each (16-bit PCM @ 16 kHz), streamed
+  from flash. Alarms play them with an optional fade-in.
+- 🔋 **Low power**: the MCU sleeps between events and drops into STOP2 when
+  fully idle, waking on the next alarm or a button press (useful on backup
+  supply).
+- 🔴 **Clock-unset cue**: if the time has never been set (for example after a
+  full power loss), the onboard LED (index 0) blinks dim red until you set it.
 
 ### 1.1 Bill of Materials (BOM)
 
