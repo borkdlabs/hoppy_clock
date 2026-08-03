@@ -20,6 +20,7 @@
 /** Includes. *****************************************************************/
 
 #include "light.h"
+#include "sound.h"
 #include "ws2812b_hal_pwm.h"
 #include <stdint.h>
 
@@ -281,6 +282,9 @@ void light_play(const light_seq_t *seq) {
 void light_task(void) {
   if (!s_active) {
     return; // Idle: holding a settled SOLID target.
+  }
+  if (sound_is_writing()) {
+    return; // Hold the strip; don't run LED DMA against a USB flash write.
   }
 
   const uint32_t el = HAL_GetTick() - s_start_ms;

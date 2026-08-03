@@ -109,6 +109,15 @@ void sound_stop(void);
 bool sound_is_playing(void);
 
 /**
+ * @brief Whether a USB sound write is open (a blob is being programmed).
+ *
+ * True from the end of sound_write_begin() until sound_write_end() (or an
+ * abort). Other subsystems should hold off DMA/flash activity (LED updates,
+ * playback) during this window to avoid contending with the program DMA.
+ */
+bool sound_is_writing(void);
+
+/**
  * @brief Begin writing a sound: validate, erase its slot, arm the byte stream.
  *
  * @param id Sound id.
