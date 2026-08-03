@@ -240,9 +240,11 @@ bool sound_start(uint8_t id) {
   s_play_cursor = 0u;
   s_play_done = false;
 
+  amp_enable(); // Owned here so both the alarm and USB-play paths match.
   amp_set_sample_rate(e.sample_rate);
   if (amp_play_stream(s_ring, (uint16_t)SOUND_RING_SAMPLES, stream_refill) !=
       HAL_OK) {
+    amp_disable();
     w25q_mmap_disable();
     return false;
   }
@@ -255,6 +257,7 @@ void sound_stop(void) {
     return;
   }
   amp_stop();
+  amp_disable();
   w25q_mmap_disable();
   s_playing = false;
   s_play_done = false;

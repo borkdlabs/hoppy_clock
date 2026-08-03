@@ -353,6 +353,18 @@ static void handle_snd_info(const uint8_t *p, uint8_t len) {
   send_frame(USB_CMD_SND_INFO, resp, sizeof(resp));
 }
 
+static void handle_snd_play(const uint8_t *p, uint8_t len) {
+  const uint8_t status =
+      (len == 1u && sound_start(p[0])) ? USB_CMD_STATUS_OK : USB_CMD_STATUS_ERR;
+  send_frame(USB_CMD_SND_PLAY, &status, 1u);
+}
+
+static void handle_snd_stop(void) {
+  sound_stop();
+  const uint8_t status = USB_CMD_STATUS_OK;
+  send_frame(USB_CMD_SND_STOP, &status, 1u);
+}
+
 static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
   switch (cmd) {
   case USB_CMD_PING: {
@@ -407,6 +419,12 @@ static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
     break;
   case USB_CMD_SND_INFO:
     handle_snd_info(payload, len);
+    break;
+  case USB_CMD_SND_PLAY:
+    handle_snd_play(payload, len);
+    break;
+  case USB_CMD_SND_STOP:
+    handle_snd_stop();
     break;
   default: {
     const uint8_t status = USB_CMD_STATUS_ERR; // Unknown command.
