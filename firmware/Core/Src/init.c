@@ -13,6 +13,7 @@
 #include "manifest.h"
 #include "mcu_temp_hal_adc.h"
 #include "pam8302a_hal_dac.h"
+#include "rtc.h"
 #include "scheduler.h"
 #include "sound.h"
 #include "usb_cmd.h"
@@ -64,6 +65,9 @@ static void state_machine(void) {
     break;
   }
 }
+
+// Blink LED 0 red while the RTC has never been set (prompt to set the time).
+static void clock_warn_task(void) { light_set_warning(rtc_is_unset()); }
 
 /** Public functions. *********************************************************/
 
@@ -121,4 +125,5 @@ void hoppy_clock_init(void) {
   scheduler_add_task(alarm_rt_task, 20);
   scheduler_add_task(sound_task, 10);
   scheduler_add_task(light_task, 20);
+  scheduler_add_task(clock_warn_task, 500);
 }

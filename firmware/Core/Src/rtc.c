@@ -68,3 +68,15 @@ void get_date_time_fields(uint8_t *year, uint8_t *month, uint8_t *date,
   *minutes = gTime.Minutes;
   *seconds = gTime.Seconds;
 }
+
+bool rtc_is_unset(void) {
+  RTC_TimeTypeDef gTime;
+  RTC_DateTypeDef gDate;
+
+  // Read time first, then date (unlocks the RTC shadow registers).
+  HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
+  HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
+
+  // Year index 00-99 -> 2000-2099; < 2002 means the RTC was never set.
+  return gDate.Year < 2u;
+}
