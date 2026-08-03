@@ -33,10 +33,14 @@ Examples:
   python main.py stop-sound                       # stop playback
   python main.py set-button-song 1                # long-press plays sound 1
 
-  # End-to-end alarm test (fires ~1 min out, sunrise look + song fading in):
-  python main.py set-light 2 --effect solid --color amber --brightness 200 --period 10000
-  python main.py set-alarm --in 1 --sound 1 --light 2 --timeout 60 --fade 20
-  python main.py list-alarms
+  # Alarms: build up as many as you like (add-alarm keeps existing ones).
+  python main.py add-alarm --at 08:00 --days weekdays --sound 1 --light 2 --fade 20
+  python main.py add-alarm --at 09:30 --days weekends --sound 1 --light 2
+  python main.py add-alarm --at 07:00 --dom 1              # monthly, the 1st
+  python main.py set-alarm --in 1 --sound 1 --light 2 --fade 20  # test: 1 min out
+  python main.py list-alarms                               # numbered list
+  python main.py remove-alarm 2                            # delete by index
+  python main.py clear-alarms                              # delete all
 
   python main.py wipe            # factory reset (erase all config + sounds)
   python main.py wipe --full     # also scrub the raw audio bytes (slow)
@@ -89,6 +93,7 @@ CMD_WIPE = 0x50
 ALARM_STRUCT = "<BBBBBHBBBBB"
 ALARM_FLAG_ENABLED = 0x01
 ALARM_FLAG_MONTHLY = 0x02
+MANIFEST_MAX_ALARMS = 64  # Must match manifest.h.
 
 # Light sequence (must match manifest.h): 12 bytes, little-endian.
 # effect, r, g, b, brightness, period_ms, curve, spread, reserved(3).
@@ -419,27 +424,74 @@ def _write_config(ser, cfg) -> bool:
     return True
 
 
-def cmd_set_alarm(ser, args):
+def _alarm_record(args):
+    """Validate the alarm spec args and build the record, or None on error."""
     if args.in_minutes is None and args.at is None:
-        print("set-alarm needs --in MINUTES or --at HH:MM", file=sys.stderr)
-        return 2
+        print("need --in MINUTES or --at HH:MM[:SS]", file=sys.stderr)
+        return None
     if args.at is not None and args.days is None and args.dom is None:
-        print("--at needs --days or --dom", file=sys.stderr)
-        return 2
-
+        print("--at needs --days (weekly) or --dom (monthly)", file=sys.stderr)
+        return None
     try:
-        record = _build_alarm(args)
+        return _build_alarm(args)
     except (ValueError, IndexError) as e:
         print(f"bad alarm spec: {e}", file=sys.stderr)
-        return 2
+        return None
 
+
+def cmd_set_alarm(ser, args):
+    record = _alarm_record(args)
+    if record is None:
+        return 2
     cfg = _read_config(ser)
     if cfg is None:
         return 1
     cfg["alarms"] = [record]  # Replace the table with this one alarm.
     if not _write_config(ser, cfg):
         return 1
-    print("set-alarm -> OK (1 alarm, lights/lamp preserved)")
+    print("set-alarm -> OK (1 alarm, other settings preserved)")
+    return 0
+
+
+def cmd_add_alarm(ser, args):
+    record = _alarm_record(args)
+    if record is None:
+        return 2
+    cfg = _read_config(ser)
+    if cfg is None:
+        return 1
+    if len(cfg["alarms"]) >= MANIFEST_MAX_ALARMS:
+        print(f"alarm table full ({MANIFEST_MAX_ALARMS} max)", file=sys.stderr)
+        return 1
+    cfg["alarms"].append(record)
+    if not _write_config(ser, cfg):
+        return 1
+    print(f"add-alarm -> OK ({len(cfg['alarms'])} alarm(s))")
+    return 0
+
+
+def cmd_remove_alarm(ser, args):
+    cfg = _read_config(ser)
+    if cfg is None:
+        return 1
+    if not 0 <= args.index < len(cfg["alarms"]):
+        print(f"no alarm at index {args.index}", file=sys.stderr)
+        return 2
+    del cfg["alarms"][args.index]
+    if not _write_config(ser, cfg):
+        return 1
+    print(f"remove-alarm -> OK ({len(cfg['alarms'])} left)")
+    return 0
+
+
+def cmd_clear_alarms(ser, args):
+    cfg = _read_config(ser)
+    if cfg is None:
+        return 1
+    cfg["alarms"] = []
+    if not _write_config(ser, cfg):
+        return 1
+    print("clear-alarms -> OK")
     return 0
 
 
@@ -824,27 +876,54 @@ def build_parser() -> argparse.ArgumentParser:
     )
     led.set_defaults(func=cmd_set_led)
 
+    def add_alarm_args(pp):
+        pp.add_argument(
+            "--in",
+            dest="in_minutes",
+            type=int,
+            help="fire this many minutes from now (weekly, today)",
+        )
+        pp.add_argument("--at", help="fire time HH:MM[:SS]")
+        pp.add_argument(
+            "--days", help="weekly days: mon,tue,... or weekdays/weekends/daily"
+        )
+        pp.add_argument("--dom", type=int, help="monthly day-of-month (1-31)")
+        pp.add_argument(
+            "--sound", type=int, default=0, help="sound id (default 0)"
+        )
+        pp.add_argument(
+            "--light", type=int, default=0, help="light id (default 0)"
+        )
+        pp.add_argument(
+            "--timeout",
+            type=int,
+            default=60,
+            help="auto-quiet seconds (0 = never)",
+        )
+        pp.add_argument(
+            "--fade",
+            type=int,
+            default=0,
+            help="sound fade-in seconds (0 = none)",
+        )
+
     al = sub.add_parser(
-        "set-alarm", help="replace the alarm table with one alarm"
+        "set-alarm", help="replace the whole alarm table with one alarm"
     )
-    al.add_argument(
-        "--in",
-        dest="in_minutes",
-        type=int,
-        help="fire this many minutes from now (weekly, today)",
-    )
-    al.add_argument("--at", help="fire time HH:MM[:SS]")
-    al.add_argument("--days", help="weekly days: mon,tue,... or weekdays/daily")
-    al.add_argument("--dom", type=int, help="monthly day-of-month (1-31)")
-    al.add_argument("--sound", type=int, default=0, help="sound id (default 0)")
-    al.add_argument("--light", type=int, default=0, help="light id (default 0)")
-    al.add_argument(
-        "--timeout", type=int, default=60, help="auto-quiet seconds (0 = never)"
-    )
-    al.add_argument(
-        "--fade", type=int, default=0, help="sound fade-in seconds (0 = none)"
-    )
+    add_alarm_args(al)
     al.set_defaults(func=cmd_set_alarm)
+
+    aa = sub.add_parser("add-alarm", help="add an alarm, keeping existing ones")
+    add_alarm_args(aa)
+    aa.set_defaults(func=cmd_add_alarm)
+
+    ra = sub.add_parser("remove-alarm", help="delete one alarm by index")
+    ra.add_argument("index", type=int, help="alarm index (see list-alarms)")
+    ra.set_defaults(func=cmd_remove_alarm)
+
+    sub.add_parser("clear-alarms", help="delete all alarms").set_defaults(
+        func=cmd_clear_alarms
+    )
 
     lt = sub.add_parser("set-light", help="define a light look (id)")
     lt.add_argument("id", type=int, help="light id")
