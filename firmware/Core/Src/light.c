@@ -342,6 +342,8 @@ void light_lamp_reapply(void) { lamp_apply(); }
 
 bool light_lamp_is_on(void) { return s_lamp_on; }
 
+bool light_is_idle(void) { return !s_active && !s_warn; }
+
 void light_set_warning(bool active) {
   if (s_warn && !active) {
     lamp_apply(); // Warning cleared: restore the current lamp idle look.
