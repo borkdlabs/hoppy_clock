@@ -77,9 +77,9 @@ static void start_ring(void) {
       light_play(&m->lights[a->light_id]);
     }
 
-    // Play the alarm's sound if one is stored (sound_start owns the amp);
-    // otherwise the ring is LED-only.
-    sound_start(a->sound_id);
+    // Play the alarm's sound if one is stored (sound_start owns the amp),
+    // fading its volume in over sound_fade_s; otherwise the ring is LED-only.
+    sound_start(a->sound_id, (uint32_t)a->sound_fade_s * 1000u);
     break;
   }
 

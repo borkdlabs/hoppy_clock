@@ -32,9 +32,9 @@ Examples:
   python main.py play-sound 1                     # play it now
   python main.py stop-sound                       # stop playback
 
-  # End-to-end alarm test (fires ~1 min out, sunrise look + song):
+  # End-to-end alarm test (fires ~1 min out, sunrise look + song fading in):
   python main.py set-light 2 --effect solid --color amber --brightness 200 --period 10000
-  python main.py set-alarm --in 1 --sound 1 --light 2 --timeout 60
+  python main.py set-alarm --in 1 --sound 1 --light 2 --timeout 60 --fade 20
   python main.py list-alarms
 """
 
@@ -79,7 +79,7 @@ CMD_SND_PLAY = 0x44
 CMD_SND_STOP = 0x45
 
 # Alarm record (must match manifest.h): 12 bytes, little-endian.
-# flags, day, h, m, s, timeout, sound, light, reserved(3).
+# flags, day, h, m, s, timeout, sound, light, sound_fade_s, reserved(2).
 ALARM_STRUCT = "<BBBBBHBBBBB"
 ALARM_FLAG_ENABLED = 0x01
 ALARM_FLAG_MONTHLY = 0x02
@@ -327,7 +327,7 @@ def _build_alarm(args) -> bytes:
         args.timeout,
         args.sound,
         args.light,
-        0,
+        args.fade,
         0,
         0,
     )
@@ -503,7 +503,7 @@ def cmd_list_alarms(ser, args):
 
     print(f"{len(cfg['alarms'])} alarm(s):")
     for i, rec in enumerate(cfg["alarms"]):
-        flags, day, hh, mm, ss, timeout, sound, light, *_ = struct.unpack(
+        flags, day, hh, mm, ss, timeout, sound, light, fade, *_ = struct.unpack(
             ALARM_STRUCT, rec
         )
         if flags & ALARM_FLAG_MONTHLY:
@@ -514,7 +514,7 @@ def cmd_list_alarms(ser, args):
         state = "on " if flags & ALARM_FLAG_ENABLED else "off"
         print(
             f"  [{i}] {state} {hh:02d}:{mm:02d}:{ss:02d} {when} "
-            f"sound={sound} light={light} timeout={timeout}s"
+            f"sound={sound} light={light} timeout={timeout}s fade={fade}s"
         )
 
     fx = {v: k for k, v in LIGHT_FX.items()}
@@ -742,7 +742,8 @@ def cmd_sound_info(ser, args):
 
 
 def cmd_play_sound(ser, args):
-    r = txn(ser, CMD_SND_PLAY, bytes([args.id]))
+    payload = bytes([args.id, args.fade]) if args.fade else bytes([args.id])
+    r = txn(ser, CMD_SND_PLAY, payload)
     print(f"play-sound {args.id} ->", _status(r))
     return 0 if r and ok(r[1]) else 1
 
@@ -800,6 +801,9 @@ def build_parser() -> argparse.ArgumentParser:
     al.add_argument("--light", type=int, default=0, help="light id (default 0)")
     al.add_argument(
         "--timeout", type=int, default=60, help="auto-quiet seconds (0 = never)"
+    )
+    al.add_argument(
+        "--fade", type=int, default=0, help="sound fade-in seconds (0 = none)"
     )
     al.set_defaults(func=cmd_set_alarm)
 
@@ -904,6 +908,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     ps = sub.add_parser("play-sound", help="play a stored sound now")
     ps.add_argument("id", type=int, help="sound id")
+    ps.add_argument(
+        "--fade", type=int, default=0, help="fade-in seconds (0 = none)"
+    )
     ps.set_defaults(func=cmd_play_sound)
 
     sub.add_parser("stop-sound", help="stop playback").set_defaults(
