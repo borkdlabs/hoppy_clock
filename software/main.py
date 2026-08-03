@@ -29,6 +29,8 @@ Examples:
   python main.py upload-sound 1 song.mp3 --gain 0.6  # needs ffmpeg
   python main.py upload-sound 1 song.mp3 --gain 0.6 --trim 60  # first 60s
   python main.py sound-info 1
+  python main.py play-sound 1                     # play it now
+  python main.py stop-sound                       # stop playback
 
   # End-to-end alarm test (fires ~1 min out, sunrise look + song):
   python main.py set-light 2 --effect solid --color amber --brightness 200 --period 10000
@@ -73,6 +75,8 @@ CMD_SND_BEGIN = 0x40
 CMD_SND_DATA = 0x41
 CMD_SND_END = 0x42
 CMD_SND_INFO = 0x43
+CMD_SND_PLAY = 0x44
+CMD_SND_STOP = 0x45
 
 # Alarm record (must match manifest.h): 12 bytes, little-endian.
 # flags, day, h, m, s, timeout, sound, light, reserved(3).
@@ -737,6 +741,18 @@ def cmd_sound_info(ser, args):
     return 1
 
 
+def cmd_play_sound(ser, args):
+    r = txn(ser, CMD_SND_PLAY, bytes([args.id]))
+    print(f"play-sound {args.id} ->", _status(r))
+    return 0 if r and ok(r[1]) else 1
+
+
+def cmd_stop_sound(ser, args):
+    r = txn(ser, CMD_SND_STOP)
+    print("stop-sound ->", _status(r))
+    return 0 if r and ok(r[1]) else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Hoppy Clock USB CDC test tool.",
@@ -885,6 +901,14 @@ def build_parser() -> argparse.ArgumentParser:
     si = sub.add_parser("sound-info", help="query a stored sound")
     si.add_argument("id", type=int, help="sound id")
     si.set_defaults(func=cmd_sound_info)
+
+    ps = sub.add_parser("play-sound", help="play a stored sound now")
+    ps.add_argument("id", type=int, help="sound id")
+    ps.set_defaults(func=cmd_play_sound)
+
+    sub.add_parser("stop-sound", help="stop playback").set_defaults(
+        func=cmd_stop_sound
+    )
     return p
 
 

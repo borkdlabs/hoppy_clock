@@ -22,7 +22,6 @@
 #include "alarm.h"
 #include "light.h"
 #include "manifest.h"
-#include "pam8302a_hal_dac.h"
 #include "rtc.h"
 #include "sound.h"
 
@@ -36,7 +35,6 @@ static volatile bool s_fired = false;
 static bool s_ringing = false;
 static uint32_t s_ring_start_ms = 0u;
 static uint32_t s_ring_timeout_ms = 0u; // 0 = no auto-quiet (cancel only).
-static bool s_ring_has_sound = false;   // Amp was enabled for this ring.
 
 /** Private functions. ********************************************************/
 
@@ -53,11 +51,7 @@ static void read_now(alarm_time_t *now) {
  */
 static void stop_ring(void) {
   s_ringing = false;
-  if (s_ring_has_sound) {
-    sound_stop();
-    amp_disable();
-    s_ring_has_sound = false;
-  }
+  sound_stop();         // No-op if this ring had no sound; also mutes the amp.
   light_lamp_reapply(); // Back to the current lamp on/off idle look.
 }
 
@@ -83,15 +77,9 @@ static void start_ring(void) {
       light_play(&m->lights[a->light_id]);
     }
 
-    // Play the alarm's sound if one is stored, otherwise ring LED-only.
-    sound_entry_t se;
-    if (sound_get_info(a->sound_id, &se)) {
-      amp_enable();
-      s_ring_has_sound = sound_start(a->sound_id);
-      if (!s_ring_has_sound) {
-        amp_disable(); // Stream failed to start, undo the enable.
-      }
-    }
+    // Play the alarm's sound if one is stored (sound_start owns the amp);
+    // otherwise the ring is LED-only.
+    sound_start(a->sound_id);
     break;
   }
 
