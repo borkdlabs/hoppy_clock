@@ -65,6 +65,13 @@ void light_lamp_reapply(void);
 bool light_lamp_is_on(void);
 
 /**
+ * @brief Whether the strip is idle (settled, no animation or warning blink).
+ *
+ * @return true if nothing needs rendering, so the CPU may deep-sleep.
+ */
+bool light_is_idle(void);
+
+/**
  * @brief Enable/disable the "clock not set" warning blink on LED 0.
  *
  * While active, LED 0 blinks dim red regardless of the current look (it
