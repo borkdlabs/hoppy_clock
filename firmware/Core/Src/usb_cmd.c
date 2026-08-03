@@ -354,8 +354,16 @@ static void handle_snd_info(const uint8_t *p, uint8_t len) {
 }
 
 static void handle_snd_play(const uint8_t *p, uint8_t len) {
-  const uint8_t status =
-      (len == 1u && sound_start(p[0])) ? USB_CMD_STATUS_OK : USB_CMD_STATUS_ERR;
+  uint8_t status = USB_CMD_STATUS_ERR;
+
+  // Payload: id (1 B), optionally followed by a fade-in seconds byte.
+  if (len == 1u || len == 2u) {
+    const uint32_t fade_ms = (len == 2u) ? (uint32_t)p[1] * 1000u : 0u;
+    if (sound_start(p[0], fade_ms)) {
+      status = USB_CMD_STATUS_OK;
+    }
+  }
+
   send_frame(USB_CMD_SND_PLAY, &status, 1u);
 }
 

@@ -96,6 +96,7 @@ static volatile bool s_play_done = false;
 static const uint8_t *s_play_src = NULL;     // Into memory-mapped flash.
 static volatile uint32_t s_play_cursor = 0u; // Sample index.
 static uint32_t s_play_len = 0u;             // Total samples in the clip.
+static uint32_t s_play_fade = 0u; // Fade-in length in samples (0 = none).
 static uint8_t s_play_format = SOUND_FORMAT_PCM_U8;
 
 /** Private functions. ********************************************************/
@@ -178,12 +179,28 @@ static uint16_t decode_sample(uint32_t i) {
 }
 
 /**
+ * @brief Scale a DAC code toward mid-scale for the fade-in ramp (ISR context).
+ *
+ * During the first s_play_fade samples the AC swing about mid-scale is scaled
+ * by cursor/fade (0 -> silence, fade -> full volume). 64-bit intermediate to
+ * avoid overflow of (swing * cursor).
+ */
+static uint16_t apply_fade(uint16_t code, uint32_t cursor) {
+  if (s_play_fade == 0u || cursor >= s_play_fade) {
+    return code;
+  }
+  int64_t swing = (int64_t)code - (int64_t)AMP_DAC_MIDSCALE;
+  swing = swing * (int64_t)cursor / (int64_t)s_play_fade;
+  return (uint16_t)((int64_t)AMP_DAC_MIDSCALE + swing);
+}
+
+/**
  * @brief DMA refill: decode the next samples to 12-bit DAC codes (ISR context).
  */
 static void stream_refill(uint16_t *dst, uint16_t count) {
   for (uint16_t i = 0u; i < count; i++) {
     if (s_play_cursor < s_play_len) {
-      dst[i] = decode_sample(s_play_cursor);
+      dst[i] = apply_fade(decode_sample(s_play_cursor), s_play_cursor);
       s_play_cursor++;
     } else {
       dst[i] = AMP_DAC_MIDSCALE;
@@ -223,7 +240,7 @@ bool sound_get_info(uint8_t id, sound_entry_t *out) {
   return true;
 }
 
-bool sound_start(uint8_t id) {
+bool sound_start(uint8_t id, uint32_t fade_ms) {
   sound_entry_t e;
   // Never switch to memory-mapped mode while a USB write owns the flash.
   if (s_playing || s_wr_active || !sound_get_info(id, &e)) {
@@ -239,6 +256,12 @@ bool sound_start(uint8_t id) {
   s_play_len = (e.format == SOUND_FORMAT_PCM_S16) ? (e.length / 2u) : e.length;
   s_play_cursor = 0u;
   s_play_done = false;
+
+  // Fade length in samples, clamped so it never exceeds the clip.
+  s_play_fade = (uint32_t)((uint64_t)fade_ms * e.sample_rate / 1000u);
+  if (s_play_fade > s_play_len) {
+    s_play_fade = s_play_len;
+  }
 
   amp_enable(); // Owned here so both the alarm and USB-play paths match.
   amp_set_sample_rate(e.sample_rate);

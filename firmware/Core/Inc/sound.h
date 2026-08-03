@@ -86,17 +86,17 @@ void sound_task(void);
 bool sound_get_info(uint8_t id, sound_entry_t *out);
 
 /**
- * @brief Start streaming a sound to the amp (one-shot).
+ * @brief Start streaming a sound to the amp (one-shot), enabling the amp.
  *
- * The amp must already be enabled. Switches the flash to memory-mapped mode and
- * feeds the DAC via a DMA refill callback. sound_task() ends it when drained,
- * or call sound_stop().
+ * Switches the flash to memory-mapped mode and feeds the DAC via a DMA refill
+ * callback. sound_task() ends it when drained, or call sound_stop().
  *
  * @param id Sound id to play.
+ * @param fade_ms Volume fade-in duration in ms (0 = start at full volume).
  *
  * @return true if playback started, false if the id is invalid or busy.
  */
-bool sound_start(uint8_t id);
+bool sound_start(uint8_t id, uint32_t fade_ms);
 
 /**
  * @brief Stop playback and return the flash to indirect mode. No-op if idle.

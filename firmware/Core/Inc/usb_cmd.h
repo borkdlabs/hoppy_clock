@@ -61,7 +61,7 @@
 #define USB_CMD_SND_DATA 0x41u // Payload: raw blob bytes (1..32).
 #define USB_CMD_SND_END 0x42u  // Payload: crc32 (4 B); commits the entry.
 #define USB_CMD_SND_INFO 0x43u // Payload: id (1 B), replies with entry fields.
-#define USB_CMD_SND_PLAY 0x44u // Payload: id (1 B); play a stored sound now.
+#define USB_CMD_SND_PLAY 0x44u // Payload: id (1 B) [+ fade-in seconds (1 B)].
 #define USB_CMD_SND_STOP 0x45u // No payload; stop playback.
 
 // Response status codes (payload[0] of a response frame).

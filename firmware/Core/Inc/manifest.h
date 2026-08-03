@@ -99,18 +99,20 @@ typedef struct __attribute__((packed)) {
  *
  * Fires at hour:minute:second on the days selected by flags/day_sel (weekly
  * mask or monthly day-of-month). On firing it plays light look light_id, plays
- * sound_id, then auto-quiets after timeout_s (0 = until cancelled).
+ * sound_id (fading its volume in over sound_fade_s), then auto-quiets after
+ * timeout_s (0 = until cancelled).
  */
 typedef struct __attribute__((packed)) {
-  uint8_t flags;       // ALARM_FLAG_* bits.
-  uint8_t day_sel;     // Weekly: weekday mask. Monthly: day-of-month 1..31.
-  uint8_t hour;        // 0..23.
-  uint8_t minute;      // 0..59.
-  uint8_t second;      // 0..59.
-  uint16_t timeout_s;  // Auto-quiet this long after firing; 0 = manual only.
-  uint8_t sound_id;    // Index into the sound region.
-  uint8_t light_id;    // Index into lights[].
-  uint8_t reserved[3]; // Zero; reserved for future use.
+  uint8_t flags;        // ALARM_FLAG_* bits.
+  uint8_t day_sel;      // Weekly: weekday mask. Monthly: day-of-month 1..31.
+  uint8_t hour;         // 0..23.
+  uint8_t minute;       // 0..59.
+  uint8_t second;       // 0..59.
+  uint16_t timeout_s;   // Auto-quiet this long after firing; 0 = manual only.
+  uint8_t sound_id;     // Index into the sound region.
+  uint8_t light_id;     // Index into lights[].
+  uint8_t sound_fade_s; // Sound fade-in duration, seconds. 0 = no fade.
+  uint8_t reserved[2];  // Zero; reserved for future use.
 } alarm_record_t;
 
 /**
