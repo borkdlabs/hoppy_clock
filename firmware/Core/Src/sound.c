@@ -46,8 +46,9 @@
 // 16 kHz is ~16 ms per half -- ample time for the refill callback.
 #define SOUND_RING_SAMPLES 512u
 
-// Blocking-op guard for erase/program/read wrappers.
-#define SOUND_FLASH_TIMEOUT_MS 2000u
+// Blocking-op guard for erase/program/read wrappers. A 64 KB block erase can
+// take up to ~2 s (tBE2), so allow margin above that.
+#define SOUND_FLASH_TIMEOUT_MS 3000u
 
 /**
  * @brief On-flash sound index image (magic + CRC + entry table).
@@ -64,6 +65,9 @@ _Static_assert(sizeof(sound_index_t) <= W25Q_SECTOR_SIZE,
 _Static_assert(SOUND_REGION_ADDR + SOUND_MAX_COUNT * SOUND_SLOT_SIZE <=
                    16u * 1024u * 1024u,
                "sound slots overflow the W25Q128 (16 MB)");
+_Static_assert(SOUND_REGION_ADDR % W25Q_BLOCK_SIZE == 0u &&
+                   SOUND_SLOT_SIZE % W25Q_BLOCK_SIZE == 0u,
+               "region/slot must be 64 KB aligned so block erase can't spill");
 
 /** Private variables. ********************************************************/
 
@@ -131,6 +135,11 @@ static HAL_StatusTypeDef flash_write(uint32_t addr, const void *buf,
 
 static HAL_StatusTypeDef flash_erase_sector(uint32_t addr) {
   HAL_StatusTypeDef st = w25q_erase_sector(addr);
+  return (st == HAL_OK) ? flash_wait_idle() : st;
+}
+
+static HAL_StatusTypeDef flash_erase_block(uint32_t addr) {
+  HAL_StatusTypeDef st = w25q_erase_block_64k(addr);
   return (st == HAL_OK) ? flash_wait_idle() : st;
 }
 
@@ -266,11 +275,13 @@ HAL_StatusTypeDef sound_write_begin(uint8_t id, uint8_t format,
 
   w25q_mmap_disable();
 
+  // Erase only what the blob needs, in 64 KB blocks. Slot bases are 64 KB
+  // aligned, so whole-block erases never spill into a neighbouring slot, and a
+  // multi-MB song erases in ~16x fewer commands than sector-erasing.
   s_wr_base = SOUND_REGION_ADDR + (uint32_t)id * SOUND_SLOT_SIZE;
-  const uint32_t sectors =
-      (total_len + W25Q_SECTOR_SIZE - 1u) / W25Q_SECTOR_SIZE;
-  for (uint32_t k = 0u; k < sectors; k++) {
-    HAL_StatusTypeDef st = flash_erase_sector(s_wr_base + k * W25Q_SECTOR_SIZE);
+  const uint32_t blocks = (total_len + W25Q_BLOCK_SIZE - 1u) / W25Q_BLOCK_SIZE;
+  for (uint32_t k = 0u; k < blocks; k++) {
+    HAL_StatusTypeDef st = flash_erase_block(s_wr_base + k * W25Q_BLOCK_SIZE);
     if (st != HAL_OK) {
       return st;
     }
