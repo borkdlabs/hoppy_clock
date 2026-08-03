@@ -30,6 +30,11 @@
 // wobble reads as a slow flicker rather than fast noise.
 #define LIGHT_FLICKER_PERIOD_MS 120u
 
+// "Clock not set" warning: LED 0 blinks dim red at this level, toggling every
+// half-period.
+#define LIGHT_WARN_LEVEL 10u
+#define LIGHT_WARN_HALF_MS 500u
+
 // Built-in fallbacks used when the manifest has no lamp look programmed.
 static const light_seq_t LAMP_ON_DEFAULT = {.effect = LIGHT_FX_SOLID,
                                             .r = 255,
@@ -72,6 +77,9 @@ static uint32_t s_rng = 0x2545F491u;
 
 // Lamp on/off state.
 static bool s_lamp_on = false;
+
+// "Clock not set" warning: overrides LED 0 with a red blink while active.
+static bool s_warn = false;
 
 /** Private functions. ********************************************************/
 
@@ -256,6 +264,7 @@ void light_init(void) {
   s_active = false;
   s_flick = 0u;
   s_lamp_on = false;
+  s_warn = false;
   strip_write();
 }
 
@@ -279,14 +288,8 @@ void light_play(const light_seq_t *seq) {
   s_active = true;
 }
 
-void light_task(void) {
-  if (!s_active) {
-    return; // Idle: holding a settled SOLID target.
-  }
-  if (sound_is_writing()) {
-    return; // Hold the strip; don't run LED DMA against a USB flash write.
-  }
-
+// Render the active look's current frame into the colour buffer.
+static void render_frame(void) {
   const uint32_t el = HAL_GetTick() - s_start_ms;
   switch (s_seq.effect) {
   case LIGHT_FX_RAINBOW:
@@ -302,7 +305,32 @@ void light_task(void) {
     render_solid(el);
     break;
   }
-  strip_write();
+}
+
+void light_task(void) {
+  if (sound_is_writing()) {
+    return; // Hold the strip; don't run LED DMA against a USB flash write.
+  }
+
+  bool push = false;
+
+  if (s_active) {
+    render_frame();
+    push = true;
+  }
+
+  if (s_warn) {
+    // Override LED 0 with a dim red blink, animated every tick.
+    const bool on = ((HAL_GetTick() / LIGHT_WARN_HALF_MS) & 1u) != 0u;
+    s_cur_r[0] = on ? LIGHT_WARN_LEVEL : 0u;
+    s_cur_g[0] = 0u;
+    s_cur_b[0] = 0u;
+    push = true;
+  }
+
+  if (push) {
+    strip_write();
+  }
 }
 
 void light_lamp_toggle(void) {
@@ -313,3 +341,10 @@ void light_lamp_toggle(void) {
 void light_lamp_reapply(void) { lamp_apply(); }
 
 bool light_lamp_is_on(void) { return s_lamp_on; }
+
+void light_set_warning(bool active) {
+  if (s_warn && !active) {
+    lamp_apply(); // Warning cleared: restore the current lamp idle look.
+  }
+  s_warn = active;
+}

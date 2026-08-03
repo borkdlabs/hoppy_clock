@@ -10,6 +10,7 @@
 /** Includes. *****************************************************************/
 
 #include "stm32l4xx_hal.h"
+#include <stdbool.h>
 
 /** STM32 port and pin configs. ***********************************************/
 
@@ -61,5 +62,15 @@ void get_time_date(char *time, char *date);
 void get_date_time_fields(uint8_t *year, uint8_t *month, uint8_t *date,
                           uint8_t *day, uint8_t *hours, uint8_t *minutes,
                           uint8_t *seconds);
+
+/**
+ * @brief Whether the RTC still reads its power-on default (never set).
+ *
+ * A lost/reset RTC sits at the 2000 epoch; a real time is always far later.
+ * Treats year < 2002 as "not set" so the UI can prompt the user.
+ *
+ * @return true if the clock has not been set, false once a real time is set.
+ */
+bool rtc_is_unset(void);
 
 #endif

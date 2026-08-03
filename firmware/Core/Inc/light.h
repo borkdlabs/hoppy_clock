@@ -64,4 +64,15 @@ void light_lamp_reapply(void);
  */
 bool light_lamp_is_on(void);
 
+/**
+ * @brief Enable/disable the "clock not set" warning blink on LED 0.
+ *
+ * While active, LED 0 blinks dim red regardless of the current look (it
+ * overrides the lamp/alarm colour on that one pixel). Clearing it restores the
+ * current lamp idle. Idempotent; drive it from the RTC-unset check.
+ *
+ * @param active true to show the warning blink, false to clear it.
+ */
+void light_set_warning(bool active);
+
 #endif
