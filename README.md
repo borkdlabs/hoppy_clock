@@ -4,7 +4,8 @@
 ![kibot](https://github.com/borkdlabs/hoppy_clock/actions/workflows/kibot.yaml/badge.svg)
 ![black_formatter](https://github.com/borkdlabs/hoppy_clock/actions/workflows/black_formatter.yaml/badge.svg)
 
-STM32L432KC alarm clock lamp with optional backup source.
+STM32-based alarm clock and RGB lamp: custom alarms wake you with light and your
+own songs, configured over USB.
 
 ---
 
@@ -25,6 +26,9 @@ STM32L432KC alarm clock lamp with optional backup source.
     * [2.4 Test Pads](#24-test-pads)
     * [2.5 Power Supply](#25-power-supply)
     * [2.6 Speaker](#26-speaker)
+  * [3 Firmware](#3-firmware)
+    * [3.1 User Button Controls](#31-user-button-controls)
+    * [3.2 USB Configuration](#32-usb-configuration)
   * [Third-Party Licenses](#third-party-licenses)
 <!-- TOC -->
 
@@ -37,6 +41,23 @@ STM32L432KC alarm clock lamp with optional backup source.
 |                       Top                        |                         Bottom                         |
 |:------------------------------------------------:|:------------------------------------------------------:|
 | ![hoppy_clock-top.png](docs/hoppy_clock-top.png) | ![hoppy_clock-bottom.png](docs/hoppy_clock-bottom.png) |
+
+**Features**:
+
+- **Alarms**: up to 64, each either weekly (any set of weekdays) or monthly (a
+  day of the month) at a chosen time. Every alarm has its own light look, sound,
+  volume fade-in, and auto-quiet timeout.
+- **Lamp**: the single button toggles a warm lamp look on/off, the "off" state
+  can settle to a dim ambient rather than fully dark.
+- **Lights**: parametric looks (`solid` fade, `rainbow`, `sweep`, `breathe`)
+  rendered across the onboard LED and any chained via the `WS2812B breakout`
+  connector.
+- **Sounds**: two slots of ~4 minutes each (16-bit PCM @ 16 kHz), streamed from
+  flash. Alarms play them with an optional fade-in.
+- **Low power**: the MCU sleeps between events and drops into STOP2 when fully
+  idle, waking on the next alarm or a button press (useful on backup supply).
+- **Clock-unset cue**: if the time has never been set (for example after a full
+  power loss), the onboard LED (index 0) blinks dim red until you set it.
 
 ### 1.1 Bill of Materials (BOM)
 
@@ -163,6 +184,51 @@ allowing a probe to detect the active source during development/testing.
 An 8 ohm, >= 1 W speaker can be connected via the `Speaker` connector.
 The amplifier output is bridge-tied (BTL): both terminals are driven, so
 neither may be connected to ground.
+
+---
+
+## 3 Firmware
+
+The firmware is fixed, all user settings (time, alarms, light looks, the lamp,
+sounds, and the LED count) live in the W25Q NOR flash and are written over USB
+at runtime. Settings survive resets (the clock's time is kept in the STM32
+backup domain). A flash `wipe` returns the unit to a clean state.
+
+### 3.1 User Button Controls
+
+| Action      | While idle                  | While an alarm is ringing |
+|-------------|-----------------------------|---------------------------|
+| Short press | Toggle the lamp on/off      | (ignored)                 |
+| Long press  | Play / stop the button song | Silence the alarm         |
+
+### 3.2 USB Configuration
+
+The board enumerates as a USB CDC virtual serial port. Settings are written with
+the Python tool in [`software/`](software/main.py), nothing is hard-coded.
+
+```bash
+cd software
+python main.py <command> [options]     # add -p COM7 (or /dev/ttyACM0) to pick the port
+```
+
+Needs Python 3 with `pyserial` (`pip install -r software/requirements.txt`),
+MP3 uploads additionally need `ffmpeg` on the `PATH`.
+
+| Command                           | Description                                                             |
+|-----------------------------------|-------------------------------------------------------------------------|
+| `set-time`                        | Sync the RTC to the host's local time                                   |
+| `add-alarm` / `set-alarm`         | Add an alarm (e.g. `--at 08:00 --days weekdays`) / replace all with one |
+| `remove-alarm N` / `clear-alarms` | Delete one alarm by index / delete all                                  |
+| `list-alarms`                     | Show alarms, lights, the lamp, and LED count                            |
+| `set-light`                       | Define a light look (`--effect solid\|rainbow\|sweep\|breathe`)         |
+| `set-lamp`                        | Choose the on/off lamp idle looks                                       |
+| `set-led-count N`                 | Set the number of chained LEDs                                          |
+| `upload-sound`                    | Store a sound from a WAV/MP3 file or a synthesized tone                 |
+| `play-sound` / `stop-sound`       | Play / stop a stored sound now                                          |
+| `set-button-song`                 | Set which sound the long-press plays                                    |
+| `wipe`                            | Factory-reset the flash (`--full` also scrubs the audio)                |
+
+Run `python main.py --help` (or `<command> --help`) for the full option list.
 
 ---
 

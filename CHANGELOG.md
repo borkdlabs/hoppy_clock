@@ -15,7 +15,7 @@
 
 ---
 
-## [v0.1.0-alpha (2026-07-25)](https://github.com/borkdlabs/hobby_clock/releases/tag/v0.1.0-alpha)
+## [v0.1.0-alpha (2026-07-25)](https://github.com/borkdlabs/hoppy_clock/releases/tag/v0.1.0-alpha)
 
 - Pre-release 4-layer board variant (hardware focused release).
     - Short-term pre-release board bring-up/testing release.
@@ -31,19 +31,26 @@ Manual corrections:
     - The silkscreen represents the intended design (matching most WS2812B LED
       strip pinouts), but the connector pinout was ordered incorrectly. To be
       corrected in the following release.
+2. The backup supply via the `Backup supply` connector should not be used.
+    - The TPS2116DRL is missing something to help pull VIN1 low below the 1 V
+      threshold in time of a supply switchover, leading to power issues when
+      connecting to `Backup supply`.
 
 ---
 
-## [v0.1.0 (TBD)](https://github.com/borkdlabs/hobby_clock/releases/tag/v0.1.0)
+## [v0.1.0 (TBD)](https://github.com/borkdlabs/hoppy_clock/releases/tag/v0.1.0)
 
 - 4-layer board variant.
+    - Moderate confidence near production release.
 - **Modifications:**
     - Fix `WS2812B breakout` connector pinout to match silkscreen and expected
       WS2812B LED strip pinouts.
         - Update `README.md` docs accordingly.
     - Minor silkscreen cleanup.
-    - Add voltage divider on TPS2116DRL for improved supply mux threshold.
+    - Fix power switching, add voltage divider on TPS2116DRL for improved supply
+      mux threshold.
         - Previously used default 1 V threshold.
     - Add copper clearance on top layer below USB-C connector.
     - Add 1 mm fillet on USB-C area neck.
+    - Fix bad release link in `CHANGELOG.md` for v0.1.0-alpha.
 - Order date: **_TBD_**.
