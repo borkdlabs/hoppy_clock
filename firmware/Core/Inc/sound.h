@@ -10,8 +10,9 @@
  *   Index sector: magic | crc32 | sound_entry_t[SOUND_MAX_COUNT]
  *   Data region : slot i at SOUND_REGION_ADDR + i * SOUND_SLOT_SIZE
  *
- * Audio is unsigned 8-bit PCM (SOUND_FORMAT_PCM_U8): one byte per sample, 128 =
- * silence, converted to the DAC's 12-bit mid-scale by (byte << 4). A format
+ * Audio is linear PCM, per-entry format: PCM_U8 (1 byte/sample, 128 = silence)
+ * for short effects, or PCM_S16 (signed 16-bit LE, 2 bytes/sample) for full-
+ * quality songs. Both decode to the DAC's 12-bit range at play time. A format
  * field leaves room for a compressed codec (e.g. ADPCM) later.
  *
  * Writing (indirect mode): sound_write_begin() erases the slot,
@@ -34,10 +35,11 @@
 
 /** Definitions. **************************************************************/
 
-#define SOUND_MAX_COUNT 64u // Distinct sounds (one per alarm at most).
+#define SOUND_MAX_COUNT 2u // Distinct sounds; two large slots for full songs.
 
 // Audio formats (sound_entry_t.format).
-#define SOUND_FORMAT_PCM_U8 0u // Unsigned 8-bit PCM, one byte per sample.
+#define SOUND_FORMAT_PCM_U8 0u  // Unsigned 8-bit PCM, 1 byte/sample.
+#define SOUND_FORMAT_PCM_S16 1u // Signed 16-bit LE PCM, 2 bytes/sample.
 
 // sound_entry_t.flags bits.
 #define SOUND_FLAG_VALID (1u << 0) // Entry holds a committed sound.
@@ -49,7 +51,7 @@
  */
 typedef struct __attribute__((packed)) {
   uint32_t offset;      // Byte offset of the blob in flash.
-  uint32_t length;      // Sample count (== byte count for PCM_U8).
+  uint32_t length;      // Blob length in bytes.
   uint16_t sample_rate; // Playback rate in Hz.
   uint8_t format;       // SOUND_FORMAT_*.
   uint8_t flags;        // SOUND_FLAG_* bits.
