@@ -10,8 +10,9 @@
  *   Index sector: magic | crc32 | sound_entry_t[SOUND_MAX_COUNT]
  *   Data region : slot i at SOUND_REGION_ADDR + i * SOUND_SLOT_SIZE
  *
- * Audio is unsigned 8-bit PCM (SOUND_FORMAT_PCM_U8): one byte per sample, 128 =
- * silence, converted to the DAC's 12-bit mid-scale by (byte << 4). A format
+ * Audio is linear PCM, per-entry format: PCM_U8 (1 byte/sample, 128 = silence)
+ * for short effects, or PCM_S16 (signed 16-bit LE, 2 bytes/sample) for full-
+ * quality songs. Both decode to the DAC's 12-bit range at play time. A format
  * field leaves room for a compressed codec (e.g. ADPCM) later.
  *
  * Writing (indirect mode): sound_write_begin() erases the slot,
@@ -36,11 +37,13 @@
 // Flash map (sectors 0/1 hold the manifest A/B slots).
 #define SOUND_INDEX_ADDR (2u * W25Q_SECTOR_SIZE) // Index sector at 0x002000.
 #define SOUND_REGION_ADDR 0x010000u              // Data region base (64 KB in).
-#define SOUND_SLOT_SIZE (128u * 1024u)           // Fixed bytes reserved per id.
-#define SOUND_INDEX_MAGIC 0x444E5348u            // "HSND".
+// Fixed bytes reserved per id: 7.5 MB ~= 4 min at 16-bit / 16 kHz (32 KB/s).
+// Two slots (SOUND_MAX_COUNT) fit in the 16 MB chip after the region base.
+#define SOUND_SLOT_SIZE (7680u * 1024u)
+#define SOUND_INDEX_MAGIC 0x444E5348u // "HSND".
 
-// DMA ring for streaming: two halves refilled from flash. 512 samples at 8 kHz
-// is ~32 ms per half -- ample time for the refill callback.
+// DMA ring for streaming: two halves refilled from flash. 512 samples at
+// 16 kHz is ~16 ms per half -- ample time for the refill callback.
 #define SOUND_RING_SAMPLES 512u
 
 // Blocking-op guard for erase/program/read wrappers.
@@ -58,6 +61,9 @@ typedef struct __attribute__((packed)) {
 _Static_assert(sizeof(sound_entry_t) == 16u, "sound_entry_t must be 16 bytes");
 _Static_assert(sizeof(sound_index_t) <= W25Q_SECTOR_SIZE,
                "sound index must fit in one sector");
+_Static_assert(SOUND_REGION_ADDR + SOUND_MAX_COUNT * SOUND_SLOT_SIZE <=
+                   16u * 1024u * 1024u,
+               "sound slots overflow the W25Q128 (16 MB)");
 
 /** Private variables. ********************************************************/
 
@@ -78,9 +84,10 @@ static uint32_t s_wr_crc = 0u;    // Running CRC-32 state (pre-final-xor).
 static uint16_t s_ring[SOUND_RING_SAMPLES];
 static bool s_playing = false;
 static volatile bool s_play_done = false;
-static const uint8_t *s_play_src = NULL; // Into memory-mapped flash.
-static volatile uint32_t s_play_cursor = 0u;
-static uint32_t s_play_len = 0u;
+static const uint8_t *s_play_src = NULL;     // Into memory-mapped flash.
+static volatile uint32_t s_play_cursor = 0u; // Sample index.
+static uint32_t s_play_len = 0u;             // Total samples in the clip.
+static uint8_t s_play_format = SOUND_FORMAT_PCM_U8;
 
 /** Private functions. ********************************************************/
 
@@ -144,12 +151,25 @@ static HAL_StatusTypeDef index_persist(void) {
 }
 
 /**
- * @brief DMA refill: convert PCM_U8 bytes to 12-bit DAC codes (ISR context).
+ * @brief Decode one sample (by index) to a 12-bit DAC code for the format.
+ */
+static uint16_t decode_sample(uint32_t i) {
+  if (s_play_format == SOUND_FORMAT_PCM_S16) {
+    const uint32_t o = i * 2u; // 2 bytes/sample, little-endian.
+    const int16_t s = (int16_t)((uint16_t)s_play_src[o] |
+                                ((uint16_t)s_play_src[o + 1u] << 8));
+    return amp_pcm16_to_dac12(s);
+  }
+  return (uint16_t)s_play_src[i] << 4; // PCM_U8: 128 -> mid-scale.
+}
+
+/**
+ * @brief DMA refill: decode the next samples to 12-bit DAC codes (ISR context).
  */
 static void stream_refill(uint16_t *dst, uint16_t count) {
   for (uint16_t i = 0u; i < count; i++) {
     if (s_play_cursor < s_play_len) {
-      dst[i] = (uint16_t)s_play_src[s_play_cursor] << 4; // 128 -> mid-scale.
+      dst[i] = decode_sample(s_play_cursor);
       s_play_cursor++;
     } else {
       dst[i] = AMP_DAC_MIDSCALE;
@@ -199,7 +219,9 @@ bool sound_start(uint8_t id) {
   }
 
   s_play_src = (const uint8_t *)W25Q_MMAP_PTR(e.offset);
-  s_play_len = e.length;
+  s_play_format = e.format;
+  // length is bytes; PCM_S16 packs 2 bytes per sample.
+  s_play_len = (e.format == SOUND_FORMAT_PCM_S16) ? (e.length / 2u) : e.length;
   s_play_cursor = 0u;
   s_play_done = false;
 
@@ -233,7 +255,8 @@ void sound_task(void) {
 
 HAL_StatusTypeDef sound_write_begin(uint8_t id, uint8_t format,
                                     uint16_t sample_rate, uint32_t total_len) {
-  if (id >= SOUND_MAX_COUNT || format != SOUND_FORMAT_PCM_U8 ||
+  if (id >= SOUND_MAX_COUNT ||
+      (format != SOUND_FORMAT_PCM_U8 && format != SOUND_FORMAT_PCM_S16) ||
       total_len == 0u || total_len > SOUND_SLOT_SIZE) {
     return HAL_ERROR;
   }

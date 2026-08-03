@@ -29,7 +29,7 @@
 /** Definitions. **************************************************************/
 
 #define USB_CMD_SOF 0xA5u
-#define USB_CMD_MAX_PAYLOAD 32u
+#define USB_CMD_MAX_PAYLOAD 64u
 
 // Command IDs.
 #define USB_CMD_PING 0x01u     // No payload, replies [status].
