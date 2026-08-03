@@ -31,6 +31,7 @@ Examples:
   python main.py sound-info 1
   python main.py play-sound 1                     # play it now
   python main.py stop-sound                       # stop playback
+  python main.py set-button-song 1                # long-press plays sound 1
 
   # End-to-end alarm test (fires ~1 min out, sunrise look + song fading in):
   python main.py set-light 2 --effect solid --color amber --brightness 200 --period 10000
@@ -74,6 +75,7 @@ CMD_CFG_SET_LIGHT = 0x35
 CMD_CFG_SET_LAMP = 0x36
 CMD_CFG_GET_LIGHT = 0x37
 CMD_CFG_SET_LEDS = 0x38
+CMD_CFG_SET_BTN = 0x39
 CMD_SND_BEGIN = 0x40
 CMD_SND_DATA = 0x41
 CMD_SND_END = 0x42
@@ -343,13 +345,13 @@ def _build_alarm(args) -> bytes:
 
 
 def _read_config(ser):
-    """Fetch (alarms, lights, lamp_on/off, led_count) or None on failure."""
+    """Fetch the whole config dict, or None on failure."""
     r = txn(ser, CMD_CFG_GET_COUNT)
-    if not (r and ok(r[1]) and len(r[1]) >= 6):
+    if not (r and ok(r[1]) and len(r[1]) >= 7):
         print("GET_COUNT ->", _status(r))
         return None
     n_alarm, n_light = r[1][1], r[1][2]
-    lamp_on, lamp_off, led_count = r[1][3], r[1][4], r[1][5]
+    lamp_on, lamp_off, led_count, btn_sound = r[1][3], r[1][4], r[1][5], r[1][6]
 
     alarms = []
     for i in range(n_alarm):
@@ -373,6 +375,7 @@ def _read_config(ser):
         "lamp_on": lamp_on,
         "lamp_off": lamp_off,
         "led_count": led_count,
+        "button_sound": btn_sound,
     }
 
 
@@ -399,6 +402,10 @@ def _write_config(ser, cfg) -> bool:
     r = txn(ser, CMD_CFG_SET_LEDS, bytes([cfg["led_count"]]))
     if not (r and ok(r[1])):
         print("CFG_SET_LEDS ->", _status(r))
+        return False
+    r = txn(ser, CMD_CFG_SET_BTN, bytes([cfg["button_sound"]]))
+    if not (r and ok(r[1])):
+        print("CFG_SET_BTN ->", _status(r))
         return False
     r = txn(
         ser,
@@ -500,6 +507,17 @@ def cmd_set_led_count(ser, args):
     return 0
 
 
+def cmd_set_button_song(ser, args):
+    cfg = _read_config(ser)
+    if cfg is None:
+        return 1
+    cfg["button_sound"] = args.id
+    if not _write_config(ser, cfg):
+        return 1
+    print(f"set-button-song -> OK (long-press plays sound {args.id})")
+    return 0
+
+
 def cmd_list_alarms(ser, args):
     cfg = _read_config(ser)
     if cfg is None:
@@ -536,6 +554,7 @@ def cmd_list_alarms(ser, args):
         )
     print(f"lamp: on=light {cfg['lamp_on']}  off=light {cfg['lamp_off']}")
     print(f"led-count: {cfg['led_count']}")
+    print(f"button-song: sound {cfg['button_sound']}")
     return 0
 
 
@@ -877,6 +896,16 @@ def build_parser() -> argparse.ArgumentParser:
         "count", type=int, help="active LED count (1..LED_COUNT_MAX)"
     )
     lc.set_defaults(func=cmd_set_led_count)
+
+    bs = sub.add_parser(
+        "set-button-song", help="sound the long-press button plays"
+    )
+    bs.add_argument(
+        "id",
+        type=int,
+        help="sound id (an unused id = long-press plays nothing)",
+    )
+    bs.set_defaults(func=cmd_set_button_song)
 
     sub.add_parser(
         "list-alarms", help="read back alarms, lights, lamp, led-count"

@@ -169,6 +169,8 @@ static void manifest_set_defaults(void) {
   s_manifest.header.lamp_on_light = 0u;
   s_manifest.header.lamp_off_light = 0u;
   s_manifest.header.led_count = 1u; // Onboard LED until configured.
+  s_manifest.header.button_sound_id =
+      0u; // Long-press plays sound 0 if present.
   s_manifest.header.seq_no = 0u;
   s_manifest.header.crc32 = manifest_crc(&s_manifest);
 }
@@ -233,6 +235,10 @@ void manifest_set_lamp(uint8_t on_light, uint8_t off_light) {
 
 void manifest_set_led_count(uint8_t led_count) {
   s_manifest.header.led_count = led_count;
+}
+
+void manifest_set_button_sound(uint8_t button_sound_id) {
+  s_manifest.header.button_sound_id = button_sound_id;
 }
 
 HAL_StatusTypeDef manifest_save(void) {

@@ -64,6 +64,7 @@ static light_seq_t s_stage_lights[MANIFEST_MAX_LIGHTS];
 static uint8_t s_stage_lamp_on;
 static uint8_t s_stage_lamp_off;
 static uint8_t s_stage_led_count;
+static uint8_t s_stage_btn_sound;
 
 // The config frames must fit the payload budget: index (1) + record (12), a
 // GET_ALARM reply of status (1) + record (12), and id (1) + light_seq (8).
@@ -168,6 +169,7 @@ static void handle_cfg_begin(void) {
   s_stage_lamp_on = 0u;
   s_stage_lamp_off = 0u;
   s_stage_led_count = 1u; // Default; the host resends the real count.
+  s_stage_btn_sound = 0u; // Default; the host resends the real id.
   const uint8_t status = USB_CMD_STATUS_OK;
   send_frame(USB_CMD_CFG_BEGIN, &status, 1u);
 }
@@ -225,6 +227,19 @@ static void handle_cfg_set_leds(const uint8_t *p, uint8_t len) {
   send_frame(USB_CMD_CFG_SET_LEDS, &status, 1u);
 }
 
+static void handle_cfg_set_btn(const uint8_t *p, uint8_t len) {
+  uint8_t status = USB_CMD_STATUS_OK;
+
+  // Payload: long-press sound id.
+  if (len != 1u) {
+    status = USB_CMD_STATUS_ERR;
+  } else {
+    s_stage_btn_sound = p[0];
+  }
+
+  send_frame(USB_CMD_CFG_SET_BTN, &status, 1u);
+}
+
 static void handle_cfg_commit(const uint8_t *p, uint8_t len) {
   uint8_t status = USB_CMD_STATUS_OK;
 
@@ -236,6 +251,7 @@ static void handle_cfg_commit(const uint8_t *p, uint8_t len) {
   } else {
     manifest_set_lamp(s_stage_lamp_on, s_stage_lamp_off);
     manifest_set_led_count(s_stage_led_count);
+    manifest_set_button_sound(s_stage_btn_sound);
     if (manifest_save() != HAL_OK) {
       status = USB_CMD_STATUS_ERR;
     } else {
@@ -250,12 +266,13 @@ static void handle_cfg_commit(const uint8_t *p, uint8_t len) {
 
 static void handle_cfg_get_count(void) {
   const manifest_t *m = manifest_get();
-  const uint8_t resp[6] = {USB_CMD_STATUS_OK,
+  const uint8_t resp[7] = {USB_CMD_STATUS_OK,
                            (uint8_t)m->header.alarm_count,
                            (uint8_t)m->header.light_count,
                            m->header.lamp_on_light,
                            m->header.lamp_off_light,
-                           m->header.led_count};
+                           m->header.led_count,
+                           m->header.button_sound_id};
   send_frame(USB_CMD_CFG_GET_COUNT, resp, sizeof(resp));
 }
 
@@ -432,6 +449,9 @@ static void dispatch(uint8_t cmd, const uint8_t *payload, uint8_t len) {
     break;
   case USB_CMD_CFG_SET_LEDS:
     handle_cfg_set_leds(payload, len);
+    break;
+  case USB_CMD_CFG_SET_BTN:
+    handle_cfg_set_btn(payload, len);
     break;
   case USB_CMD_SND_BEGIN:
     handle_snd_begin(payload, len);
