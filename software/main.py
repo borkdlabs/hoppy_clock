@@ -24,12 +24,15 @@ Examples:
   python main.py set-light 3 --effect rainbow --period 4000 --spread 24 --brightness 5
   python main.py set-light 4 --effect breathe --color blue --period 3000 --brightness 5
 
-  # End-to-end alarm test (fires ~1 min out, sunrise look + sound):
+  # Sounds default to 16-bit PCM @ 16 kHz (2 slots, ~4 min each):
   python main.py upload-sound 0 --tone 880 --seconds 1 --gain 0.05
-  python main.py upload-sound 1 example_file.wav --gain 0.4
-  python main.py set-light 2 --effect solid --color amber --brightness 200 \
-      --period 10000
-  python main.py set-alarm --in 1 --sound 0 --light 2 --timeout 20
+  python main.py upload-sound 1 song.mp3 --gain 0.6  # needs ffmpeg
+  python main.py upload-sound 1 song.mp3 --gain 0.6 --trim 60  # first 60s
+  python main.py sound-info 1
+
+  # End-to-end alarm test (fires ~1 min out, sunrise look + song):
+  python main.py set-light 2 --effect solid --color amber --brightness 200 --period 10000
+  python main.py set-alarm --in 1 --sound 1 --light 2 --timeout 60
   python main.py list-alarms
 """
 
@@ -37,7 +40,9 @@ import argparse
 import datetime
 import math
 import os
+import shutil
 import struct
+import subprocess
 import sys
 import time
 import wave
@@ -104,9 +109,14 @@ DAY_GROUPS = {
     "weekends": "sat,sun",
 }
 
+# Audio formats (must match sound.h).
 SND_FORMAT_PCM_U8 = 0x00
-SND_RATE_HZ = 8000  # Firmware plays PCM_U8; 8 kHz is the design rate.
-SND_CHUNK = 32  # USB payload cap (USB_CMD_MAX_PAYLOAD).
+SND_FORMAT_PCM_S16 = 0x01
+SND_FORMATS = {"s16": SND_FORMAT_PCM_S16, "u8": SND_FORMAT_PCM_U8}
+SND_BYTES_PER_SAMPLE = {SND_FORMAT_PCM_U8: 1, SND_FORMAT_PCM_S16: 2}
+SND_RATE_HZ = 16000  # Default rate; 16-bit PCM @ 16 kHz is the song target.
+SND_CHUNK = 64  # Data chunk size; must be <= firmware USB_CMD_MAX_PAYLOAD.
+SND_SLOT_BYTES = 7680 * 1024  # Per-sound flash slot (firmware SOUND_SLOT_SIZE).
 
 # Convenience colour names for `set-led`.
 COLORS = {
@@ -555,7 +565,39 @@ def _scale_u8(data: bytes, gain: float) -> bytes:
     return bytes(max(0, min(255, round((b - 128) * gain) + 128)) for b in data)
 
 
-def _wav_to_u8(path, dst_rate, gain=1.0) -> bytes:
+def _to_s16(samples, gain=1.0) -> bytes:
+    """Map floats in [-1, 1] to signed 16-bit little-endian PCM."""
+    vals = [max(-32768, min(32767, round(s * 32767 * gain))) for s in samples]
+    return struct.pack(f"<{len(vals)}h", *vals)
+
+
+def _scale_s16(data: bytes, gain: float) -> bytes:
+    """Apply a volume gain to already-16-bit signed PCM."""
+    if gain == 1.0:
+        return data
+    n = len(data) // 2
+    vals = [
+        max(-32768, min(32767, round(v * gain)))
+        for v in struct.unpack(f"<{n}h", data[: n * 2])
+    ]
+    return struct.pack(f"<{n}h", *vals)
+
+
+def _encode(samples, gain, fmt) -> bytes:
+    """Encode float samples to the target PCM format."""
+    if fmt == SND_FORMAT_PCM_S16:
+        return _to_s16(samples, gain)
+    return _to_u8(samples, gain)
+
+
+def _scale_pcm(data: bytes, gain: float, fmt: int) -> bytes:
+    """Apply a volume gain to already-encoded PCM of the given format."""
+    if fmt == SND_FORMAT_PCM_S16:
+        return _scale_s16(data, gain)
+    return _scale_u8(data, gain)
+
+
+def _wav_to_pcm(path, dst_rate, gain, fmt) -> bytes:
     with wave.open(path, "rb") as w:
         ch, sw, sr = w.getnchannels(), w.getsampwidth(), w.getframerate()
         raw = w.readframes(w.getnframes())
@@ -572,22 +614,54 @@ def _wav_to_u8(path, dst_rate, gain=1.0) -> bytes:
 
     if ch > 1:  # Downmix to mono by averaging channels.
         vals = [sum(vals[i : i + ch]) / ch for i in range(0, len(vals), ch)]
-    return _to_u8(_resample(vals, sr, dst_rate), gain)
+    return _encode(_resample(vals, sr, dst_rate), gain, fmt)
 
 
-def _load_sound(args) -> bytes:
+def _ffmpeg_to_pcm(path, dst_rate, gain, fmt) -> bytes:
+    """Decode any ffmpeg-readable file (mp3, ogg, flac, m4a, ...) to mono PCM
+    at dst_rate in the target format -- exactly what the firmware plays."""
+    exe = shutil.which("ffmpeg")
+    if not exe:
+        raise RuntimeError(
+            "ffmpeg not found; install it (https://ffmpeg.org) or convert to "
+            "a WAV first"
+        )
+    codec = "s16le" if fmt == SND_FORMAT_PCM_S16 else "u8"
+    cmd = [exe, "-v", "error", "-i", path, "-ac", "1", "-ar", str(dst_rate)]
+    if gain != 1.0:
+        cmd += ["-af", f"volume={gain}"]  # ffmpeg applies gain (fast).
+    cmd += ["-f", codec, "-"]
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if proc.returncode != 0 or not proc.stdout:
+        msg = proc.stderr.decode(errors="replace").strip()
+        raise RuntimeError(msg or "ffmpeg failed to decode the file")
+    return proc.stdout
+
+
+def _load_sound(args):
+    """Return (pcm_bytes, format_code). Raw file extensions pin the format."""
+    fmt = SND_FORMATS[args.format]
     if args.file:
         ext = os.path.splitext(args.file)[1].lower()
-        if ext in (".u8", ".raw", ".pcm"):  # Already 8-bit mono at the rate.
+        if ext == ".u8":  # Raw unsigned 8-bit at --rate.
             with open(args.file, "rb") as f:
-                return _scale_u8(f.read(), args.gain)
-        return _wav_to_u8(args.file, args.rate, args.gain)
+                return _scale_u8(f.read(), args.gain), SND_FORMAT_PCM_U8
+        if ext == ".s16":  # Raw signed 16-bit LE at --rate.
+            with open(args.file, "rb") as f:
+                return _scale_s16(f.read(), args.gain), SND_FORMAT_PCM_S16
+        if ext in (".raw", ".pcm"):  # Raw bytes in the chosen --format.
+            with open(args.file, "rb") as f:
+                return _scale_pcm(f.read(), args.gain, fmt), fmt
+        if ext == ".wav":  # Decoded in-process, no external tools.
+            return _wav_to_pcm(args.file, args.rate, args.gain, fmt), fmt
+        # mp3 and other compressed formats: decode via ffmpeg.
+        return _ffmpeg_to_pcm(args.file, args.rate, args.gain, fmt), fmt
     # Synthesized test tone.
     n = int(args.seconds * args.rate)
-    return _to_u8(
-        [math.sin(2 * math.pi * args.tone * i / args.rate) for i in range(n)],
-        args.gain,
-    )
+    samples = [
+        math.sin(2 * math.pi * args.tone * i / args.rate) for i in range(n)
+    ]
+    return _encode(samples, args.gain, fmt), fmt
 
 
 def cmd_upload_sound(ser, args):
@@ -595,17 +669,40 @@ def cmd_upload_sound(ser, args):
         print("upload-sound needs a FILE or --tone HZ", file=sys.stderr)
         return 2
     try:
-        data = _load_sound(args)
-    except (OSError, ValueError, wave.Error) as e:
+        data, fmt = _load_sound(args)
+    except (OSError, ValueError, wave.Error, RuntimeError) as e:
         print(f"could not load sound: {e}", file=sys.stderr)
         return 2
 
-    total = len(data)
-    crc = zlib.crc32(data) & 0xFFFFFFFF
-    print(f"uploading sound {args.id}: {total} bytes @ {args.rate} Hz")
+    bps = SND_BYTES_PER_SAMPLE[fmt]  # Bytes per sample (u8 = 1, s16 = 2).
+    rate_bytes = args.rate * bps  # Bytes per second at this rate/format.
 
-    begin = struct.pack("<BBHI", args.id, SND_FORMAT_PCM_U8, args.rate, total)
-    r = txn(ser, CMD_SND_BEGIN, begin, timeout=5.0)
+    if args.trim is not None:  # Keep only the first N seconds (whole samples).
+        data = data[: max(bps, int(args.trim * args.rate) * bps)]
+
+    total = len(data)
+    if total > SND_SLOT_BYTES:
+        limit_s = SND_SLOT_BYTES / rate_bytes
+        print(
+            f"sound is {total / rate_bytes:.1f}s ({total} bytes); the per-sound "
+            f"limit is {limit_s:.1f}s ({SND_SLOT_BYTES} bytes at {args.rate} "
+            f"Hz, {args.format}). Use --trim SECONDS or shorten the file.",
+            file=sys.stderr,
+        )
+        return 2
+
+    crc = zlib.crc32(data) & 0xFFFFFFFF
+    print(
+        f"uploading sound {args.id}: {total} bytes "
+        f"({total / rate_bytes:.1f}s, {args.format} @ {args.rate} Hz)"
+    )
+
+    # SND_BEGIN erases the slot in 64 KB blocks (tBE2 ~2 s each), so scale the
+    # wait to the erase size with margin.
+    blocks = (total + 65535) // 65536
+    begin_timeout = max(10.0, blocks * 2.5)
+    begin = struct.pack("<BBHI", args.id, fmt, args.rate, total)
+    r = txn(ser, CMD_SND_BEGIN, begin, timeout=begin_timeout)
     if not (r and ok(r[1])):
         print("SND_BEGIN ->", _status(r))
         return 1
@@ -628,9 +725,12 @@ def cmd_sound_info(ser, args):
     r = txn(ser, CMD_SND_INFO, bytes([args.id]))
     if r and ok(r[1]) and len(r[1]) >= 12:
         _st, fmt, rate, length, crc = struct.unpack("<BBHII", r[1][:12])
+        names = {v: k for k, v in SND_FORMATS.items()}
+        bps = SND_BYTES_PER_SAMPLE.get(fmt, 1)
+        secs = length / (rate * bps) if rate else 0
         print(
-            f"sound {args.id}: format={fmt} rate={rate} "
-            f"length={length} crc=0x{crc:08X}"
+            f"sound {args.id}: format={names.get(fmt, fmt)} rate={rate} "
+            f"length={length}B ({secs:.1f}s) crc=0x{crc:08X}"
         )
         return 0
     print("SND_INFO ->", _status(r))
@@ -743,10 +843,20 @@ def build_parser() -> argparse.ArgumentParser:
     ).set_defaults(func=cmd_list_alarms)
 
     up = sub.add_parser(
-        "upload-sound", help="store a sound (WAV/raw file or --tone)"
+        "upload-sound", help="store a sound (WAV/MP3/raw file or --tone)"
     )
     up.add_argument("id", type=int, help="sound id")
-    up.add_argument("file", nargs="?", help="WAV, or raw .u8/.pcm at --rate")
+    up.add_argument(
+        "file",
+        nargs="?",
+        help="WAV, MP3/etc (needs ffmpeg), or raw .u8/.s16/.pcm at --rate",
+    )
+    up.add_argument(
+        "--format",
+        choices=list(SND_FORMATS),
+        default="s16",
+        help="s16 = 16-bit quality (default), u8 = 8-bit half-size",
+    )
     up.add_argument(
         "--tone", type=float, help="synthesize a sine of HZ instead"
     )
@@ -764,6 +874,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=1.0,
         help="volume 0.0-1.0 (default 1.0 = full scale)",
+    )
+    up.add_argument(
+        "--trim",
+        type=float,
+        help=f"keep only the first N seconds (~{SND_SLOT_BYTES // (SND_RATE_HZ * 2)}s max at 16-bit)",
     )
     up.set_defaults(func=cmd_upload_sound)
 

@@ -50,6 +50,11 @@
 // take up to ~2 s (tBE2), so allow margin above that.
 #define SOUND_FLASH_TIMEOUT_MS 3000u
 
+// A page program can occasionally fail on a transient in the async QUADSPI
+// completion path under sustained streaming. The driver recovers on the next
+// op and re-programming identical bytes is safe, so retry the chunk.
+#define SOUND_WRITE_RETRIES 4u
+
 /**
  * @brief On-flash sound index image (magic + CRC + entry table).
  */
@@ -220,7 +225,8 @@ bool sound_get_info(uint8_t id, sound_entry_t *out) {
 
 bool sound_start(uint8_t id) {
   sound_entry_t e;
-  if (s_playing || !sound_get_info(id, &e)) {
+  // Never switch to memory-mapped mode while a USB write owns the flash.
+  if (s_playing || s_wr_active || !sound_get_info(id, &e)) {
     return false;
   }
   if (w25q_mmap_enable() != HAL_OK) {
@@ -255,6 +261,8 @@ void sound_stop(void) {
 }
 
 bool sound_is_playing(void) { return s_playing; }
+
+bool sound_is_writing(void) { return s_wr_active; }
 
 void sound_task(void) {
   if (s_playing && s_play_done) {
@@ -302,7 +310,15 @@ HAL_StatusTypeDef sound_write_data(const uint8_t *data, uint8_t len) {
     return HAL_ERROR;
   }
 
-  HAL_StatusTypeDef st = flash_write(s_wr_base + s_wr_cursor, data, len);
+  // Retry transient program failures; re-writing the same bytes is idempotent.
+  HAL_StatusTypeDef st = HAL_ERROR;
+  for (uint8_t attempt = 0u; attempt < SOUND_WRITE_RETRIES; attempt++) {
+    st = flash_write(s_wr_base + s_wr_cursor, data, len);
+    if (st == HAL_OK) {
+      break;
+    }
+    HAL_Delay(1u); // Let the QUADSPI/DMA IRQs settle before retrying.
+  }
   if (st != HAL_OK) {
     s_wr_active = false;
     return st;
