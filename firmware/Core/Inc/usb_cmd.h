@@ -45,13 +45,14 @@
 #define USB_CMD_CFG_SET_ALARM 0x31u // Payload: index (1 B) + record (12 B).
 #define USB_CMD_CFG_COMMIT 0x32u    // Payload: alarm_count, light_count (2 B).
 #define USB_CMD_CFG_GET_COUNT                                                  \
-  0x33u // Replies [status, alarms, lights, on, off].
+  0x33u // Replies [status, alarms, lights, on, off, leds, btn].
 #define USB_CMD_CFG_GET_ALARM                                                  \
   0x34u // Payload: index (1 B), replies [status,rec].
 #define USB_CMD_CFG_SET_LIGHT 0x35u // Payload: id (1 B) + light_seq (12 B).
 #define USB_CMD_CFG_SET_LAMP 0x36u  // Payload: on_id, off_id (2 B).
 #define USB_CMD_CFG_GET_LIGHT 0x37u // Payload: id (1 B), replies [status, seq].
 #define USB_CMD_CFG_SET_LEDS 0x38u  // Payload: led_count (1 B).
+#define USB_CMD_CFG_SET_BTN 0x39u   // Payload: button_sound_id (1 B).
 
 // Sound assets. A blob is larger than one frame, so it streams in chunks:
 // SND_BEGIN (erase the slot), repeated SND_DATA (append <=32 B, in order), then

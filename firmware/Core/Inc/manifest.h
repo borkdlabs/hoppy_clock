@@ -119,16 +119,16 @@ typedef struct __attribute__((packed)) {
  * @brief On-flash manifest header (20 bytes, packed).
  */
 typedef struct __attribute__((packed)) {
-  uint32_t magic;         // MANIFEST_MAGIC.
-  uint16_t version;       // MANIFEST_VERSION.
-  uint16_t alarm_count;   // Valid entries in alarms[], 0..MAX.
-  uint16_t light_count;   // Valid entries in lights[], 0..MAX.
-  uint8_t lamp_on_light;  // lights[] id played when the lamp toggles on.
-  uint8_t lamp_off_light; // lights[] id played when the lamp toggles off.
-  uint8_t led_count;      // Active LEDs in the chain (1..LED_COUNT_MAX).
-  uint8_t reserved;       // Zero; reserved for future use.
-  uint32_t seq_no;        // Monotonic; higher = newer slot.
-  uint32_t crc32;         // Over the image excluding this field.
+  uint32_t magic;          // MANIFEST_MAGIC.
+  uint16_t version;        // MANIFEST_VERSION.
+  uint16_t alarm_count;    // Valid entries in alarms[], 0..MAX.
+  uint16_t light_count;    // Valid entries in lights[], 0..MAX.
+  uint8_t lamp_on_light;   // lights[] id played when the lamp toggles on.
+  uint8_t lamp_off_light;  // lights[] id played when the lamp toggles off.
+  uint8_t led_count;       // Active LEDs in the chain (1..LED_COUNT_MAX).
+  uint8_t button_sound_id; // Sound played on a long-press (invalid id = none).
+  uint32_t seq_no;         // Monotonic; higher = newer slot.
+  uint32_t crc32;          // Over the image excluding this field.
 } manifest_header_t;
 
 /**
@@ -198,6 +198,14 @@ void manifest_set_lamp(uint8_t on_light, uint8_t off_light);
  * @param led_count Number of LEDs in the chain.
  */
 void manifest_set_led_count(uint8_t led_count);
+
+/**
+ * @brief Set the long-press song id in the RAM copy (not flash).
+ *
+ * @param button_sound_id Sound id played on a long-press, an id with no stored
+ * sound simply plays nothing.
+ */
+void manifest_set_button_sound(uint8_t button_sound_id);
 
 /**
  * @brief Persist the current RAM copy to the idle slot (power-safe).

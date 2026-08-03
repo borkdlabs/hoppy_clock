@@ -35,7 +35,7 @@
 #define BUTTON_DEBOUNCE_MS 20u
 
 // Hold threshold (ms) separating a short press from a long press.
-#define BUTTON_LONG_PRESS_MS 800u
+#define BUTTON_LONG_PRESS_MS 1500u
 
 /** Public types. *************************************************************/
 

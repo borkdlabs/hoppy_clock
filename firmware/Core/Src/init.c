@@ -47,10 +47,14 @@ static void state_machine(void) {
 
   switch (button_get_event()) {
   case BUTTON_EVENT_LONG:
-    // A long press shuts off a ringing alarm.
+    // Long press: shut off a ringing alarm; otherwise toggle the button song.
     if (alarm_rt_is_ringing()) {
       alarm_rt_cancel();
       s_state = STATE_IDLE;
+    } else if (sound_is_playing()) {
+      sound_stop();
+    } else {
+      sound_start(manifest_get()->header.button_sound_id, 0u);
     }
     break;
 
