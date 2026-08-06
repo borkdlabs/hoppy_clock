@@ -16,8 +16,11 @@
 
 /** External references. ******************************************************/
 
-// Re-run on wake from STOP2 (the PLL is lost, clock falls back to MSI).
+// Re-run on wake from STOP2 (all PLLs are lost, clock falls back to MSI).
+// SystemClock_Config re-locks the main PLL (SYSCLK), PeriphCommonClock_Config
+// re-locks PLLSAI1, which feeds the USB and ADC clocks.
 extern void SystemClock_Config(void);
+extern void PeriphCommonClock_Config(void);
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /** Private functions. ********************************************************/
@@ -56,10 +59,13 @@ void power_idle(void) {
 
   // Deep sleep (STOP2): clocks off, SRAM retained (~uA). Wakes on the RTC alarm
   // (the next armed alarm) or a button press (EXTI4). SysTick is off during
-  // STOP2 and the PLL is lost, so re-lock the 80 MHz system clock and resume the
-  // HAL tick on wake before returning to the loop.
+  // STOP2 and all PLLs are lost, so re-lock the 80 MHz system clock (SYSCLK)
+  // and PLLSAI1 (USB + ADC), then resume the HAL tick on wake before returning
+  // to the loop. Restoring PLLSAI1 lets USB enumerate after a button/alarm
+  // wake.
   HAL_SuspendTick();
   HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
   SystemClock_Config();
+  PeriphCommonClock_Config();
   HAL_ResumeTick();
 }
