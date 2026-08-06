@@ -12,6 +12,19 @@
 #include "stm32l4xx_hal.h"
 #include <stdbool.h>
 
+/** Defines. ******************************************************************/
+
+/**
+ * @brief Backup-register marker proving the RTC holds a user-set time.
+ *
+ * set_date() stamps this into RTC_BKP_DR1. The value survives any reset that
+ * keeps the backup domain powered (the RTC keeps counting), and is only lost
+ * when the backup domain loses power (full power loss) which causes RTC to fall
+ * back to its 2000 epoch. So "marker present" == "time is valid", thus both
+ * MX_RTC_Init() and rtc_is_unset() key off it.
+ */
+#define RTC_BKUP_SET_MARKER 0x2345u
+
 /** STM32 port and pin configs. ***********************************************/
 
 extern RTC_HandleTypeDef hrtc;
@@ -64,10 +77,12 @@ void get_date_time_fields(uint8_t *year, uint8_t *month, uint8_t *date,
                           uint8_t *seconds);
 
 /**
- * @brief Whether the RTC still reads its power-on default (never set).
+ * @brief Whether the RTC has never been set (or lost due to a power loss).
  *
- * A lost/reset RTC sits at the 2000 epoch; a real time is always far later.
- * Treats year < 2002 as "not set" so the UI can prompt the user.
+ * Keys off the RTC_BKUP_SET_MARKER backup-register stamp rather than the
+ * calendar year: the marker is written when the user sets the time and cleared
+ * only when the backup domain loses power (the same event that drops the RTC to
+ * its 2000 epoch).
  *
  * @return true if the clock has not been set, false once a real time is set.
  */

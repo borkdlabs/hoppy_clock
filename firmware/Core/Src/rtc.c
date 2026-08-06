@@ -22,7 +22,9 @@ void set_date(uint8_t year, uint8_t month, uint8_t date, uint8_t day) {
     // TODO: Error handler.
   }
 
-  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, 0x2345); // Backup register.
+  // Stamp the "time is valid" marker so a reset that keeps the backup domain
+  // powered won't be mistaken for an unset clock (see rtc_is_unset).
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, RTC_BKUP_SET_MARKER);
 }
 
 void set_time(uint8_t hours, uint8_t minutes, uint8_t seconds) {
@@ -70,13 +72,7 @@ void get_date_time_fields(uint8_t *year, uint8_t *month, uint8_t *date,
 }
 
 bool rtc_is_unset(void) {
-  RTC_TimeTypeDef gTime;
-  RTC_DateTypeDef gDate;
-
-  // Read time first, then date (unlocks the RTC shadow registers).
-  HAL_RTC_GetTime(&hrtc, &gTime, RTC_FORMAT_BIN);
-  HAL_RTC_GetDate(&hrtc, &gDate, RTC_FORMAT_BIN);
-
-  // Year index 00-99 -> 2000-2099; < 2002 means the RTC was never set.
-  return gDate.Year < 2u;
+  // The marker is present iff set_date() has run and the backup domain has kept
+  // power since. Full power loss clears it and drops the RTC to the 2000 epoch.
+  return HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != RTC_BKUP_SET_MARKER;
 }

@@ -59,6 +59,14 @@ static void stop_ring(void) {
  * @brief Begin ringing for whichever enabled alarm matches now, then re-arm.
  */
 static void start_ring(void) {
+  // Never ring on the default 2000 calendar: if the clock isn't set, drop this
+  // (stale) fire and leave Alarm A disarmed. This is redundant cover, a rearm
+  // won't arm while unset, so this shouldn't be reached.
+  if (rtc_is_unset()) {
+    alarm_rt_rearm();
+    return;
+  }
+
   alarm_time_t now;
   read_now(&now);
 
@@ -109,6 +117,14 @@ void alarm_rt_init(void) {
 }
 
 void alarm_rt_rearm(void) {
+  // STM32 Alarm A matches weekday/date + time only (not the year) so arming
+  // while the RTC sits at its 2000 power-on default would fire alarms on a
+  // bogus calendar. Keep it disarmed until the user sets the time.
+  if (rtc_is_unset()) {
+    HAL_RTC_DeactivateAlarm(&hrtc, RTC_ALARM_A);
+    return;
+  }
+
   alarm_time_t now;
   read_now(&now);
 
