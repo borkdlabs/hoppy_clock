@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "init.h"
+#include "rtc.h"
 #include "run.h"
 /* USER CODE END Includes */
 
@@ -409,7 +410,13 @@ static void MX_RTC_Init(void)
   }
 
   /* USER CODE BEGIN Check_RTC_BKUP */
-
+  // If the RTC is already running with a user-set time (marker retained across
+  // this reset) keep it, skip the default init below that would otherwise mess
+  // up the calendar back to 2000-01-01 on every boot. alarm_rt re-arms Alarm A
+  // from the live time, so the default alarm setup is skipped too.
+  if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) == RTC_BKUP_SET_MARKER) {
+    return;
+  }
   /* USER CODE END Check_RTC_BKUP */
 
   /** Initialize RTC and set the Time and Date
