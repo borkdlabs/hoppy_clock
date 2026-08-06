@@ -52,13 +52,15 @@ own songs, configured over USB.
 - ✨ **Lights**: parametric looks (`solid` fade, `rainbow`, `sweep`, `breathe`)
   rendered across the onboard LED and any chained via the `WS2812B breakout`
   connector.
-- 🔊 **Sounds**: two slots of ~4 minutes each (16-bit PCM @ 16 kHz), streamed
-  from flash. Alarms play them with an optional fade-in.
+- 🔊 **Sounds**: two slots, ~4 minutes each at the default 16 kHz (16-bit PCM,
+  sample rate is selectable up to 48 kHz), streamed from flash. Alarms play them
+  with an optional fade-in.
 - 🔋 **Low power**: the MCU sleeps between events and drops into STOP2 when
   fully idle, waking on the next alarm or a button press (useful on backup
   supply).
 - 🔴 **Clock-unset cue**: if the time has never been set (for example after a
-  full power loss), the onboard LED (index 0) blinks dim red until you set it.
+  full power loss), the onboard LED (index 0) blinks dim red and alarms blocked
+  from triggering until the clock is set.
 
 ### 1.1 Bill of Materials (BOM)
 
@@ -117,16 +119,17 @@ own songs, configured over USB.
 ### 1.4 Clock Configurations
 
 ```
-16 MHz High Speed Internal (HSI)
- -> Phase-Locked Loop Main (PLLM)
+4 MHz Multi-Speed Internal (MSI), LSE-trimmed
+ -> Phase-Locked Loop Main (PLL)
  -> 80 MHz SYSCLK
  -> 80 MHz HCLK
      -> 80 MHz APB1 (Maxed) -> 80 MHz APB1 Timer
      -> 80 MHz APB2 (Maxed) -> 80 MHz APB2 Timer
- -> 48 MHz PLLSAI1Q -> 48 MHz USB
+ -> PLLSAI1 -> 48 MHz USB & ADC clock
 
 32.768 kHz Low Speed External (LSE)
      -> 32.768 kHz RTC
+     -> Disciplines the MSI (MSI PLL mode)
 ```
 
 ---
@@ -193,7 +196,9 @@ neither may be connected to ground.
 The firmware is fixed, all user settings (time, alarms, light looks, the lamp,
 sounds, and the LED count) live in the W25Q NOR flash and are written over USB
 at runtime. Settings survive resets (the clock's time is kept in the STM32
-backup domain). A flash `wipe` returns the unit to a clean state.
+backup domain), as long as the board stays powered from USB-C or the backup
+supply. A full power loss resets the clock (see the clock-unset cue above). A
+flash `wipe` returns the unit to a clean state.
 
 ### 3.1 User Button Controls
 
