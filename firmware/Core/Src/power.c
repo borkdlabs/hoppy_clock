@@ -14,7 +14,16 @@
 #include "stm32l4xx_hal.h"
 #include "usb_device.h"
 
-/** External references. ******************************************************/
+/** Definitions. **************************************************************/
+
+// After waking from STOP2 the USB pull-up is re-asserted, but a host needs time
+// to enumerate before dev_state reaches CONFIGURED. Stay awake until this tick
+// so we don't deep-sleep (and detach the pull-up) mid-enumeration. Armed on
+// each wake, a real host reaches CONFIGURED well within the window and then
+// holds us awake on its own.
+#define POWER_WAKE_HOLD_MS 3000u
+
+/** STM32 external references. ************************************************/
 
 // Re-run on wake from STOP2 (all PLLs are lost, clock falls back to MSI).
 // SystemClock_Config re-locks the main PLL (SYSCLK), PeriphCommonClock_Config
@@ -23,6 +32,10 @@ extern void SystemClock_Config(void);
 extern void PeriphCommonClock_Config(void);
 extern USBD_HandleTypeDef hUsbDeviceFS;
 extern PCD_HandleTypeDef hpcd_USB_FS;
+
+/** Private variables. ********************************************************/
+
+static uint32_t s_awake_hold_until = 0u;
 
 /** Private functions. ********************************************************/
 
@@ -38,6 +51,11 @@ static bool deep_sleep_ok(void) {
     return false;
   }
   if (button_is_down() || !light_is_idle()) {
+    return false;
+  }
+  // Post-wake grace: stay awake (WFI) so a host that reconnected while we slept
+  // can finish enumerating. Signed compare tolerates the tick wrap.
+  if ((int32_t)(HAL_GetTick() - s_awake_hold_until) < 0) {
     return false;
   }
   // A live USB host session stays awake; battery/unplugged/suspended do not
@@ -79,6 +97,8 @@ void power_idle(void) {
   HAL_ResumeTick();
 
   // Back awake with the USB clock restored: re-assert the pull-up so a host
-  // (plugged in while system slept, or still attached) can enumerate now.
+  // (plugged in while system slept, or still attached) can enumerate now, and
+  // hold off the next deep sleep long enough for that enumeration to complete.
   HAL_PCD_DevConnect(&hpcd_USB_FS);
+  s_awake_hold_until = HAL_GetTick() + POWER_WAKE_HOLD_MS;
 }
