@@ -29,6 +29,7 @@ own songs, configured over USB.
   * [3 Firmware](#3-firmware)
     * [3.1 User Button Controls](#31-user-button-controls)
     * [3.2 USB Configuration](#32-usb-configuration)
+    * [3.3 Firmware Update (DFU)](#33-firmware-update-dfu)
   * [Third-Party Licenses](#third-party-licenses)
 <!-- TOC -->
 
@@ -209,16 +210,42 @@ flash `wipe` returns the unit to a clean state.
 
 ### 3.2 USB Configuration
 
-The board enumerates as a USB CDC virtual serial port. Settings are written with
-the Python tool in [`software/`](software/main.py), nothing is hard-coded.
+The board enumerates as a USB CDC virtual serial port and is configured with the
+Python tool in [`software/`](software/main.py), nothing is hard-coded.
+
+**Connecting:** When the clock is idle and off USB it deep-sleeps (STOP2) and
+deliberately presents as *detached*, so plugging into a host shows no device at
+first. To connect:
+
+1. Plug the USB-C cable into the host.
+2. **Press the button once** to wake the clock. It re-attaches and enumerates as
+   a virtual serial port (the same short press also toggles the lamp as usual,
+   harmless).
+3. Run the Python tool.
+
+If the clock is already awake (in use, ringing, or an alarm just fired) it
+enumerates the moment you plug in, with no press needed. Unplugging or the host
+going to sleep allows the system to return to deep sleep.
+
+> **Why a button press?** The clock cannot tell a data host (a PC) from a plain
+> USB-C charger or power bank, both simply present 5 V with no reliable way to
+> distinguish them until an enumeration that only a real host answers. Waking
+> and enumerating on every plug-in would spend energy for the majority of the
+> time the port is used only to charge or power the unit, and risks staying
+> awake on a battery pack it mistook for a host. Gating USB behind a deliberate
+> button press ties enumeration to a real intent to configure, and lets the
+> clock stay in its lowest-power state whenever it is merely being powered.
+> Firmware itself is flashed over SWD (the `TC2050` header), independent of this
+> path.
 
 ```bash
 cd software
 python main.py <command> [options]     # add -p COM7 (or /dev/ttyACM0) to pick the port
 ```
 
-Needs Python 3 with `pyserial` (`pip install -r software/requirements.txt`),
-MP3 uploads additionally need `ffmpeg` on the `PATH`.
+> Needs Python 3 with `pyserial` (`pip install -r software/requirements.txt`),
+> MP3 uploads additionally need `ffmpeg` on the `PATH`. See top docstring in
+> `main.py` for more information.
 
 | Command                           | Description                                                             |
 |-----------------------------------|-------------------------------------------------------------------------|
@@ -235,6 +262,27 @@ MP3 uploads additionally need `ffmpeg` on the `PATH`.
 | `wipe`                            | Factory-reset the flash (`--full` also scrubs the audio)                |
 
 Run `python main.py --help` (or `<command> --help`) for the full option list.
+
+### 3.3 Firmware Update (DFU)
+
+This flashes new *firmware* (not settings, those use the USB tool above).
+Normally firmware is programmed over SWD (the `TC2050` header). Without a
+debugger, the STM32L432's built-in USB bootloader (DFU) flashes it over the same
+USB-C port.
+
+`BOOT0` is sampled only at power-up, so DFU has to be entered on a fresh cold
+boot with the button held:
+
+1. **Remove all power**, unplug USB **and** anything on the `Backup supply`
+   connector. A backup supply keeps the MCU running, so plugging in USB would
+   not be a cold boot and `BOOT0` would never be re-sampled. (With no backup
+   supply attached, USB is the only source and this is automatic.)
+2. Hold the `BOOT0` button.
+3. While still holding it, connect USB-C to the computer. The board powers up
+   into the bootloader and enumerates as **STM32 BOOTLOADER** (DFU, USB
+   `0483:DF11`). Release the `BOOT0` button.
+4. Flash the image to the flash base `0x08000000`, then restart into it with
+   your DFU tool/software.
 
 ---
 
