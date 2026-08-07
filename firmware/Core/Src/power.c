@@ -22,6 +22,7 @@
 extern void SystemClock_Config(void);
 extern void PeriphCommonClock_Config(void);
 extern USBD_HandleTypeDef hUsbDeviceFS;
+extern PCD_HandleTypeDef hpcd_USB_FS;
 
 /** Private functions. ********************************************************/
 
@@ -57,6 +58,14 @@ void power_idle(void) {
     return;
   }
 
+  // Drop the USB D+ pull-up before sleeping. STOP2 leaves the pull-up asserted
+  // but the peripheral unclocked, so a host that gets plugged in while we sleep
+  // sees a device, tries to enumerate, gets no response, and reports an
+  // "unrecognized USB device" (plug-in is not a wake source, only the button or
+  // an alarm wakes us). Presenting as detached avoids that failed enumeration.
+  // DevConnect on wake re-asserts the pull-up so the host enumerates cleanly.
+  HAL_PCD_DevDisconnect(&hpcd_USB_FS);
+
   // Deep sleep (STOP2): clocks off, SRAM retained (~uA). Wakes on the RTC alarm
   // (the next armed alarm) or a button press (EXTI4). SysTick is off during
   // STOP2 and all PLLs are lost, so re-lock the 80 MHz system clock (SYSCLK)
@@ -68,4 +77,8 @@ void power_idle(void) {
   SystemClock_Config();
   PeriphCommonClock_Config();
   HAL_ResumeTick();
+
+  // Back awake with the USB clock restored: re-assert the pull-up so a host
+  // (plugged in while system slept, or still attached) can enumerate now.
+  HAL_PCD_DevConnect(&hpcd_USB_FS);
 }
