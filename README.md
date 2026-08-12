@@ -154,10 +154,10 @@ Connectors fixed by hardware (PCB traces or the connector itself).
 
 User controllable hardware and/or firmware driven inputs.
 
-| Switch/Jumper  | Ref | Description                           |
-|----------------|:---:|---------------------------------------|
-| `BOOT0 button` | SW1 | Push to pull `BOOT0` high             |
-| `User button`  | SW2 | Generic 6 mm TH button, push to reset |
+| Switch/Jumper  | Ref | Description               |
+|----------------|:---:|---------------------------|
+| `BOOT0 button` | SW1 | Push to pull `BOOT0` high |
+| `User button`  | SW2 | Generic 6 mm SMD button   |
 
 ### 2.3 LEDs
 

@@ -53,4 +53,5 @@ Manual corrections:
     - Add copper clearance on top layer below USB-C connector.
     - Add 1 mm fillet on USB-C area neck.
     - Fix bad release link in `CHANGELOG.md` for v0.1.0-alpha.
+    - Swap THT `User button` to match onboard `BOOT0 button` SMD part.
 - Order date: **_TBD_**.
