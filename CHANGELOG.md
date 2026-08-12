@@ -54,4 +54,6 @@ Manual corrections:
     - Add 1 mm fillet on USB-C area neck.
     - Fix bad release link in `CHANGELOG.md` for v0.1.0-alpha.
     - Swap THT `User button` to match onboard `BOOT0 button` SMD part.
+    - Move SMD right angle connectors `WS2812B breakout` and `Speaker` closer to
+      edge cut for better wiring.
 - Order date: **_TBD_**.
