@@ -7400,7 +7400,7 @@
 		(descr "JST PH series connector, S2B-PH-SM4-TB (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH horizontal")
 		(property "Reference" "J6"
-			(at -3.75 -4.25 0)
+			(at -3.25 -4.25 0)
 			(layer "F.SilkS")
 			(uuid "3cb61ce4-3709-4254-8207-81b47d18cf5b")
 			(effects
@@ -10948,7 +10948,7 @@
 		(descr "JST PH series connector, S3B-PH-SM4-TB (http://www.jst-mfg.com/product/pdf/eng/ePH.pdf)")
 		(tags "connector JST PH horizontal")
 		(property "Reference" "J5"
-			(at -4 4.25 0)
+			(at -4.25 4.25 0)
 			(unlocked yes)
 			(layer "B.SilkS")
 			(uuid "9b0c0e52-a2cf-44fe-9c19-7c2f51b2e955")
@@ -12392,7 +12392,7 @@
 			(at -4.25 0 0)
 			(unlocked yes)
 			(layer "B.SilkS")
-			(uuid "7028f1de-f015-480b-8249-9ce9abaa77d2")
+			(uuid "8055065c-6bc0-4777-93ba-8f311b70115e")
 			(effects
 				(font
 					(size 0.8 0.8)
@@ -12405,7 +12405,7 @@
 			(at 0 -4 270)
 			(unlocked yes)
 			(layer "B.Fab")
-			(uuid "453090de-f05d-4cdc-b477-4802d1f0c58c")
+			(uuid "7de0de91-247a-427f-9481-a1096f786082")
 			(effects
 				(font
 					(size 1 1)
@@ -12419,7 +12419,7 @@
 			(unlocked yes)
 			(layer "B.Fab")
 			(hide yes)
-			(uuid "ceba87e0-f677-4944-a365-36279a929dca")
+			(uuid "3445dc70-724e-4162-ba4c-066e14a6c384")
 			(effects
 				(font
 					(size 1 1)
@@ -12433,7 +12433,7 @@
 			(unlocked yes)
 			(layer "B.Fab")
 			(hide yes)
-			(uuid "a5bfe5e8-d14a-47a2-b195-de12e8db72cc")
+			(uuid "a4e17f84-0852-42d7-99c8-8251f4f76f0a")
 			(effects
 				(font
 					(size 1 1)
@@ -13531,7 +13531,7 @@
 		(uuid "016ac3dc-ad49-47e6-85db-0ad1f3ca54d5")
 	)
 	(gr_text "+"
-		(at 146 114.5 0)
+		(at 147.5 113.25 0)
 		(layer "F.SilkS")
 		(uuid "75281001-0c45-4a6a-9cb9-1e2f4cd8b141")
 		(effects
@@ -13553,7 +13553,7 @@
 		)
 	)
 	(gr_text "-"
-		(at 151 114.5 0)
+		(at 149.5 113.25 0)
 		(layer "F.SilkS")
 		(uuid "f2bcbf1d-1dc3-40e5-9542-9288adb26428")
 		(effects
@@ -13627,7 +13627,7 @@
 		)
 	)
 	(gr_text "Backup"
-		(at 164.5 122 90)
+		(at 164.5 122.25 90)
 		(layer "F.SilkS")
 		(uuid "419dd618-12c5-4a49-b5aa-03f0096a920e")
 		(effects
@@ -13794,7 +13794,7 @@
 		)
 	)
 	(gr_text "WS2812B"
-		(at 154.75 123.25 270)
+		(at 154.75 123.25 90)
 		(layer "B.SilkS")
 		(uuid "83e8198e-519d-449d-8f23-091744235450")
 		(effects
@@ -13804,7 +13804,7 @@
 				(bold yes)
 				(italic yes)
 			)
-			(justify left mirror)
+			(justify right mirror)
 		)
 	)
 	(gr_text "JST SH"
