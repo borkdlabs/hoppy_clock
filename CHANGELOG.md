@@ -56,4 +56,6 @@ Manual corrections:
     - Swap THT `User button` to match onboard `BOOT0 button` SMD part.
     - Move SMD right angle connectors `WS2812B breakout` and `Speaker` closer to
       edge cut for better wiring.
+    - Split the `WS2812B breakout` to supply external off-board WS2812B LEDs via
+      USB (VBUS) only to prevent excessive backup supply drain.
 - Order date: **_TBD_**.

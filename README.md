@@ -184,6 +184,11 @@ when USB-C power returns. The mux status pin (`ST`) is exposed on the
 `TPS2116 ST` test pad and is pulled low whenever the backup supply is in use,
 allowing a probe to detect the active source during development/testing.
 
+External LEDs on the `WS2812B breakout` connector are powered from USB (VBUS)
+directly, not the priority power mux in order to prevent excessive battery drain
+during a power outage. The single onboard LED is on the priority power mux
+supply, so it remains available for minimum operation on battery power.
+
 ### 2.6 Speaker
 
 An 8 ohm, >= 1 W speaker can be connected via the `Speaker` connector.
