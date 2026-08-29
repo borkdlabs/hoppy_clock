@@ -8,6 +8,13 @@
 STM32-based alarm clock and RGB lamp: custom alarms wake you with light and your
 own songs, configured over USB from the browser or a Python tool.
 
+<a href="https://www.pcbway.com">
+  <img src="docs/PCBWay.svg" alt="PCBWay Logo" width="25%" />
+</a>
+
+💚 Sponsored by **[PCBWay](https://www.pcbway.com)**, who provided the bare PCBs
+and solder paste stencil for the v0.1.0-alpha boards.
+
 ---
 
 <details markdown="1">
@@ -399,3 +406,6 @@ This project uses the following open-source software components:
 
 > STMicroelectronics are trademarks of their respective owners. Use of these
 > names does **not** imply any endorsement by the trademark holders.
+
+> The PCBWay name and logo are trademarks of PCBWay, reproduced with their
+> permission to acknowledge their sponsorship of this project.
