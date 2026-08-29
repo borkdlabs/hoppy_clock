@@ -1,0 +1,81 @@
+################################################################################
+# pages.yaml
+#
+# Publish the webapp/ USB configuration tool to GitHub Pages.
+#
+# Requires the repository's Pages source to be set to "GitHub Actions"
+# (Settings -> Pages -> Build and deployment -> Source).
+################################################################################
+
+name: Pages
+
+on:
+  push:
+    paths:
+      - "webapp/**"
+      - ".github/workflows/pages.yaml"
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "webapp/**"
+      - ".github/workflows/pages.yaml"
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it part-way.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check the app for syntax errors
+        run: |
+          for file in webapp/js/*.js; do
+            node --check "$file"
+          done
+        shell: bash
+
+      - name: Run the offline protocol checks
+        run: node test-device.mjs
+        working-directory: webapp/dev
+        shell: bash
+
+      - name: Stage the site
+        run: |
+          cp -r webapp _site
+          rm -rf _site/dev
+        shell: bash
+
+      - name: Upload the artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  # Pull requests build and test but do not publish.
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
