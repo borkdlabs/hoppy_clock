@@ -1,0 +1,318 @@
+/* Hoppy Clock USB configuration UI. */
+
+:root {
+  color-scheme: light dark;
+
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --border: #dfe3e8;
+  --text: #1a1d21;
+  --text-dim: #5f6874;
+  --accent: #2f6fdd;
+  --accent-text: #ffffff;
+  --ok: #1a7f4b;
+  --warn: #9a6400;
+  --err: #b3261e;
+  --warn-bg: #fff8e6;
+
+  --radius: 10px;
+  --gap: 1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171a;
+    --surface: #1c2024;
+    --border: #2e343b;
+    --text: #e7eaee;
+    --text-dim: #98a2ae;
+    --accent: #5b95f0;
+    --accent-text: #0d1013;
+    --ok: #4bc98a;
+    --warn: #e0ab4a;
+    --err: #f2837a;
+    --warn-bg: #2a2519;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0 var(--gap) 3rem;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+main,
+.bar,
+.foot {
+  max-width: 54rem;
+  margin: 0 auto;
+}
+
+/* Header. */
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  flex-wrap: wrap;
+  padding: 1.25rem 0;
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.01em;
+}
+
+.bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pill {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pill--idle {
+  color: var(--text-dim);
+}
+
+.pill--busy {
+  color: var(--warn);
+  border-color: currentcolor;
+}
+
+.pill--live {
+  color: var(--ok);
+  border-color: currentcolor;
+}
+
+.pill--err {
+  color: var(--err);
+  border-color: currentcolor;
+}
+
+/* Buttons. */
+
+.btn {
+  padding: 0.45rem 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.btn--ghost {
+  padding: 0.1rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+/* Cards. */
+
+.card {
+  margin: 0 0 var(--gap);
+  padding: 1.1rem 1.25rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.card h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.card--warn {
+  border-color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.card--warn h2 {
+  color: var(--warn);
+  font-size: 1rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.steps li + li {
+  margin-top: 0.35rem;
+}
+
+.note {
+  margin: 0.75rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.86rem;
+}
+
+code {
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.88em;
+}
+
+/* Time readout. */
+
+.readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--gap);
+}
+
+.readout__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.readout__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.readout__value {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 1.7rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.readout__unit {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.readout__sub {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Drift severity, set from app.js. */
+
+.is-ok {
+  color: var(--ok);
+}
+
+.is-warn {
+  color: var(--warn);
+}
+
+.is-err {
+  color: var(--err);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.actions .note {
+  margin: 0;
+}
+
+/* Log. */
+
+.log {
+  max-height: 15rem;
+  margin: 0;
+  overflow-y: auto;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.log:empty::before {
+  content: "Nothing yet.";
+  color: var(--text-dim);
+}
+
+.log__line--err {
+  color: var(--err);
+}
+
+.log__line--ok {
+  color: var(--ok);
+}
+
+.log__time {
+  color: var(--text-dim);
+}
+
+/* Idle (disconnected) state: dim the parts that need a live device, and show
+   the connection instructions only while they are still relevant. */
+
+body:not(.is-connected) #time-card {
+  opacity: 0.55;
+}
+
+body.is-connected #connect-card {
+  display: none;
+}
+
+.foot {
+  padding-top: 0.5rem;
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+.foot a {
+  color: var(--text-dim);
+}

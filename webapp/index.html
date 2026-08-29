@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Hoppy Clock &mdash; USB configuration</title>
+  <meta
+    name="description"
+    content="Configure a Hoppy Clock over USB from the browser."
+  />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml"/>
+  <link rel="stylesheet" href="./css/style.css"/>
+</head>
+
+<body>
+<header class="bar">
+  <h1>Hoppy Clock</h1>
+  <div class="bar__actions">
+    <span id="status" class="pill pill--idle">Disconnected</span>
+    <button id="connect" type="button" class="btn btn--primary">
+      Connect
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- Shown instead of everything else on a browser without Web Serial. -->
+  <section id="unsupported" class="card card--warn" hidden>
+    <h2>This browser can&rsquo;t talk to USB devices</h2>
+    <p>
+      The clock is configured over the Web Serial API, which needs
+      <strong>Chrome or Edge on desktop</strong> (Windows, macOS or Linux).
+      Firefox and Safari do not implement it, and neither do mobile
+      browsers.
+    </p>
+    <p>
+      The Python tool in <code>software/main.py</code> works everywhere as
+      an alternative.
+    </p>
+  </section>
+
+  <div id="app">
+    <!-- Only useful before connecting; hidden by CSS once we are. -->
+    <section class="card" id="connect-card">
+      <h2>Connecting</h2>
+      <ol class="steps">
+        <li>Plug the USB-C cable into this computer.</li>
+        <li>
+          <strong>Press the clock&rsquo;s button once</strong> to wake it.
+          While idle it deep-sleeps and stays detached, so it will not
+          appear in the port list until you do.
+        </li>
+        <li>
+          Press <em>Connect</em> and pick the STM32 serial port
+          (<code>0483:5740</code>).
+        </li>
+      </ol>
+      <p class="note">
+        Only one program can hold the port at a time &mdash; close
+        <code>main.py</code> or any serial monitor first.
+      </p>
+    </section>
+
+    <section class="card" id="time-card" aria-busy="false">
+      <h2>Clock</h2>
+
+      <div class="readout">
+        <div class="readout__item">
+          <span class="readout__label">On the clock</span>
+          <span class="readout__value" id="device-time">&mdash;</span>
+          <span class="readout__sub" id="device-date">&nbsp;</span>
+        </div>
+        <div class="readout__item">
+          <span class="readout__label">On this computer</span>
+          <span class="readout__value" id="host-time">&mdash;</span>
+          <span class="readout__sub" id="host-date">&nbsp;</span>
+        </div>
+        <div class="readout__item">
+          <span class="readout__label">Difference</span>
+          <span class="readout__value" id="drift">&mdash;</span>
+          <span class="readout__sub" id="drift-note">&nbsp;</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button
+          id="sync"
+          type="button"
+          class="btn btn--primary"
+          disabled
+        >
+          Sync to this computer
+        </button>
+        <span class="note" id="sync-note">
+              Sends the date and time on the next whole second.
+            </span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>
+        Log
+        <button id="clear-log" type="button" class="btn btn--ghost">
+          Clear
+        </button>
+      </h2>
+      <pre id="log" class="log" aria-live="polite"></pre>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <a href="https://github.com/borkdlabs/hoppy_clock">borkdlabs/hoppy_clock</a>
+</footer>
+
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>
