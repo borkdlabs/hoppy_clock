@@ -3,9 +3,10 @@
 ![arm_gcc_build](https://github.com/borkdlabs/hoppy_clock/actions/workflows/arm_gcc_build.yaml/badge.svg)
 ![kibot](https://github.com/borkdlabs/hoppy_clock/actions/workflows/kibot.yaml/badge.svg)
 ![black_formatter](https://github.com/borkdlabs/hoppy_clock/actions/workflows/black_formatter.yaml/badge.svg)
+![pages](https://github.com/borkdlabs/hoppy_clock/actions/workflows/pages.yaml/badge.svg)
 
 STM32-based alarm clock and RGB lamp: custom alarms wake you with light and your
-own songs, configured over USB.
+own songs, configured over USB from the browser or a Python tool.
 
 ---
 
@@ -29,7 +30,12 @@ own songs, configured over USB.
   * [3 Firmware](#3-firmware)
     * [3.1 User Button Controls](#31-user-button-controls)
     * [3.2 USB Configuration](#32-usb-configuration)
+      * [3.2.1 Web App](#321-web-app)
+      * [3.2.2 Python Tool](#322-python-tool)
     * [3.3 Firmware Update (DFU)](#33-firmware-update-dfu)
+  * [4 Development](#4-development)
+    * [4.1 Web App](#41-web-app)
+    * [4.2 Deployment](#42-deployment)
   * [Third-Party Licenses](#third-party-licenses)
 <!-- TOC -->
 
@@ -45,9 +51,9 @@ own songs, configured over USB.
 
 **Features**:
 
-- ⏰ **Alarms**: up to 64, each either weekly (any set of weekdays) or monthly
-  (a day of the month) at a chosen time. Every alarm has its own light look,
-  sound, volume fade-in, and auto-quiet timeout.
+- ⏰ **Alarms**: up to 64, each either weekly (any set of weekdays) or monthly (a
+  day of the month) at a chosen time. Every alarm has its own light look, sound,
+  volume fade-in, and auto-quiet timeout.
 - 💡 **Lamp**: the single button toggles a warm lamp look on/off, the "off"
   state can settle to a dim ambient rather than fully dark.
 - ✨ **Lights**: parametric looks (`solid` fade, `rainbow`, `sweep`, `breathe`)
@@ -56,9 +62,11 @@ own songs, configured over USB.
 - 🔊 **Sounds**: two slots, ~4 minutes each at the default 16 kHz (16-bit PCM,
   sample rate is selectable up to 48 kHz), streamed from flash. Alarms play them
   with an optional fade-in.
-- 🔋 **Low power**: the MCU sleeps between events and drops into STOP2 when
-  fully idle, waking on the next alarm or a button press (useful on backup
-  supply).
+- 🔋 **Low power**: the MCU sleeps between events and drops into STOP2 when fully
+  idle, waking on the next alarm or a button press (useful on backup supply).
+- 🖥️ **Configuration**: nothing is hard-coded, the board takes its settings over
+  USB from the [web app](https://borkdlabs.github.io/hoppy_clock/) (Chrome or
+  Edge, nothing to install) or the Python tool in [`software/`](software).
 - 🔴 **Clock-unset cue**: if the time has never been set (for example after a
   full power loss), the onboard LED (index 0) blinks dim red and alarms blocked
   from triggering until the clock is set.
@@ -175,14 +183,14 @@ LEDs used to show board status and/or user controllable.
 
 ### 2.5 Power Supply
 
-By default, the board is powered from the `USB-C` 5 V source. An onboard
-TPS2116 priority power mux allows a backup 5 V supply to be connected via
-the `Backup supply` connector (for example, a regulated battery pack
-output). If the USB-C supply drops below the mux threshold, the TPS2116
-automatically switches the board over to the backup supply, and switches back
-when USB-C power returns. The mux status pin (`ST`) is exposed on the
-`TPS2116 ST` test pad and is pulled low whenever the backup supply is in use,
-allowing a probe to detect the active source during development/testing.
+By default, the board is powered from the `USB-C` 5 V source. An onboard TPS2116
+priority power mux allows a backup 5 V supply to be connected via the
+`Backup supply` connector (for example, a regulated battery pack output). If the
+USB-C supply drops below the mux threshold, the TPS2116 automatically switches
+the board over to the backup supply, and switches back when USB-C power returns.
+The mux status pin (`ST`) is exposed on the `TPS2116 ST` test pad and is pulled
+low whenever the backup supply is in use, allowing a probe to detect the active
+source during development/testing.
 
 External LEDs on the `WS2812B breakout` connector are powered from USB (VBUS)
 directly, not the priority power mux in order to prevent excessive battery drain
@@ -191,9 +199,9 @@ supply, so it remains available for minimum operation on battery power.
 
 ### 2.6 Speaker
 
-An 8 ohm, >= 1 W speaker can be connected via the `Speaker` connector.
-The amplifier output is bridge-tied (BTL): both terminals are driven, so
-neither may be connected to ground.
+An 8 ohm, >= 1 W speaker can be connected via the `Speaker` connector. The
+amplifier output is bridge-tied (BTL): both terminals are driven, so neither may
+be connected to ground.
 
 ---
 
@@ -215,8 +223,15 @@ flash `wipe` returns the unit to a clean state.
 
 ### 3.2 USB Configuration
 
-The board enumerates as a USB CDC virtual serial port and is configured with the
-Python tool in [`software/`](software/main.py), nothing is hard-coded.
+The board enumerates as a USB CDC virtual serial port and speaks a small framed
+command protocol (`firmware/Core/Inc/usb_cmd.h`). Two hosts implement it:
+
+| Host                                                | Runs on                               | Covers                                         |
+|-----------------------------------------------------|---------------------------------------|------------------------------------------------|
+| [Web app](https://borkdlabs.github.io/hoppy_clock/) | Chrome or Edge on desktop, no install | Reading and syncing the clock                  |
+| [`software/main.py`](software/main.py)              | Any OS with Python 3                  | Everything: alarms, lights, lamp, sounds, wipe |
+
+Both open the same serial port, and only one program may hold it at a time.
 
 **Connecting:** When the clock is idle and off USB it deep-sleeps (STOP2) and
 deliberately presents as *detached*, so plugging into a host shows no device at
@@ -242,6 +257,32 @@ going to sleep allows the system to return to deep sleep.
 > clock stay in its lowest-power state whenever it is merely being powered.
 > Firmware itself is flashed over SWD (the `TC2050` header), independent of this
 > path.
+
+#### 3.2.1 Web App
+
+<https://borkdlabs.github.io/hoppy_clock/>
+
+A single static page that drives the port through the
+[Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API),
+so there is nothing to install beyond the OS's own CDC driver. It needs **Chrome
+or Edge on desktop** (Windows, macOS or Linux); Firefox, Safari and mobile
+browsers do not implement Web Serial, and the page says so rather than
+half-working.
+
+Press *Connect* and pick the STM32 virtual COM port (`0483:5740`). Permission is
+granted per site and remembered, so later visits reopen that port on their own.
+
+What it does today:
+
+- shows the clock's time and date beside this computer's,
+- reports the drift between them, refreshed every second,
+- **Sync to this computer**, sent on the next whole-second boundary,
+- logs every command and the status that came back.
+
+Alarms, lights, the lamp and sounds are not in the page yet, use the Python tool
+for those.
+
+#### 3.2.2 Python Tool
 
 ```bash
 cd software
@@ -288,6 +329,62 @@ boot with the button held:
    `0483:DF11`). Release the `BOOT0` button.
 4. Flash the image to the flash base `0x08000000`, then restart into it with
    your DFU tool/software.
+
+---
+
+## 4 Development
+
+### 4.1 Web App
+
+[`webapp/`](webapp) is plain ES modules with no build step, no bundler and no
+dependencies, it is served exactly as it sits in the repository. Web Serial only
+runs in a secure context, and `http://localhost` counts as one, so a static
+server is enough and no HTTPS setup is needed:
+
+```bash
+cd webapp
+python -m http.server 8000
+```
+
+Then open <http://localhost:8000> in Chrome or Edge.
+
+| Path                          | What it is                                               |
+|-------------------------------|----------------------------------------------------------|
+| `index.html`, `css/style.css` | Page and styling                                         |
+| `js/protocol.js`              | Framing and CRC-8, mirrors `firmware/Core/Inc/usb_cmd.h` |
+| `js/device.js`                | Port lifecycle, request/response transactions            |
+| `js/app.js`                   | UI wiring, clock polling and the drift readout           |
+| `dev/`                        | The helpers below, stripped from the published site      |
+
+**Working without a board.** The offline checks exercise the framing and
+transaction layers against a fake CDC port, covering the happy path, error
+statuses, command timeouts and a mid-command unplug:
+
+```bash
+cd webapp/dev
+node test-device.mjs
+```
+
+For the UI itself, paste
+[`dev/inject-fake-port.js`](webapp/dev/inject-fake-port.js) into the browser
+console with the page open. It stubs `navigator.serial.requestPort` with a clock
+whose RTC runs 47 s fast, so the connect flow, the drift readout and the sync
+button can all be driven dry. More in [`webapp/dev/`](webapp/dev/README.md).
+
+A protocol change touches three implementations, keep them in step:
+`firmware/Core/Inc/usb_cmd.h`, `software/main.py` and `webapp/js/protocol.js`.
+
+### 4.2 Deployment
+
+[`.github/workflows/pages.yaml`](.github/workflows/pages.yaml) publishes the app
+to GitHub Pages on every push to `main` touching `webapp/`. It runs
+`node --check` over each module and the offline checks above, copies `webapp/`
+to the site root minus `dev/`, then deploys. Pull requests build and test but do
+not publish, and the workflow can also be started by hand (*Actions -> Pages ->
+Run workflow*).
+
+The repository's Pages source must be set to **GitHub Actions**
+(*Settings -> Pages -> Build and deployment -> Source*).
 
 ---
 
