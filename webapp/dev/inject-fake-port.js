@@ -7,8 +7,7 @@
   rtc.mm = seeded.getMinutes();
   rtc.ss = seeded.getSeconds();
   const startedAt = Date.now();
-  const baseSec =
-    seeded.getHours() * 3600 + seeded.getMinutes() * 60 + seeded.getSeconds();
+  const baseSec = seeded.getHours() * 3600 + seeded.getMinutes() * 60 + seeded.getSeconds();
 
   const crc8 = (data) => {
     let crc = 0;
@@ -27,6 +26,27 @@
 
   let enqueue;
   let synced = false;
+
+  // A manifest to edit, in the packed layout the firmware stores (manifest.h).
+  // Two alarms and two light looks, so the alarm, light and lamp cards all
+  // have something to show. Both 16-bit fields are little-endian.
+  //
+  //   alarm: flags, day_sel, h, m, s, timeout(2), sound, light, fade, rsv(2)
+  //   light: effect, r, g, b, brightness, period(2), curve, spread, rsv(3)
+  const cfg = {
+    alarms: [[0x01, 0b0011111, 7, 30, 0, 60, 0, 1, 2, 20, 0, 0], [0x01, 0b1100000, 9, 0, 0, 0x2c, 0x01, 0, 0, 0, 0, 0],],
+    lights: [[0, 255, 200, 120, 180, 0xe8, 0x03, 1, 0, 0, 0, 0], [0, 255, 140, 0, 20, 0xd0, 0x07, 0, 0, 0, 0, 0],],
+    lampOn: 0,
+    lampOff: 1,
+    ledCount: 8,
+    buttonSound: 1,
+  };
+  let staged = null;
+
+  // Sound slot 0 holds a 10 s stereo-ish blob; slot 1 is empty.
+  const sounds = [{
+    format: 1, rate: 16000, length: 320000, crc: 0x1234abcd
+  }, null];
 
   const tick = () => {
     // Free-run the fake RTC off its own offset until the host sets it.
@@ -69,16 +89,46 @@
           out = frame(cmd, [0]);
         } else if (cmd === 0x11) {
           tick();
-          out = frame(cmd, [
-            0,
-            rtc.yy,
-            rtc.mo,
-            rtc.dd,
-            rtc.wd,
-            rtc.hh,
-            rtc.mm,
-            rtc.ss,
-          ]);
+          out = frame(cmd, [0, rtc.yy, rtc.mo, rtc.dd, rtc.wd, rtc.hh, rtc.mm, rtc.ss,]);
+        } else if (cmd === 0x43) {
+          const entry = sounds[payload[0]];
+          out = frame(cmd, entry ? [0, entry.format, entry.rate & 0xff, entry.rate >> 8, entry.length & 0xff, (entry.length >> 8) & 0xff, (entry.length >> 16) & 0xff, (entry.length >>> 24) & 0xff, entry.crc & 0xff, (entry.crc >> 8) & 0xff, (entry.crc >> 16) & 0xff, (entry.crc >>> 24) & 0xff,] : [1],);
+        } else if (cmd === 0x44 || cmd === 0x45) {
+          window.__lastPlayback = {cmd, payload: [...payload]};
+          out = frame(cmd, [0]);
+        } else if (cmd === 0x33) {
+          out = frame(cmd, [0, cfg.alarms.length, cfg.lights.length, cfg.lampOn, cfg.lampOff, cfg.ledCount, cfg.buttonSound,]);
+        } else if (cmd === 0x34 || cmd === 0x37) {
+          const table = cmd === 0x34 ? cfg.alarms : cfg.lights;
+          const record = table[payload[0]];
+          out = frame(cmd, record ? [0, ...record] : [1]);
+        } else if (cmd === 0x30) {
+          staged = {...cfg, alarms: [], lights: []};
+          out = frame(cmd, [0]);
+        } else if (!staged) {
+          out = frame(cmd, [1]); // A staging edit outside BEGIN/COMMIT.
+        } else if (cmd === 0x31) {
+          staged.alarms[payload[0]] = [...payload.subarray(1)];
+          out = frame(cmd, [0]);
+        } else if (cmd === 0x35) {
+          staged.lights[payload[0]] = [...payload.subarray(1)];
+          out = frame(cmd, [0]);
+        } else if (cmd === 0x36) {
+          [staged.lampOn, staged.lampOff] = payload;
+          out = frame(cmd, [0]);
+        } else if (cmd === 0x38) {
+          staged.ledCount = payload[0];
+          out = frame(cmd, [0]);
+        } else if (cmd === 0x39) {
+          staged.buttonSound = payload[0];
+          out = frame(cmd, [0]);
+        } else if (cmd === 0x32) {
+          Object.assign(cfg, staged, {
+            alarms: staged.alarms.slice(0, payload[0]),
+            lights: staged.lights.slice(0, payload[1]),
+          });
+          staged = null;
+          out = frame(cmd, [0]);
         } else {
           out = frame(cmd, [1]);
         }
@@ -91,6 +141,7 @@
   };
 
   window.__fakePort = port;
+  window.__fakeConfig = cfg;
   navigator.serial.requestPort = async () => port;
   return 'fake port installed';
 }

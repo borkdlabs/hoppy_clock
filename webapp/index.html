@@ -40,7 +40,6 @@
   </section>
 
   <div id="app">
-    <!-- Only useful before connecting; hidden by CSS once we are. -->
     <section class="card" id="connect-card">
       <h2>Connecting</h2>
       <ol class="steps">
@@ -61,41 +60,453 @@
       </p>
     </section>
 
-    <section class="card" id="time-card" aria-busy="false">
-      <h2>Clock</h2>
+    <!-- One card per tab; the log stays put, since it reports on all of them. -->
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button
+        type="button"
+        class="tab"
+        role="tab"
+        id="tab-clock"
+        aria-controls="panel-clock"
+        aria-selected="true"
+      >
+        Clock
+      </button>
+      <button
+        type="button"
+        class="tab"
+        role="tab"
+        id="tab-lights"
+        aria-controls="panel-lights"
+        aria-selected="false"
+      >
+        Lights
+      </button>
+      <button
+        type="button"
+        class="tab"
+        role="tab"
+        id="tab-sounds"
+        aria-controls="panel-sounds"
+        aria-selected="false"
+      >
+        Sounds
+      </button>
+      <button
+        type="button"
+        class="tab"
+        role="tab"
+        id="tab-alarms"
+        aria-controls="panel-alarms"
+        aria-selected="false"
+      >
+        Alarms
+      </button>
+    </nav>
 
-      <div class="readout">
-        <div class="readout__item">
-          <span class="readout__label">On the clock</span>
-          <span class="readout__value" id="device-time">&mdash;</span>
-          <span class="readout__sub" id="device-date">&nbsp;</span>
+    <div
+      class="panel"
+      id="panel-clock"
+      role="tabpanel"
+      aria-labelledby="tab-clock"
+    >
+      <section class="card" id="time-card" aria-busy="false">
+        <div class="readout">
+          <div class="readout__item">
+            <span class="readout__label">On the clock</span>
+            <span class="readout__value" id="device-time">&mdash;</span>
+            <span class="readout__sub" id="device-date">&nbsp;</span>
+          </div>
+          <div class="readout__item">
+            <span class="readout__label">On this computer</span>
+            <span class="readout__value" id="host-time">&mdash;</span>
+            <span class="readout__sub" id="host-date">&nbsp;</span>
+          </div>
+          <div class="readout__item">
+            <span class="readout__label">Difference</span>
+            <span class="readout__value" id="drift">&mdash;</span>
+            <span class="readout__sub" id="drift-note">&nbsp;</span>
+          </div>
         </div>
-        <div class="readout__item">
-          <span class="readout__label">On this computer</span>
-          <span class="readout__value" id="host-time">&mdash;</span>
-          <span class="readout__sub" id="host-date">&nbsp;</span>
-        </div>
-        <div class="readout__item">
-          <span class="readout__label">Difference</span>
-          <span class="readout__value" id="drift">&mdash;</span>
-          <span class="readout__sub" id="drift-note">&nbsp;</span>
-        </div>
-      </div>
 
-      <div class="actions">
-        <button
-          id="sync"
-          type="button"
-          class="btn btn--primary"
-          disabled
-        >
-          Sync to this computer
-        </button>
-        <span class="note" id="sync-note">
-              Sends the date and time on the next whole second.
-            </span>
-      </div>
-    </section>
+        <div class="actions">
+          <button
+            id="sync"
+            type="button"
+            class="btn btn--primary"
+            disabled
+          >
+            Sync to this computer
+          </button>
+          <span class="note" id="sync-note">
+                Sends the date and time on the next whole second.
+              </span>
+        </div>
+      </section>
+    </div>
+
+    <div
+      class="panel"
+      id="panel-lights"
+      role="tabpanel"
+      aria-labelledby="tab-lights"
+      hidden
+    >
+      <section class="card" id="light-card" aria-busy="false">
+        <h2>
+          Light looks
+          <button id="refresh-lights" type="button" class="btn btn--ghost">
+            Refresh
+          </button>
+        </h2>
+
+        <p class="note" id="light-summary">Not read yet.</p>
+        <ul class="lights" id="light-list"></ul>
+
+        <div class="subsection">
+          <h3 class="subsection__title">Button press</h3>
+          <p class="note">
+            A short press toggles the lamp between these two looks. The
+            &ldquo;off&rdquo; one can settle on a dim ambient rather than going
+            fully dark.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">Lamp on</span>
+              <select id="lamp-on"></select>
+            </label>
+            <label class="field">
+              <span class="field__label">Lamp off</span>
+              <select id="lamp-off"></select>
+            </label>
+            <button id="lamp-save" type="button" class="btn" disabled>
+              Save button lights
+            </button>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3 class="subsection__title">LED chain</h3>
+          <p class="note">
+            How many LEDs a look is rendered across: the onboard one plus
+            anything chained from the <code>WS2812B breakout</code> connector.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">Active LEDs</span>
+              <input type="number" id="led-count" min="1" max="64" value="1"/>
+            </label>
+            <button id="led-save" type="button" class="btn" disabled>
+              Save LED count
+            </button>
+          </div>
+        </div>
+
+        <details class="adder" id="light-editor">
+          <summary id="light-editor-summary">Add a light look</summary>
+
+          <form id="light-form">
+            <div class="field-row">
+              <label class="field">
+                <span class="field__label">Light id</span>
+                <input
+                  type="number"
+                  id="light-id"
+                  min="0"
+                  max="15"
+                  value="0"
+                  required
+                />
+              </label>
+
+              <label class="field">
+                <span class="field__label">Effect</span>
+                <select id="light-effect">
+                  <option value="solid" selected>Solid fade</option>
+                  <option value="rainbow">Rainbow</option>
+                  <option value="sweep">Sweep</option>
+                  <option value="breathe">Breathe</option>
+                </select>
+              </label>
+
+              <label class="field" id="light-color-field">
+                <span class="field__label">Colour</span>
+                <input type="color" id="light-color" value="#ffc878"/>
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label class="field">
+                <span class="field__label">Brightness</span>
+                <input
+                  type="number"
+                  id="light-brightness"
+                  min="0"
+                  max="255"
+                  value="160"
+                />
+              </label>
+
+              <label class="field">
+                <span class="field__label" id="light-period-label">
+                  Fade time (ms)
+                </span>
+                <input
+                  type="number"
+                  id="light-period"
+                  min="0"
+                  max="65535"
+                  value="1500"
+                />
+              </label>
+
+              <label class="field" id="light-curve-field">
+                <span class="field__label">Ramp</span>
+                <select id="light-curve">
+                  <option value="linear" selected>Linear</option>
+                  <option value="ease">Ease in and out</option>
+                  <option value="flicker">Flicker</option>
+                </select>
+              </label>
+
+              <label class="field" id="light-spread-field">
+                <span class="field__label" id="light-spread-label">
+                  Flicker amount
+                </span>
+                <input
+                  type="number"
+                  id="light-spread"
+                  min="0"
+                  max="255"
+                  value="40"
+                />
+              </label>
+            </div>
+
+            <div class="actions">
+              <button
+                id="light-save"
+                type="submit"
+                class="btn btn--primary"
+                disabled
+              >
+                Save look
+              </button>
+              <button id="light-reset" type="button" class="btn btn--ghost">
+                Clear the form
+              </button>
+              <span class="note">
+                Saving an id that does not exist yet fills the gap with blanks.
+              </span>
+            </div>
+          </form>
+        </details>
+      </section>
+    </div>
+
+    <div
+      class="panel"
+      id="panel-sounds"
+      role="tabpanel"
+      aria-labelledby="tab-sounds"
+      hidden
+    >
+      <section class="card" id="sound-card" aria-busy="false">
+        <h2>
+          Sound slots
+          <button id="refresh-sounds" type="button" class="btn btn--ghost">
+            Refresh
+          </button>
+        </h2>
+
+        <p class="note" id="sound-summary">Not read yet.</p>
+        <ul class="sounds" id="sound-list"></ul>
+
+        <div class="subsection">
+          <h3 class="subsection__title">Playback</h3>
+          <p class="note">
+            Playing a slot starts it on the clock straight away, at the volume
+            it was stored with.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">Fade-in (s)</span>
+              <input
+                type="number"
+                id="sound-fade"
+                min="0"
+                max="255"
+                value="0"
+              />
+            </label>
+            <button id="sound-stop" type="button" class="btn" disabled>
+              Stop playback
+            </button>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3 class="subsection__title">Long press</h3>
+          <p class="note">
+            A long press on the button plays this sound. An id with nothing
+            stored in it means the long press stays silent.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">Button song id</span>
+              <input
+                type="number"
+                id="button-sound"
+                min="0"
+                max="255"
+                value="0"
+              />
+            </label>
+            <button id="button-sound-save" type="button" class="btn" disabled>
+              Save button song
+            </button>
+          </div>
+        </div>
+
+        <p class="note">
+          Uploading a sound still needs <code>main.py upload-sound</code>,
+          which decodes WAV or MP3 and resamples it before streaming the blob
+          over.
+        </p>
+      </section>
+    </div>
+
+    <div
+      class="panel"
+      id="panel-alarms"
+      role="tabpanel"
+      aria-labelledby="tab-alarms"
+      hidden
+    >
+      <section class="card" id="alarm-card" aria-busy="false">
+        <h2>
+          Stored alarms
+          <button id="refresh-alarms" type="button" class="btn btn--ghost">
+            Refresh
+          </button>
+        </h2>
+
+        <p class="note" id="alarm-summary">Not read yet.</p>
+        <ul class="alarms" id="alarm-list"></ul>
+
+        <details class="adder" id="alarm-adder">
+          <summary>Add an alarm</summary>
+
+          <form id="alarm-form">
+            <div class="field-row">
+              <label class="field">
+                <span class="field__label">Time</span>
+                <input
+                  type="time"
+                  id="alarm-time"
+                  step="1"
+                  value="08:00:00"
+                  required
+                />
+              </label>
+
+              <label class="field">
+                <span class="field__label">Repeats</span>
+                <select id="alarm-mode">
+                  <option value="weekly" selected>Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </label>
+            </div>
+
+            <fieldset class="days" id="alarm-days">
+              <legend class="field__label">Days</legend>
+              <label><input type="checkbox" value="0" checked/> Mon</label>
+              <label><input type="checkbox" value="1" checked/> Tue</label>
+              <label><input type="checkbox" value="2" checked/> Wed</label>
+              <label><input type="checkbox" value="3" checked/> Thu</label>
+              <label><input type="checkbox" value="4" checked/> Fri</label>
+              <label><input type="checkbox" value="5"/> Sat</label>
+              <label><input type="checkbox" value="6"/> Sun</label>
+            </fieldset>
+
+            <label class="field" id="alarm-dom-field" hidden>
+              <span class="field__label">Day of the month</span>
+              <input type="number" id="alarm-dom" min="1" max="31" value="1"/>
+            </label>
+
+            <details class="adder__more">
+              <summary>Sound, light and timing</summary>
+              <div class="field-row">
+                <label class="field">
+                  <span class="field__label">Sound id</span>
+                  <input
+                    type="number"
+                    id="alarm-sound"
+                    min="0"
+                    max="255"
+                    value="0"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field__label">Light id</span>
+                  <input
+                    type="number"
+                    id="alarm-light"
+                    min="0"
+                    max="255"
+                    value="0"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field__label">Auto-quiet (s)</span>
+                  <input
+                    type="number"
+                    id="alarm-timeout"
+                    min="0"
+                    max="65535"
+                    value="60"
+                  />
+                </label>
+                <label class="field">
+                  <span class="field__label">Sound fade-in (s)</span>
+                  <input
+                    type="number"
+                    id="alarm-fade"
+                    min="0"
+                    max="255"
+                    value="0"
+                  />
+                </label>
+              </div>
+              <p class="note">
+                Auto-quiet 0 means the alarm rings until the button stops it.
+                Sounds and light looks are still uploaded with
+                <code>main.py</code>; these ids choose which ones an alarm uses.
+              </p>
+            </details>
+
+            <div class="actions">
+              <button
+                id="alarm-add"
+                type="submit"
+                class="btn btn--primary"
+                disabled
+              >
+                Add alarm
+              </button>
+              <label class="inline">
+                <input type="checkbox" id="alarm-enabled" checked/>
+                Enabled
+              </label>
+              <span class="note">
+                Saving rewrites the clock&rsquo;s stored settings.
+              </span>
+            </div>
+          </form>
+        </details>
+      </section>
+    </div>
 
     <section class="card">
       <h2>

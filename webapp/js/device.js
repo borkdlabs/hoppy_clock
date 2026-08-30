@@ -9,6 +9,9 @@
  */
 
 import {CMD, FrameParser, STATUS_OK, buildFrame, cmdName} from './protocol.js';
+import {ALARM_BYTES, MAX_ALARMS} from './alarms.js';
+import {MAX_LEDS, MAX_LIGHTS} from './lights.js';
+import {MAX_SOUNDS, decodeSound} from './sounds.js';
 
 /** STM32 Virtual COM Port, from firmware/USB_DEVICE/App/usbd_desc.c. */
 export const USB_FILTER = {usbVendorId: 0x0483, usbProductId: 0x5740};
@@ -18,6 +21,12 @@ const BAUD_RATE = 115200;
 
 /** How long to wait for a response before giving up on a command. */
 const TXN_TIMEOUT_MS = 1000;
+
+/**
+ * Longer budget for CFG_COMMIT, which erases and rewrites a flash sector
+ * before it answers. Matches the 5 s the Python tool allows.
+ */
+const COMMIT_TIMEOUT_MS = 5000;
 
 /** A command that failed: no response, a bad echo, or a non-OK status. */
 export class DeviceError extends Error {
@@ -49,6 +58,16 @@ function awaitSecondBoundary() {
   const delay = 1000 - (Date.now() % 1000);
   return new Promise((resolve) => setTimeout(resolve, delay));
 }
+
+/**
+ * @typedef {object} Config
+ * @property {Uint8Array[]} alarms Packed alarm records, in table order.
+ * @property {Uint8Array[]} lights Packed light looks, in id order.
+ * @property {number} lampOn Light id the lamp plays when switched on.
+ * @property {number} lampOff Light id the lamp settles to when switched off.
+ * @property {number} ledCount Active LEDs in the chain.
+ * @property {number} buttonSound Sound id the long-press plays.
+ */
 
 /**
  * An open (or openable) connection to one clock.
@@ -89,8 +108,7 @@ export class HoppyClock extends EventTarget {
       throw new DeviceError('this browser does not support Web Serial');
     }
 
-    const target =
-      port ?? (await navigator.serial.requestPort({filters: [USB_FILTER]}));
+    const target = port ?? (await navigator.serial.requestPort({filters: [USB_FILTER]}));
     await target.open({baudRate: BAUD_RATE});
 
     this.#port = target;
@@ -144,10 +162,11 @@ export class HoppyClock extends EventTarget {
    *
    * @param {number} cmd Command ID.
    * @param {Uint8Array|number[]} [payload] Request payload.
+   * @param {number} [timeoutMs] How long to wait for the response.
    * @returns {Promise<Uint8Array>} Response payload, status byte included.
    */
-  txn(cmd, payload = []) {
-    const run = () => this.#txnNow(cmd, payload);
+  txn(cmd, payload = [], timeoutMs = TXN_TIMEOUT_MS) {
+    const run = () => this.#txnNow(cmd, payload, timeoutMs);
     // Chain onto the queue either way, but keep this caller's own outcome.
     const result = this.#queue.then(run, run);
     this.#queue = result.catch(() => {
@@ -160,18 +179,16 @@ export class HoppyClock extends EventTarget {
    *
    * @param {number} cmd Command ID.
    * @param {Uint8Array|number[]} [payload] Request payload.
+   * @param {number} [timeoutMs] How long to wait for the response.
    * @returns {Promise<Uint8Array>} Response data after the status byte.
    */
-  async command(cmd, payload = []) {
-    const response = await this.txn(cmd, payload);
+  async command(cmd, payload = [], timeoutMs = TXN_TIMEOUT_MS) {
+    const response = await this.txn(cmd, payload, timeoutMs);
     if (response.length < 1) {
       throw new DeviceError(`${cmdName(cmd)}: empty response`);
     }
     if (response[0] !== STATUS_OK) {
-      throw new DeviceError(
-        `${cmdName(cmd)}: device reported an error`,
-        response[0],
-      );
+      throw new DeviceError(`${cmdName(cmd)}: device reported an error`, response[0],);
     }
     return response.subarray(1);
   }
@@ -208,15 +225,7 @@ export class HoppyClock extends EventTarget {
   async setTime(when) {
     // The firmware wants an ISO weekday (Mon=1 .. Sun=7); JS counts Sun=0.
     const weekday = when.getDay() === 0 ? 7 : when.getDay();
-    await this.command(CMD.SET_TIME, [
-      when.getFullYear() % 100,
-      when.getMonth() + 1,
-      when.getDate(),
-      weekday,
-      when.getHours(),
-      when.getMinutes(),
-      when.getSeconds(),
-    ]);
+    await this.command(CMD.SET_TIME, [when.getFullYear() % 100, when.getMonth() + 1, when.getDate(), weekday, when.getHours(), when.getMinutes(), when.getSeconds(),]);
   }
 
   /**
@@ -230,8 +239,230 @@ export class HoppyClock extends EventTarget {
     return this.getTime();
   }
 
+  /**
+   * Read the whole stored config: alarms, light looks and the odds and ends.
+   *
+   * Light looks come back as raw records. The page does not edit them yet, but
+   * writeConfig has to send them back untouched, so they are carried rather
+   * than decoded.
+   *
+   * @returns {Promise<Config>} The config as the clock currently holds it.
+   */
+  async readConfig() {
+    const counts = await this.command(CMD.CFG_GET_COUNT);
+    if (counts.length < 6) {
+      throw new DeviceError('CFG_GET_COUNT: short response');
+    }
+    const [alarmCount, lightCount, lampOn, lampOff, ledCount, buttonSound] = counts;
+
+    // Alarm and light records are both 12 packed bytes.
+    const read = async (cmd, count) => {
+      const records = [];
+      for (let i = 0; i < count; i++) {
+        const data = await this.command(cmd, [i]);
+        if (data.length < ALARM_BYTES) {
+          throw new DeviceError(`${cmdName(cmd)} ${i}: short response`);
+        }
+        // Copy: the response payload is a view onto the parser's frame.
+        records.push(data.slice(0, ALARM_BYTES));
+      }
+      return records;
+    };
+
+    return {
+      alarms: await read(CMD.CFG_GET_ALARM, alarmCount),
+      lights: await read(CMD.CFG_GET_LIGHT, lightCount),
+      lampOn,
+      lampOff,
+      ledCount,
+      buttonSound,
+    };
+  }
+
+  /**
+   * Push a whole config back and commit it.
+   *
+   * The manifest is one atomic image: CFG_BEGIN clears the staging area and
+   * CFG_COMMIT writes whatever is in it, so anything not resent here is lost.
+   * Always build the argument by editing a readConfig() result rather than
+   * assembling one from scratch.
+   *
+   * @param {Config} config The complete config to store.
+   * @returns {Promise<void>}
+   */
+  async writeConfig(config) {
+    await this.command(CMD.CFG_BEGIN);
+    for (const [i, record] of config.alarms.entries()) {
+      await this.command(CMD.CFG_SET_ALARM, [i, ...record]);
+    }
+    for (const [i, look] of config.lights.entries()) {
+      await this.command(CMD.CFG_SET_LIGHT, [i, ...look]);
+    }
+    await this.command(CMD.CFG_SET_LAMP, [config.lampOn, config.lampOff]);
+    await this.command(CMD.CFG_SET_LEDS, [config.ledCount]);
+    await this.command(CMD.CFG_SET_BTN, [config.buttonSound]);
+    await this.command(CMD.CFG_COMMIT, [config.alarms.length, config.lights.length], COMMIT_TIMEOUT_MS,);
+  }
+
+  /**
+   * Append one alarm, leaving every other setting as it was.
+   *
+   * @param {Uint8Array} record A packed record from encodeAlarm().
+   * @returns {Promise<Uint8Array[]>} The stored alarm records afterwards.
+   */
+  async addAlarm(record) {
+    const config = await this.readConfig();
+    if (config.alarms.length >= MAX_ALARMS) {
+      throw new DeviceError(`the clock holds at most ${MAX_ALARMS} alarms`);
+    }
+    config.alarms.push(record);
+    await this.writeConfig(config);
+    return config.alarms;
+  }
+
+  /**
+   * Delete the alarm at one index, closing the gap behind it.
+   *
+   * @param {number} index Position in the stored table.
+   * @returns {Promise<Uint8Array[]>} The stored alarm records afterwards.
+   */
+  async removeAlarm(index) {
+    const config = await this.readConfig();
+    if (!Number.isInteger(index) || index < 0 || index >= config.alarms.length) {
+      throw new DeviceError(`no alarm at index ${index}`);
+    }
+    config.alarms.splice(index, 1);
+    await this.writeConfig(config);
+    return config.alarms;
+  }
+
+  /**
+   * Store one light look at an id, leaving every other setting as it was.
+   *
+   * Ids are positions in the table, so setting one past the end grows it with
+   * blank looks, the same way the Python tool does.
+   *
+   * @param {number} id Light id, 0..MAX_LIGHTS - 1.
+   * @param {Uint8Array} record A packed look from encodeLight().
+   * @returns {Promise<Uint8Array[]>} The stored light records afterwards.
+   */
+  async saveLight(id, record) {
+    if (!Number.isInteger(id) || id < 0 || id >= MAX_LIGHTS) {
+      throw new DeviceError(`light id must be 0-${MAX_LIGHTS - 1}, got ${id}`);
+    }
+    const config = await this.readConfig();
+    while (config.lights.length <= id) {
+      config.lights.push(new Uint8Array(record.length));
+    }
+    config.lights[id] = record;
+    await this.writeConfig(config);
+    return config.lights;
+  }
+
+  /**
+   * Point the lamp's two idle states at light ids.
+   *
+   * These are what the button plays: the short press toggles between them, so
+   * "off" can settle on a dim ambient rather than going fully dark.
+   *
+   * @param {number} onId Light id played when the lamp switches on.
+   * @param {number} offId Light id the lamp settles to when switched off.
+   * @returns {Promise<void>}
+   */
+  async setLamp(onId, offId) {
+    for (const [name, id] of [['on', onId], ['off', offId]]) {
+      if (!Number.isInteger(id) || id < 0 || id >= MAX_LIGHTS) {
+        throw new DeviceError(`lamp ${name} id must be 0-${MAX_LIGHTS - 1}, got ${id}`,);
+      }
+    }
+    const config = await this.readConfig();
+    config.lampOn = onId;
+    config.lampOff = offId;
+    await this.writeConfig(config);
+  }
+
+  /**
+   * Set how many LEDs in the chain the firmware drives.
+   *
+   * Looks are rendered across exactly this many, so it is the strip length,
+   * not a brightness or power setting.
+   *
+   * @param {number} count Active LEDs, 1..MAX_LEDS.
+   * @returns {Promise<void>}
+   */
+  async setLedCount(count) {
+    if (!Number.isInteger(count) || count < 1 || count > MAX_LEDS) {
+      throw new DeviceError(`LED count must be 1-${MAX_LEDS}, got ${count}`,);
+    }
+    const config = await this.readConfig();
+    config.ledCount = count;
+    await this.writeConfig(config);
+  }
+
+  /**
+   * Read what one sound slot holds.
+   *
+   * An empty slot is not a failure, so this reads the status byte itself
+   * rather than letting command() throw on it.
+   *
+   * @param {number} id Slot id, 0..MAX_SOUNDS - 1.
+   * @returns {Promise<Sound|null>} The entry, or null if the slot is empty.
+   */
+  async soundInfo(id) {
+    if (!Number.isInteger(id) || id < 0 || id >= MAX_SOUNDS) {
+      throw new DeviceError(`sound id must be 0-${MAX_SOUNDS - 1}, got ${id}`);
+    }
+    const response = await this.txn(CMD.SND_INFO, [id]);
+    if (response.length < 12 || response[0] !== STATUS_OK) {
+      return null;
+    }
+    return decodeSound(response.subarray(1));
+  }
+
+  /**
+   * Play a stored sound now.
+   *
+   * @param {number} id Slot id.
+   * @param {number} [fadeS] Fade the volume in over this many seconds.
+   * @returns {Promise<void>}
+   */
+  async playSound(id, fadeS = 0) {
+    if (!Number.isInteger(id) || id < 0 || id >= MAX_SOUNDS) {
+      throw new DeviceError(`sound id must be 0-${MAX_SOUNDS - 1}, got ${id}`);
+    }
+    // The fade byte is optional in the protocol; send it only when asked for.
+    await this.command(CMD.SND_PLAY, fadeS ? [id, fadeS] : [id]);
+  }
+
+  /**
+   * Stop whatever is playing.
+   *
+   * @returns {Promise<void>}
+   */
+  async stopSound() {
+    await this.command(CMD.SND_STOP);
+  }
+
+  /**
+   * Choose the sound a long press plays.
+   *
+   * Any id with nothing stored in it means the long press plays nothing, so
+   * this deliberately allows ids past the slot count.
+   *
+   * @param {number} id Sound id, 0..255.
+   * @returns {Promise<void>}
+   */
+  async setButtonSound(id) {
+    if (!Number.isInteger(id) || id < 0 || id > 255) {
+      throw new DeviceError(`button song id must be 0-255, got ${id}`);
+    }
+    const config = await this.readConfig();
+    config.buttonSound = id;
+    await this.writeConfig(config);
+  }
+
   /** Send one command, now that the queue has granted us the wire. */
-  #txnNow(cmd, payload) {
+  #txnNow(cmd, payload, timeoutMs = TXN_TIMEOUT_MS) {
     if (!this.#port || !this.#writer) {
       return Promise.reject(new DeviceError('not connected'));
     }
@@ -240,13 +471,10 @@ export class HoppyClock extends EventTarget {
 
     return new Promise((resolve, reject) => {
       this.#pending = {
-        cmd,
-        resolve,
-        reject,
-        timer: setTimeout(() => {
+        cmd, resolve, reject, timer: setTimeout(() => {
           this.#pending = null;
           reject(new DeviceError(`${cmdName(cmd)}: timed out`));
-        }, TXN_TIMEOUT_MS),
+        }, timeoutMs),
       };
 
       this.#writer.write(frame).catch((err) => {
@@ -289,13 +517,7 @@ export class HoppyClock extends EventTarget {
       return; // Late reply to an already-timed-out command; ignore it.
     }
     if (frame.cmd !== pending.cmd) {
-      this.#settlePending((p) =>
-        p.reject(
-          new DeviceError(
-            `expected ${cmdName(p.cmd)}, got ${cmdName(frame.cmd)}`,
-          ),
-        ),
-      );
+      this.#settlePending((p) => p.reject(new DeviceError(`expected ${cmdName(p.cmd)}, got ${cmdName(frame.cmd)}`,),),);
       return;
     }
     this.#settlePending((p) => p.resolve(frame.payload));
@@ -318,10 +540,7 @@ export class HoppyClock extends EventTarget {
       return;
     }
 
-    navigator.serial.removeEventListener(
-      'disconnect',
-      this.#onSerialDisconnect,
-    );
+    navigator.serial.removeEventListener('disconnect', this.#onSerialDisconnect,);
     this.#onSerialDisconnect = null;
 
     this.#settlePending((p) => p.reject(reason));

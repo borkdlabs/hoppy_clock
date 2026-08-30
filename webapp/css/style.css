@@ -141,6 +141,42 @@ main,
   color: var(--text-dim);
 }
 
+/* Tabs. */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  margin: 0 0 var(--gap);
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  padding: 0.55rem 0.95rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
 /* Cards. */
 
 .card {
@@ -266,6 +302,225 @@ code {
   margin: 0;
 }
 
+/* Row lists: alarms, light looks and sound slots share one shape. */
+
+.alarms,
+.lights,
+.sounds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alarm,
+.light,
+.sound {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.1rem 0.9rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* The action sits on the right, spanning both rows of the item. */
+.alarm .btn,
+.light .btn,
+.sound .btn {
+  grid-column: 3;
+  grid-row: 1 / 3;
+}
+
+/* Stored but inert: a disabled alarm, an empty sound slot. */
+.alarm--off,
+.sound--empty {
+  opacity: 0.55;
+}
+
+/* Alarms. */
+
+.alarm__time {
+  grid-row: 1 / 3;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.alarm__when {
+  grid-column: 2;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.alarm__meta {
+  grid-column: 2;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+/* Lights. */
+
+/* A dot of the colour the look settles on, brightness included. */
+.light__swatch {
+  grid-row: 1 / 3;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+
+.light__name {
+  grid-column: 2;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.light__meta {
+  grid-column: 2;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+/* Sounds. */
+
+.sound__id {
+  grid-row: 1 / 3;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sound__name {
+  grid-column: 2;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.sound__meta {
+  grid-column: 2;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+/* Blocks inside a card: the lamp pickers, the LED chain. */
+
+.subsection {
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.subsection__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.subsection .note {
+  margin-top: 0.3rem;
+}
+
+.subsection .field-row {
+  align-items: flex-end;
+}
+
+/* Add-alarm form. */
+
+.adder {
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.adder summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.adder__more {
+  margin-top: 0.9rem;
+}
+
+.adder__more summary {
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  margin-top: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.field__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.9rem;
+  margin: 0.9rem 0 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.days legend {
+  padding: 0 0.3rem;
+}
+
+.days label,
+.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+input[type="time"],
+input[type="number"],
+select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+}
+
+input[type="number"] {
+  width: 7.5rem;
+}
+
+input[type="color"] {
+  width: 4rem;
+  height: 2.3rem;
+  padding: 0.15rem;
+}
+
+/* The day picker and the day-of-month field swap on the repeat mode, and both
+   set display, which would otherwise beat the browser's own [hidden] rule. */
+[hidden] {
+  display: none !important;
+}
+
 /* Log. */
 
 .log {
@@ -299,7 +554,10 @@ code {
 /* Idle (disconnected) state: dim the parts that need a live device, and show
    the connection instructions only while they are still relevant. */
 
-body:not(.is-connected) #time-card {
+body:not(.is-connected) #time-card,
+body:not(.is-connected) #alarm-card,
+body:not(.is-connected) #light-card,
+body:not(.is-connected) #sound-card {
   opacity: 0.55;
 }
 
