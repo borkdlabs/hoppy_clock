@@ -23,7 +23,8 @@ timeouts, mid-command unplug, the packed alarm, light and sound records, and
 editing alarms, light looks, the lamp ids, the LED count and the button song
 without disturbing the rest of the manifest. Sound upload is covered too: PCM
 encoding, a CRC-32 check against a known vector, the chunked stream arriving
-byte for byte, and a cancel part-way leaving nothing committed.
+byte for byte, and a cancel part-way leaving nothing committed. Clearing the
+alarm table, lighting a single LED, and both wipe scopes are covered too.
 
 ```bash
 cd webapp/dev
@@ -36,8 +37,9 @@ Paste into the browser console (or evaluate through DevTools) while the app is
 open. It replaces `navigator.serial.requestPort` with a stub clock whose RTC
 runs 47 s fast, whose manifest holds two alarms and two light looks, and whose
 first sound slot holds a 10 s blob, so every tab can be driven without a board.
-It accepts uploads as well: playback commands land on `window.__lastPlayback`
-rather than making a noise, and a committed upload lands on
-`window.__lastUpload`. The stub's manifest is left on
+It accepts uploads and wipes as well: playback commands land on
+`window.__lastPlayback` rather than making a noise, a committed upload lands on
+`window.__lastUpload`, a wipe on `window.__lastWipe`, and a lit LED on
+`window.__lastLed`. The stub's manifest is left on
 `window.__fakeConfig`, which is the quickest way to see what a save actually
 wrote.

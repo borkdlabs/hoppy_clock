@@ -134,6 +134,19 @@ main,
   font-weight: 600;
 }
 
+/* Reserved for actions that destroy stored data. */
+.btn--danger {
+  border-color: var(--err);
+  color: var(--err);
+  font-weight: 600;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: var(--err);
+  color: var(--surface);
+  border-color: var(--err);
+}
+
 .btn--ghost {
   padding: 0.1rem 0.5rem;
   font-size: 0.78rem;
@@ -185,6 +198,12 @@ main,
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
+}
+
+/* Two or more buttons in a card heading stay grouped on the right. */
+.card__actions {
+  display: flex;
+  gap: 0.4rem;
 }
 
 .card h2 {
@@ -569,7 +588,8 @@ input[type="color"] {
 body:not(.is-connected) #time-card,
 body:not(.is-connected) #alarm-card,
 body:not(.is-connected) #light-card,
-body:not(.is-connected) #sound-card {
+body:not(.is-connected) #sound-card,
+body:not(.is-connected) #reset-card {
   opacity: 0.55;
 }
 

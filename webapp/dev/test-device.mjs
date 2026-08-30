@@ -20,6 +20,7 @@ const {
 // deliberately dribbling responses out in small chunks the way USB can.
 function fakePort({
                     dropCommand = null,
+                    errorCommand = null,
                     splitEvery = 3,
                     config = null,
                     commitDelayMs = 0,
@@ -44,6 +45,8 @@ function fakePort({
   const upload = {
     begin: null, chunks: [], bytes: [], crc: null, committed: false
   };
+  const wiped = {full: null};
+  const lit = {index: null, rgb: null};
 
   const respond = (cmd, payload) => {
     const frame = buildFrame(cmd, payload);
@@ -53,7 +56,8 @@ function fakePort({
   };
 
   return {
-    rtc, stored, sounds, played, upload, readable: new ReadableStream({
+    rtc, stored, sounds, played, upload, wiped, lit,
+    readable: new ReadableStream({
       start(controller) {
         enqueue = (chunk) => controller.enqueue(chunk);
       },
@@ -66,12 +70,37 @@ function fakePort({
           throw new Error('bad CRC from host');
         }
         if (cmd === dropCommand) return; // Simulate a lost command.
+        if (cmd === errorCommand) return respond(cmd, [1]); // Forced failure.
 
         if (cmd === CMD.PING) respond(cmd, [0]); else if (cmd === CMD.SET_TIME) {
           [rtc.yy, rtc.mo, rtc.dd, rtc.wd, rtc.hh, rtc.mm, rtc.ss] = payload;
           respond(cmd, [0]);
         } else if (cmd === CMD.GET_TIME) {
           respond(cmd, [0, ...Object.values(rtc)]);
+        } else if (cmd === CMD.SET_LED) {
+          // The firmware bounds the index by the active chain length.
+          if (payload.length !== 4 || payload[0] >= stored.ledCount) {
+            respond(cmd, [1]);
+          } else {
+            lit.index = payload[0];
+            lit.rgb = [...payload.subarray(1)];
+            respond(cmd, [0]);
+          }
+        } else if (cmd === CMD.WIPE) {
+          // Blank defaults, exactly what manifest_wipe leaves behind.
+          Object.assign(stored, {
+            alarms: [],
+            lights: [],
+            lampOn: 0,
+            lampOff: 0,
+            ledCount: 1,
+            buttonSound: 0,
+          });
+          wiped.full = payload.length >= 1 && payload[0] !== 0;
+          if (wiped.full) {
+            sounds.fill(null);
+          }
+          respond(cmd, [0]);
         } else if (cmd === CMD.SND_BEGIN) {
           upload.begin = [...payload];
           upload.chunks = [];
@@ -175,7 +204,7 @@ const check = (name, pass, extra = '') => {
 // A device error status must reject rather than resolve.
 {
   const clock = new HoppyClock();
-  await clock.connect(fakePort());
+  await clock.connect(fakePort({errorCommand: CMD.WIPE}));
   const err = await clock.command(CMD.WIPE, [0]).catch((e) => e);
   check('non-OK status rejects', err?.name === 'DeviceError', err?.message);
   await clock.disconnect();
@@ -540,6 +569,78 @@ const sampleLight = (over = {}) => ({
   check('cancelling rejects', cancelled?.name === 'DeviceError');
   check('and nothing was committed', !port.upload.committed);
   check('and it stopped early', port.upload.bytes.length < data.length, `${port.upload.bytes.length} of ${data.length} B`,);
+  await clock.disconnect();
+}
+
+// --- Clearing and wiping ---------------------------------------------------
+
+{
+  const port = fakePort({
+    config: {
+      alarms: [[...encodeAlarm(sampleAlarm())], [...encodeAlarm(sampleAlarm())]],
+      lights: [[...encodeLight(sampleLight())]],
+      lampOn: 0,
+      lampOff: 0,
+      ledCount: 8,
+      buttonSound: 3,
+    },
+  });
+  const clock = new HoppyClock();
+  await clock.connect(port);
+
+  const left = await clock.clearAlarms();
+  check('clearAlarms empties the table', left.length === 0);
+  check('the device agrees', port.stored.alarms.length === 0);
+  check(
+    'and the rest of the manifest stands',
+    port.stored.lights.length === 1 &&
+      port.stored.ledCount === 8 &&
+      port.stored.buttonSound === 3,
+  );
+
+  await clock.wipe();
+  check('a plain wipe clears the config', port.stored.lights.length === 0);
+  check('a plain wipe leaves the audio alone', port.wiped.full === false);
+  check('defaults come back', port.stored.ledCount === 1);
+  check('the sound slots survive', port.sounds[0] !== null);
+
+  await clock.wipe(true);
+  check('a full wipe says so', port.wiped.full === true);
+  check('and scrubs the slots', port.sounds.every((s) => s === null));
+  await clock.disconnect();
+}
+
+// --- Lighting one LED ------------------------------------------------------
+
+{
+  const port = fakePort({
+    config: {
+      alarms: [],
+      lights: [],
+      lampOn: 0,
+      lampOff: 0,
+      ledCount: 8,
+      buttonSound: 0,
+    },
+  });
+  const clock = new HoppyClock();
+  await clock.connect(port);
+
+  await clock.setLed(3, 255, 128, 0);
+  check('setLed sends the index and colour', port.lit.index === 3);
+  check('the channels arrive in order', `${port.lit.rgb}` === '255,128,0');
+
+  const past = await clock.setLed(8, 1, 1, 1).catch((e) => e);
+  check('the device refuses an index past the chain', past?.name === 'DeviceError');
+  const bad = await clock.setLed(0, 300, 0, 0).catch((e) => e);
+  check('an out-of-range channel is refused here', bad?.name === 'DeviceError');
+  check('and never reached the device', port.lit.index === 3);
+
+  // Nothing about this is stored; the manifest must be untouched.
+  check(
+    'lighting an LED stores nothing',
+    port.stored.lights.length === 0 && port.stored.ledCount === 8,
+  );
   await clock.disconnect();
 }
 

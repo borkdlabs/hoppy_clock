@@ -102,6 +102,16 @@
       >
         Alarms
       </button>
+      <button
+        type="button"
+        class="tab"
+        role="tab"
+        id="tab-reset"
+        aria-controls="panel-reset"
+        aria-selected="false"
+      >
+        Reset
+      </button>
     </nav>
 
     <div
@@ -198,6 +208,35 @@
             </label>
             <button id="led-save" type="button" class="btn" disabled>
               Save LED count
+            </button>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <h3 class="subsection__title">Test an LED</h3>
+          <p class="note">
+            Lights one LED straight away without storing anything, for
+            checking a strip is wired and the right length. The next look,
+            alarm or lamp press paints over it, and the index has to be inside
+            the chain length above.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">LED index</span>
+              <input
+                type="number"
+                id="test-led-index"
+                min="0"
+                max="63"
+                value="0"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">Colour</span>
+              <input type="color" id="test-led-color" value="#ff8000"/>
+            </label>
+            <button id="test-led-set" type="button" class="btn" disabled>
+              Light it
             </button>
           </div>
         </div>
@@ -482,9 +521,14 @@
       <section class="card" id="alarm-card" aria-busy="false">
         <h2>
           Stored alarms
-          <button id="refresh-alarms" type="button" class="btn btn--ghost">
-            Refresh
-          </button>
+          <span class="card__actions">
+            <button id="clear-alarms" type="button" class="btn btn--ghost">
+              Delete all
+            </button>
+            <button id="refresh-alarms" type="button" class="btn btn--ghost">
+              Refresh
+            </button>
+          </span>
         </h2>
 
         <p class="note" id="alarm-summary">Not read yet.</p>
@@ -601,6 +645,53 @@
             </div>
           </form>
         </details>
+      </section>
+    </div>
+
+    <div
+      class="panel"
+      id="panel-reset"
+      role="tabpanel"
+      aria-labelledby="tab-reset"
+      hidden
+    >
+      <section class="card" id="reset-card" aria-busy="false">
+        <h2>Factory reset</h2>
+
+        <p>
+          This erases everything the clock stores: every alarm, every light
+          look, the lamp and button choices, the LED count, and the index of
+          stored sounds. The firmware itself is untouched, and the time keeps
+          running. <strong>It cannot be undone.</strong>
+        </p>
+
+        <label class="inline">
+          <input type="checkbox" id="wipe-full"/>
+          Also scrub the audio itself
+        </label>
+        <p class="note">
+          Without this the sounds are forgotten but their bytes stay on the
+          flash until something overwrites them. Scrubbing erases the whole
+          audio region, which takes several minutes with the clock unusable
+          meanwhile.
+        </p>
+
+        <div class="actions">
+          <label class="field">
+            <span class="field__label">Type <code>wipe</code> to confirm</span>
+            <input
+              type="text"
+              id="wipe-confirm"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="wipe"
+            />
+          </label>
+          <button id="wipe-start" type="button" class="btn btn--danger"
+                  disabled>
+            Erase everything
+          </button>
+        </div>
       </section>
     </div>
 

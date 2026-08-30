@@ -91,6 +91,25 @@
         } else if (cmd === 0x11) {
           tick();
           out = frame(cmd, [0, rtc.yy, rtc.mo, rtc.dd, rtc.wd, rtc.hh, rtc.mm, rtc.ss,]);
+        } else if (cmd === 0x20) {
+          if (payload.length !== 4 || payload[0] >= cfg.ledCount) {
+            out = frame(cmd, [1]);
+          } else {
+            window.__lastLed = {index: payload[0], rgb: [...payload.subarray(1)]};
+            out = frame(cmd, [0]);
+          }
+        } else if (cmd === 0x50) {
+          Object.assign(cfg, {
+            alarms: [],
+            lights: [],
+            lampOn: 0,
+            lampOff: 0,
+            ledCount: 1,
+            buttonSound: 0,
+          });
+          if (payload.length >= 1 && payload[0]) sounds.fill(null);
+          window.__lastWipe = {full: payload.length >= 1 && !!payload[0]};
+          out = frame(cmd, [0]);
         } else if (cmd === 0x40) {
           incoming = {
             id: payload[0],

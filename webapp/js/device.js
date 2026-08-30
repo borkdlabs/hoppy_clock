@@ -30,6 +30,12 @@ const TXN_TIMEOUT_MS = 1000;
  */
 const COMMIT_TIMEOUT_MS = 5000;
 
+/** A wipe erases the config and the sound index before answering. */
+const WIPE_TIMEOUT_MS = 10000;
+
+/** A full wipe scrubs the whole ~15 MB audio region: minutes, not seconds. */
+const WIPE_FULL_TIMEOUT_MS = 300000;
+
 /** A command that failed: no response, a bad echo, or a non-OK status. */
 export class DeviceError extends Error {
   /**
@@ -323,6 +329,18 @@ export class HoppyClock extends EventTarget {
   }
 
   /**
+   * Delete every alarm, leaving the rest of the manifest alone.
+   *
+   * @returns {Promise<Uint8Array[]>} The empty alarm table.
+   */
+  async clearAlarms() {
+    const config = await this.readConfig();
+    config.alarms = [];
+    await this.writeConfig(config);
+    return config.alarms;
+  }
+
+  /**
    * Delete the alarm at one index, closing the gap behind it.
    *
    * @param {number} index Position in the stored table.
@@ -381,6 +399,29 @@ export class HoppyClock extends EventTarget {
     config.lampOn = onId;
     config.lampOff = offId;
     await this.writeConfig(config);
+  }
+
+  /**
+   * Light one LED a colour right now.
+   *
+   * Transient and unstored: it writes straight to the strip, so the next light
+   * look, alarm or lamp press paints over it. The firmware refuses an index at
+   * or past the active chain length.
+   *
+   * @param {number} index Position in the chain, from 0.
+   * @param {number} r Red, 0..255.
+   * @param {number} g Green, 0..255.
+   * @param {number} b Blue, 0..255.
+   * @returns {Promise<void>}
+   */
+  async setLed(index, r, g, b) {
+    const fields = [['index', index], ['red', r], ['green', g], ['blue', b],];
+    for (const [name, value] of fields) {
+      if (!Number.isInteger(value) || value < 0 || value > 255) {
+        throw new DeviceError(`${name} must be 0-255, got ${value}`);
+      }
+    }
+    await this.command(CMD.SET_LED, [index, r, g, b]);
   }
 
   /**
@@ -524,6 +565,20 @@ export class HoppyClock extends EventTarget {
 
     const crc = crc32(data);
     await this.command(CMD.SND_END, [crc & 0xff, (crc >> 8) & 0xff, (crc >> 16) & 0xff, (crc >>> 24) & 0xff], 5000,);
+  }
+
+  /**
+   * Factory-reset the flash.
+   *
+   * Clears the manifest and the sound index, and the firmware re-applies the
+   * blank defaults live. Firmware and the running clock are untouched.
+   *
+   * @param {boolean} [full] Also scrub the audio data region, which erases
+   *   roughly 15 MB and takes minutes rather than seconds.
+   * @returns {Promise<void>}
+   */
+  async wipe(full = false) {
+    await this.command(CMD.WIPE, full ? [1] : [], full ? WIPE_FULL_TIMEOUT_MS : WIPE_TIMEOUT_MS,);
   }
 
   /** Send one command, now that the queue has granted us the wire. */

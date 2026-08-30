@@ -73,6 +73,10 @@ const ui = {
   alarmFade: el('alarm-fade'),
   alarmEnabled: el('alarm-enabled'),
   alarmAdd: el('alarm-add'),
+  clearAlarms: el('clear-alarms'),
+  wipeFull: el('wipe-full'),
+  wipeConfirm: el('wipe-confirm'),
+  wipeStart: el('wipe-start'),
   lightList: el('light-list'),
   lightSummary: el('light-summary'),
   refreshLights: el('refresh-lights'),
@@ -81,6 +85,9 @@ const ui = {
   lampSave: el('lamp-save'),
   ledCount: el('led-count'),
   ledSave: el('led-save'),
+  testLedIndex: el('test-led-index'),
+  testLedColor: el('test-led-color'),
+  testLedSet: el('test-led-set'),
   tabs: document.querySelectorAll('.tab'),
   soundList: el('sound-list'),
   soundSummary: el('sound-summary'),
@@ -243,6 +250,7 @@ function refresh() {
   updateAlarmControls();
   updateLightControls();
   updateSoundControls();
+  updateResetControls();
 
   if (!on) {
     lastReading = null;
@@ -321,6 +329,7 @@ async function poll() {
 function updateAlarmControls() {
   const live = clock.connected && !busy;
   ui.refreshAlarms.disabled = !live;
+  ui.clearAlarms.disabled = !live || alarmRecords.length === 0;
   ui.alarmAdd.disabled = !live || alarmRecords.length >= MAX_ALARMS;
   for (const button of ui.alarmList.querySelectorAll('button')) {
     button.disabled = !live;
@@ -372,6 +381,8 @@ async function readAll() {
     lamp = {on: config.lampOn, off: config.lampOff};
     ledCount = config.ledCount;
     ui.ledCount.value = String(ledCount);
+    // The firmware refuses an index past the chain, so do not offer one.
+    ui.testLedIndex.max = String(Math.max(0, ledCount - 1));
     buttonSound = config.buttonSound;
     ui.buttonSound.value = String(buttonSound);
     renderAlarms();
@@ -434,6 +445,31 @@ async function submitAlarm(event) {
   });
 }
 
+/** Handle the delete-all button. */
+async function clearAllAlarms() {
+  const count = alarmRecords.length;
+  if (!confirm(`Delete
+  all
+  ${count}
+  alarms
+  from
+  the
+  clock
+  ?`)) {
+    return;
+  }
+
+  await withBusy('Saving...', async () => {
+    try {
+      alarmRecords = await clock.clearAlarms();
+      renderAlarms();
+      log(`${count} alarm(s) deleted, none left`, 'ok');
+    } catch (err) {
+      log(`could not delete the alarms: ${err.message}`, 'err');
+    }
+  });
+}
+
 /** Handle a Delete button in the alarm list. */
 async function deleteAlarm(index) {
   const alarm = decodeAlarm(alarmRecords[index]);
@@ -467,6 +503,7 @@ function updateLightControls() {
   ui.lightSave.disabled = !live;
   ui.lampSave.disabled = !live || lightRecords.length === 0;
   ui.ledSave.disabled = !live;
+  ui.testLedSet.disabled = !live;
   for (const button of ui.lightList.querySelectorAll('button')) {
     button.disabled = !live;
   }
@@ -612,6 +649,23 @@ async function saveLamp() {
   });
 }
 
+/** Handle the test-LED button. */
+async function lightOneLed() {
+  const index = Number(ui.testLedIndex.value);
+  const {r, g, b} = fromHex(ui.testLedColor.value);
+
+  await withBusy('Lighting...', async () => {
+    try {
+      await clock.setLed(index, r, g, b);
+      log(`LED ${index} lit rgb(${r}, ${g}, ${b})`, 'ok');
+    } catch (err) {
+      // The device only says "error", so name the likeliest cause.
+      const why = index >= ledCount ? ` (the chain is ${ledCount} LED(s) long)` : '';
+      log(`could not light LED ${index}: ${err.message}${why}`, 'err');
+    }
+  });
+}
+
 /** Handle the LED count save. */
 async function saveLedCount() {
   const count = Number(ui.ledCount.value);
@@ -734,7 +788,7 @@ async function buildUpload() {
   let samples;
   let label;
   if (file) {
-    ui.uploadStatus.textContent = `Decoding ${file.name}…`;
+    ui.uploadStatus.textContent = `Decoding ${file.name}...`;
     samples = await decodeAudioFile(await file.arrayBuffer(), rateHz);
     label = file.name;
   } else {
@@ -781,17 +835,17 @@ async function startUpload() {
   ui.uploadProgress.hidden = false;
   ui.uploadProgress.value = 0;
 
-  await withBusy('Uploading…', async () => {
+  await withBusy('Uploading...', async () => {
     const kb = (sound.data.length / 1000).toFixed(0);
     log(`uploading ${sound.label} to slot ${id}: ${kb} kB, ` + `${sound.seconds.toFixed(1)} s, ${sound.format} @ ${sound.rateHz} Hz`,);
-    ui.uploadStatus.textContent = 'Erasing the slot…';
+    ui.uploadStatus.textContent = 'Erasing the slot...';
 
     try {
       await clock.uploadSound(id, sound, {
         signal: uploadAbort.signal, onProgress: (sent, total) => {
           const percent = Math.round((sent / total) * 100);
           ui.uploadProgress.value = percent;
-          ui.uploadStatus.textContent = `Sending… ${percent}%`;
+          ui.uploadStatus.textContent = `Sending... ${percent}%`;
         },
       });
       ui.uploadStatus.textContent = 'Stored.';
@@ -822,6 +876,35 @@ async function saveButtonSound() {
     } catch (err) {
       ui.buttonSound.value = String(buttonSound);
       log(`could not save the button song: ${err.message}`, 'err');
+    }
+  });
+}
+
+/** The wipe stays behind its typed confirmation, whatever else is going on. */
+function updateResetControls() {
+  const live = clock.connected && !busy;
+  ui.wipeStart.disabled = !live || ui.wipeConfirm.value.trim().toLowerCase() !== 'wipe';
+}
+
+/** Handle the factory reset. */
+async function startWipe() {
+  const full = ui.wipeFull.checked;
+
+  await withBusy('Erasing...', async () => {
+    log(`wiping the config and sound index${full ? ', and scrubbing the audio' : ''}`,);
+    try {
+      await clock.wipe(full);
+      log('wipe -> OK, the clock is back to blank defaults', 'ok');
+      // Everything on every tab just became empty; read it back rather than
+      // leaving stale tables on screen.
+      await readAll();
+      await readSounds();
+    } catch (err) {
+      log(`wipe failed: ${err.message}`, 'err');
+    } finally {
+      // Re-arm the confirmation so the next wipe is deliberate too.
+      ui.wipeConfirm.value = '';
+      ui.wipeFull.checked = false;
     }
   });
 }
@@ -943,6 +1026,9 @@ function main() {
   ui.clearLog.addEventListener('click', () => ui.log.replaceChildren());
   ui.refreshAlarms.addEventListener('click', () => withBusy('Reading...', readAll),);
   ui.alarmForm.addEventListener('submit', submitAlarm);
+  ui.clearAlarms.addEventListener('click', clearAllAlarms);
+  ui.wipeConfirm.addEventListener('input', updateResetControls);
+  ui.wipeStart.addEventListener('click', startWipe);
   ui.alarmMode.addEventListener('change', syncAlarmMode);
   // Delegated: rows come and go with every read.
   ui.alarmList.addEventListener('click', (event) => {
@@ -957,6 +1043,7 @@ function main() {
   ui.lightEffect.addEventListener('change', syncLightEffect);
   ui.lampSave.addEventListener('click', saveLamp);
   ui.ledSave.addEventListener('click', saveLedCount);
+  ui.testLedSet.addEventListener('click', lightOneLed);
   ui.lightReset.addEventListener('click', () => fillLightForm(lightRecords.length, BLANK_LIGHT),);
   ui.lightList.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-id]');
@@ -976,7 +1063,7 @@ function main() {
     // Only speak for an upload that is actually in flight.
     if (uploadAbort) {
       uploadAbort.abort();
-      ui.uploadStatus.textContent = 'Stopping…';
+      ui.uploadStatus.textContent = 'Stopping...';
     }
   });
   // Either source arms the button, so watch both.
