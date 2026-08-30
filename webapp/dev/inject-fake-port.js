@@ -47,6 +47,7 @@
   const sounds = [{
     format: 1, rate: 16000, length: 320000, crc: 0x1234abcd
   }, null];
+  let incoming = null;
 
   const tick = () => {
     // Free-run the fake RTC off its own offset until the host sets it.
@@ -90,6 +91,31 @@
         } else if (cmd === 0x11) {
           tick();
           out = frame(cmd, [0, rtc.yy, rtc.mo, rtc.dd, rtc.wd, rtc.hh, rtc.mm, rtc.ss,]);
+        } else if (cmd === 0x40) {
+          incoming = {
+            id: payload[0],
+            format: payload[1],
+            rate: payload[2] | (payload[3] << 8),
+            length: (payload[4] | (payload[5] << 8) | (payload[6] << 16) | (payload[7] << 24)) >>> 0,
+            got: 0,
+          };
+          out = frame(cmd, [0]);
+        } else if (cmd === 0x41) {
+          if (incoming) incoming.got += payload.length;
+          out = frame(cmd, [incoming ? 0 : 1]);
+        } else if (cmd === 0x42) {
+          // Publish the slot the way the firmware does on a good commit.
+          if (incoming) {
+            sounds[incoming.id] = {
+              format: incoming.format,
+              rate: incoming.rate,
+              length: incoming.got,
+              crc: (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24)) >>> 0,
+            };
+          }
+          window.__lastUpload = incoming;
+          incoming = null;
+          out = frame(cmd, [0]);
         } else if (cmd === 0x43) {
           const entry = sounds[payload[0]];
           out = frame(cmd, entry ? [0, entry.format, entry.rate & 0xff, entry.rate >> 8, entry.length & 0xff, (entry.length >> 8) & 0xff, (entry.length >> 16) & 0xff, (entry.length >>> 24) & 0xff, entry.crc & 0xff, (entry.crc >> 8) & 0xff, (entry.crc >> 16) & 0xff, (entry.crc >>> 24) & 0xff,] : [1],);

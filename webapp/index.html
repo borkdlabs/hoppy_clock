@@ -368,11 +368,107 @@
           </div>
         </div>
 
-        <p class="note">
-          Uploading a sound still needs <code>main.py upload-sound</code>,
-          which decodes WAV or MP3 and resamples it before streaming the blob
-          over.
-        </p>
+        <div class="subsection">
+          <h3 class="subsection__title">Upload</h3>
+          <p class="note">
+            Anything this browser can play works &mdash; WAV, MP3, FLAC, OGG or
+            M4A &mdash; and is mixed to mono and resampled here before it is
+            sent. Nothing is uploaded to a server; the decode happens on this
+            machine.
+          </p>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">Into slot</span>
+              <select id="upload-id">
+                <option value="0" selected>0</option>
+                <option value="1">1</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field__label">Audio file</span>
+              <input type="file" id="upload-file" accept="audio/*"/>
+            </label>
+          </div>
+
+          <details class="adder__more" id="upload-options">
+            <summary>Format, rate, level and test tones</summary>
+            <div class="field-row">
+              <label class="field">
+                <span class="field__label">Format</span>
+                <select id="upload-format">
+                  <option value="s16" selected>s16 (16-bit)</option>
+                  <option value="u8">u8 (8-bit, half size)</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field__label">Sample rate (Hz)</span>
+                <input
+                  type="number"
+                  id="upload-rate"
+                  min="1000"
+                  max="48000"
+                  step="1000"
+                  value="16000"
+                />
+              </label>
+              <label class="field">
+                <span class="field__label">Gain</span>
+                <input
+                  type="number"
+                  id="upload-gain"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value="1"
+                />
+              </label>
+              <label class="field">
+                <span class="field__label">Trim to (s)</span>
+                <input type="number" id="upload-trim" min="0" step="1"/>
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field">
+                <span class="field__label">Test tone (Hz)</span>
+                <input type="number" id="upload-tone" min="20" max="20000"/>
+              </label>
+              <label class="field">
+                <span class="field__label">Tone length (s)</span>
+                <input
+                  type="number"
+                  id="upload-tone-seconds"
+                  min="0.1"
+                  step="0.5"
+                  value="2"
+                />
+              </label>
+            </div>
+            <p class="note">
+              A test tone is used when no file is chosen. Trim is the quickest
+              way to fit a long song into a slot.
+            </p>
+          </details>
+
+          <div class="actions">
+            <button
+              id="upload-start"
+              type="button"
+              class="btn btn--primary"
+              disabled
+            >
+              Upload
+            </button>
+            <button id="upload-cancel" type="button" class="btn" hidden>
+              Cancel
+            </button>
+            <span class="note" id="upload-status">
+              Choose a file, or set a test tone frequency.
+            </span>
+          </div>
+
+          <progress id="upload-progress" max="100" value="0" hidden></progress>
+        </div>
       </section>
     </div>
 

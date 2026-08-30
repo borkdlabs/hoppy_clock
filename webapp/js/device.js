@@ -11,7 +11,9 @@
 import {CMD, FrameParser, STATUS_OK, buildFrame, cmdName} from './protocol.js';
 import {ALARM_BYTES, MAX_ALARMS} from './alarms.js';
 import {MAX_LEDS, MAX_LIGHTS} from './lights.js';
-import {MAX_SOUNDS, decodeSound} from './sounds.js';
+import {
+  CHUNK_BYTES, FORMATS, MAX_SOUNDS, SLOT_BYTES, crc32, decodeSound,
+} from './sounds.js';
 
 /** STM32 Virtual COM Port, from firmware/USB_DEVICE/App/usbd_desc.c. */
 export const USB_FILTER = {usbVendorId: 0x0483, usbProductId: 0x5740};
@@ -459,6 +461,69 @@ export class HoppyClock extends EventTarget {
     const config = await this.readConfig();
     config.buttonSound = id;
     await this.writeConfig(config);
+  }
+
+  /**
+   * Stream a PCM blob into a sound slot.
+   *
+   * SND_BEGIN erases the slot before it answers, in 64 KB blocks at roughly
+   * 2 s each, so its budget is scaled to the size rather than the usual one
+   * second. The blob then goes out in CHUNK_BYTES frames, each acknowledged,
+   * and SND_END commits it once the firmware agrees on the CRC.
+   *
+   * Cancelling stops sending, which leaves the slot erased and uncommitted:
+   * the firmware only publishes an entry when SND_END verifies it.
+   *
+   * @param {number} id Slot id.
+   * @param {{format: string, rateHz: number, data: Uint8Array}} sound The blob
+   *   and how to describe it to the firmware.
+   * @param {{onProgress?: (sent: number, total: number) => void,
+   *          signal?: AbortSignal}} [options] Progress and cancellation.
+   * @returns {Promise<void>}
+   */
+  async uploadSound(id, sound, options = {}) {
+    const {onProgress, signal} = options;
+    const {data, rateHz} = sound;
+    const format = FORMATS.indexOf(sound.format);
+
+    if (!Number.isInteger(id) || id < 0 || id >= MAX_SOUNDS) {
+      throw new DeviceError(`sound id must be 0-${MAX_SOUNDS - 1}, got ${id}`);
+    }
+    if (format < 0) {
+      throw new DeviceError(`unknown sound format '${sound.format}'`);
+    }
+    if (!Number.isInteger(rateHz) || rateHz < 1 || rateHz > 65535) {
+      throw new DeviceError(`sample rate must be 1-65535, got ${rateHz}`);
+    }
+    if (data.length < 1 || data.length > SLOT_BYTES) {
+      throw new DeviceError(`sound is ${data.length} B; a slot holds ${SLOT_BYTES} B`,);
+    }
+
+    const total = data.length;
+    const blocks = Math.ceil(total / 65536);
+    await this.command(CMD.SND_BEGIN, [id, format, rateHz & 0xff, (rateHz >> 8) & 0xff, total & 0xff, (total >> 8) & 0xff, (total >> 16) & 0xff, (total >>> 24) & 0xff,], Math.max(10000, blocks * 2500),);
+
+    // Aim for about a hundred updates whatever the size: reporting every
+    // chunk would be thousands of repaints, and a fixed byte interval never
+    // fires at all for a short sound.
+    const chunks = Math.ceil(total / CHUNK_BYTES);
+    const reportEvery = Math.max(1, Math.floor(chunks / 100));
+    let done = 0;
+
+    for (let sent = 0; sent < total; sent += CHUNK_BYTES) {
+      if (signal?.aborted) {
+        throw new DeviceError('upload cancelled');
+      }
+      const end = Math.min(sent + CHUNK_BYTES, total);
+      await this.command(CMD.SND_DATA, data.subarray(sent, end));
+      if (onProgress && ++done % reportEvery === 0) {
+        onProgress(end, total);
+      }
+    }
+    onProgress?.(total, total);
+
+    const crc = crc32(data);
+    await this.command(CMD.SND_END, [crc & 0xff, (crc >> 8) & 0xff, (crc >> 16) & 0xff, (crc >>> 24) & 0xff], 5000,);
   }
 
   /** Send one command, now that the queue has granted us the wire. */

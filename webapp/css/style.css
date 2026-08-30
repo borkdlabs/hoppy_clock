@@ -509,6 +509,18 @@ input[type="number"] {
   width: 7.5rem;
 }
 
+progress {
+  width: 100%;
+  height: 0.5rem;
+  margin-top: 0.75rem;
+  accent-color: var(--accent);
+}
+
+input[type="file"] {
+  max-width: 100%;
+  font-size: 0.88rem;
+}
+
 input[type="color"] {
   width: 4rem;
   height: 2.3rem;

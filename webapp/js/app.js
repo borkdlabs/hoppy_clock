@@ -22,7 +22,15 @@ import {
   lightColor,
   toHex,
 } from './lights.js';
-import {MAX_SOUNDS, describeSound} from './sounds.js';
+import {
+  MAX_SOUNDS,
+  SLOT_BYTES,
+  decodeAudioFile,
+  describeSound,
+  encodePcm,
+  slotSeconds,
+  synthesizeTone,
+} from './sounds.js';
 
 /** How often to re-read the device clock while connected. */
 const POLL_MS = 1000;
@@ -81,6 +89,19 @@ const ui = {
   soundStop: el('sound-stop'),
   buttonSound: el('button-sound'),
   buttonSoundSave: el('button-sound-save'),
+  uploadId: el('upload-id'),
+  uploadFile: el('upload-file'),
+  uploadOptions: el('upload-options'),
+  uploadFormat: el('upload-format'),
+  uploadRate: el('upload-rate'),
+  uploadGain: el('upload-gain'),
+  uploadTrim: el('upload-trim'),
+  uploadTone: el('upload-tone'),
+  uploadToneSeconds: el('upload-tone-seconds'),
+  uploadStart: el('upload-start'),
+  uploadCancel: el('upload-cancel'),
+  uploadStatus: el('upload-status'),
+  uploadProgress: el('upload-progress'),
   lightEditor: el('light-editor'),
   lightEditorSummary: el('light-editor-summary'),
   lightForm: el('light-form'),
@@ -167,6 +188,9 @@ let buttonSound = 0;
 
 /** What each sound slot holds, as last read: a Sound, or null if empty. */
 let soundSlots = [];
+
+/** Set while a blob is streaming, so it can be called off. */
+let uploadAbort = null;
 
 const timeFmt = new Intl.DateTimeFormat(undefined, {
   hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
@@ -611,6 +635,9 @@ function updateSoundControls() {
   ui.refreshSounds.disabled = !live;
   ui.soundStop.disabled = !live;
   ui.buttonSoundSave.disabled = !live;
+  // A source means either a chosen file or a tone frequency to synthesize.
+  const source = ui.uploadFile.files.length > 0 || Number(ui.uploadTone.value);
+  ui.uploadStart.disabled = !live || !source;
   for (const button of ui.soundList.querySelectorAll('button')) {
     // An empty slot has nothing to play.
     button.disabled = !live || !soundSlots[Number(button.dataset.id)];
@@ -687,6 +714,98 @@ async function stopSound() {
       log('playback stopped', 'ok');
     } catch (err) {
       log(`could not stop playback: ${err.message}`, 'err');
+    }
+  });
+}
+
+/**
+ * Turn the upload form into a PCM blob the firmware will take.
+ *
+ * @returns {Promise<{data: Uint8Array, format: string, rateHz: number,
+ *   seconds: number, label: string}>} The encoded sound.
+ */
+async function buildUpload() {
+  const format = ui.uploadFormat.value;
+  const rateHz = Number(ui.uploadRate.value);
+  const gain = Number(ui.uploadGain.value);
+  const trim = Number(ui.uploadTrim.value);
+  const file = ui.uploadFile.files[0];
+
+  let samples;
+  let label;
+  if (file) {
+    ui.uploadStatus.textContent = `Decoding ${file.name}…`;
+    samples = await decodeAudioFile(await file.arrayBuffer(), rateHz);
+    label = file.name;
+  } else {
+    const hz = Number(ui.uploadTone.value);
+    const seconds = Number(ui.uploadToneSeconds.value);
+    samples = synthesizeTone(hz, seconds, rateHz);
+    label = `${hz} Hz tone`;
+  }
+
+  if (trim > 0) {
+    samples = samples.subarray(0, Math.round(trim * rateHz));
+  }
+
+  return {
+    data: encodePcm(samples, format, gain),
+    format,
+    rateHz,
+    seconds: samples.length / rateHz,
+    label,
+  };
+}
+
+/** Handle the upload button. */
+async function startUpload() {
+  const id = Number(ui.uploadId.value);
+  let sound;
+  try {
+    sound = await buildUpload();
+  } catch (err) {
+    ui.uploadStatus.textContent = 'Nothing uploaded.';
+    log(`could not read that audio: ${err.message}`, 'err');
+    return;
+  }
+
+  if (sound.data.length > SLOT_BYTES) {
+    const fits = slotSeconds(sound.rateHz, sound.format);
+    ui.uploadStatus.textContent = 'Too long for a slot.';
+    log(`${sound.label} is ${sound.seconds.toFixed(1)} s; a slot holds ` + `${fits.toFixed(0)} s at ${sound.rateHz} Hz ${sound.format}. ` + 'Trim it, drop the rate, or use u8.', 'err',);
+    return;
+  }
+
+  uploadAbort = new AbortController();
+  ui.uploadCancel.hidden = false;
+  ui.uploadProgress.hidden = false;
+  ui.uploadProgress.value = 0;
+
+  await withBusy('Uploading…', async () => {
+    const kb = (sound.data.length / 1000).toFixed(0);
+    log(`uploading ${sound.label} to slot ${id}: ${kb} kB, ` + `${sound.seconds.toFixed(1)} s, ${sound.format} @ ${sound.rateHz} Hz`,);
+    ui.uploadStatus.textContent = 'Erasing the slot…';
+
+    try {
+      await clock.uploadSound(id, sound, {
+        signal: uploadAbort.signal, onProgress: (sent, total) => {
+          const percent = Math.round((sent / total) * 100);
+          ui.uploadProgress.value = percent;
+          ui.uploadStatus.textContent = `Sending… ${percent}%`;
+        },
+      });
+      ui.uploadStatus.textContent = 'Stored.';
+      log(`sound ${id} uploaded and verified`, 'ok');
+      await readSounds();
+    } catch (err) {
+      ui.uploadStatus.textContent = 'Upload failed.';
+      // A stopped upload never reaches SND_END, so nothing was committed.
+      log(`upload failed: ${err.message}; slot ${id} is now empty`, 'err');
+      await readSounds();
+    } finally {
+      uploadAbort = null;
+      ui.uploadCancel.hidden = true;
+      ui.uploadProgress.hidden = true;
     }
   });
 }
@@ -852,6 +971,17 @@ function main() {
   ui.refreshSounds.addEventListener('click', () => withBusy('Reading...', readSounds),);
   ui.soundStop.addEventListener('click', stopSound);
   ui.buttonSoundSave.addEventListener('click', saveButtonSound);
+  ui.uploadStart.addEventListener('click', startUpload);
+  ui.uploadCancel.addEventListener('click', () => {
+    // Only speak for an upload that is actually in flight.
+    if (uploadAbort) {
+      uploadAbort.abort();
+      ui.uploadStatus.textContent = 'Stopping…';
+    }
+  });
+  // Either source arms the button, so watch both.
+  ui.uploadFile.addEventListener('change', updateSoundControls);
+  ui.uploadTone.addEventListener('input', updateSoundControls);
   ui.soundList.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-id]');
     if (button) {

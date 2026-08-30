@@ -8,7 +8,13 @@ const {HoppyClock} = await import('../js/device.js');
 const {buildFrame, crc8, CMD, SOF} = await import('../js/protocol.js');
 const {decodeAlarm, encodeAlarm} = await import('../js/alarms.js');
 const {decodeLight, encodeLight, lightColor} = await import('../js/lights.js');
-const {describeSound, soundSeconds} = await import('../js/sounds.js');
+const {
+  crc32,
+  describeSound,
+  encodePcm,
+  soundSeconds,
+  synthesizeTone
+} = await import('../js/sounds.js');
 
 // A stand-in for the clock: parses requests and answers like the firmware,
 // deliberately dribbling responses out in small chunks the way USB can.
@@ -34,6 +40,11 @@ function fakePort({
   }, null];
   const played = {id: null, fade: null, stopped: false};
 
+  // What an in-flight SND_BEGIN/DATA/END stream has produced so far.
+  const upload = {
+    begin: null, chunks: [], bytes: [], crc: null, committed: false
+  };
+
   const respond = (cmd, payload) => {
     const frame = buildFrame(cmd, payload);
     for (let i = 0; i < frame.length; i += splitEvery) {
@@ -42,7 +53,7 @@ function fakePort({
   };
 
   return {
-    rtc, stored, sounds, played, readable: new ReadableStream({
+    rtc, stored, sounds, played, upload, readable: new ReadableStream({
       start(controller) {
         enqueue = (chunk) => controller.enqueue(chunk);
       },
@@ -61,6 +72,22 @@ function fakePort({
           respond(cmd, [0]);
         } else if (cmd === CMD.GET_TIME) {
           respond(cmd, [0, ...Object.values(rtc)]);
+        } else if (cmd === CMD.SND_BEGIN) {
+          upload.begin = [...payload];
+          upload.chunks = [];
+          upload.bytes = [];
+          upload.committed = false;
+          respond(cmd, [payload.length === 8 ? 0 : 1]);
+        } else if (cmd === CMD.SND_DATA) {
+          upload.chunks.push(payload.length);
+          upload.bytes.push(...payload);
+          respond(cmd, [0]);
+        } else if (cmd === CMD.SND_END) {
+          upload.crc = (payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24)) >>> 0;
+          // Commit only if the CRC matches what actually arrived, the way the
+          // firmware verifies before publishing the entry.
+          upload.committed = upload.crc === crc32(Uint8Array.from(upload.bytes));
+          respond(cmd, [upload.committed ? 0 : 1]);
         } else if (cmd === CMD.SND_INFO) {
           const entry = sounds[payload[0]];
           respond(cmd, entry ? [0, entry.format, entry.rate & 0xff, entry.rate >> 8, entry.length & 0xff, (entry.length >> 8) & 0xff, (entry.length >> 16) & 0xff, (entry.length >>> 24) & 0xff, entry.crc & 0xff, (entry.crc >> 8) & 0xff, (entry.crc >> 16) & 0xff, (entry.crc >>> 24) & 0xff,] : [1],);
@@ -459,6 +486,60 @@ const sampleLight = (over = {}) => ({
   check('setButtonSound stores the id', port.stored.buttonSound === 7);
   const over = await clock.setButtonSound(256).catch((e) => e);
   check('setButtonSound rejects 256', over?.name === 'DeviceError');
+  await clock.disconnect();
+}
+
+// --- Sound upload ----------------------------------------------------------
+
+{
+  const port = fakePort();
+  const clock = new HoppyClock();
+  await clock.connect(port);
+
+  // A 100 ms tone is 1600 samples, so 3200 B of s16: 50 full 64 B chunks.
+  const samples = synthesizeTone(440, 0.1, 16000);
+  const data = encodePcm(samples, 's16', 1);
+  check('encodePcm sizes s16 at two bytes a sample', data.length === 3200);
+  check('u8 is half the size and centred on 128', encodePcm(new Float32Array(4), 'u8', 1).every((b) => b === 128),);
+
+  const seen = [];
+  await clock.uploadSound(0, {
+    format: 's16',
+    rateHz: 16000,
+    data
+  }, {onProgress: (sent, total) => seen.push([sent, total])},);
+
+  check('the blob arrived whole', port.upload.bytes.length === data.length);
+  check('byte for byte', Uint8Array.from(port.upload.bytes).every((b, i) => b === data[i]),);
+  check('chunks stay within the frame limit', Math.max(...port.upload.chunks) === 64);
+  check('the device verified the CRC', port.upload.committed);
+  check('BEGIN carries id, format, rate and length', port.upload.begin[0] === 0 && port.upload.begin[1] === 1 && port.upload.begin[2] === 0x80 && port.upload.begin[3] === 0x3e && port.upload.begin[4] === 0x80 && port.upload.begin[5] === 0x0c,);
+  check('progress ends at the total', seen.at(-1)[0] === data.length);
+
+  // A known vector, so a broken CRC cannot pass unnoticed.
+  check('crc32 matches zlib', crc32(new TextEncoder().encode('123456789')) === 0xcbf43926,);
+
+  const short = await clock
+    .uploadSound(0, {format: 's16', rateHz: 16000, data: new Uint8Array(0)})
+    .catch((e) => e);
+  check('an empty blob is refused', short?.name === 'DeviceError');
+  const badFormat = await clock
+    .uploadSound(0, {format: 'flac', rateHz: 16000, data})
+    .catch((e) => e);
+  check('an unknown format is refused', badFormat?.name === 'DeviceError');
+
+  // Cancelling part-way must stop sending and leave nothing committed.
+  const controller = new AbortController();
+  const cancelled = await clock
+    .uploadSound(1, {format: 's16', rateHz: 16000, data}, {
+      signal: controller.signal, onProgress: (sent) => {
+        if (sent > 0) controller.abort();
+      },
+    },)
+    .catch((e) => e);
+  check('cancelling rejects', cancelled?.name === 'DeviceError');
+  check('and nothing was committed', !port.upload.committed);
+  check('and it stopped early', port.upload.bytes.length < data.length, `${port.upload.bytes.length} of ${data.length} B`,);
   await clock.disconnect();
 }
 
