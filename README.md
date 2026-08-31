@@ -13,7 +13,8 @@ own songs, configured over USB from the browser or a Python tool.
 </a>
 
 💚 Sponsored by **[PCBWay](https://www.pcbway.com)**, who provided the bare PCBs
-and solder paste stencil for the v0.1.0-alpha boards.
+and solder paste stencil for the v0.1.0-alpha boards -
+see [Acknowledgements](#acknowledgements).
 
 ---
 
@@ -43,6 +44,7 @@ and solder paste stencil for the v0.1.0-alpha boards.
   * [4 Development](#4-development)
     * [4.1 Web App](#41-web-app)
     * [4.2 Deployment](#42-deployment)
+  * [Acknowledgements](#acknowledgements)
   * [Third-Party Licenses](#third-party-licenses)
 <!-- TOC -->
 
@@ -60,7 +62,7 @@ and solder paste stencil for the v0.1.0-alpha boards.
 
 - ⏰ **Alarms**: up to 64, each either weekly (any set of weekdays) or monthly (a
   day of the month) at a chosen time. Every alarm has its own light look, sound,
-  volume fade-in, and auto-quiet timeout.
+  volume fade-in and auto-quiet timeout.
 - 💡 **Lamp**: the single button toggles a warm lamp look on/off, the "off"
   state can settle to a dim ambient rather than fully dark.
 - ✨ **Lights**: parametric looks (`solid` fade, `rainbow`, `sweep`, `breathe`)
@@ -194,7 +196,7 @@ By default, the board is powered from the `USB-C` 5 V source. An onboard TPS2116
 priority power mux allows a backup 5 V supply to be connected via the
 `Backup supply` connector (for example, a regulated battery pack output). If the
 USB-C supply drops below the mux threshold, the TPS2116 automatically switches
-the board over to the backup supply, and switches back when USB-C power returns.
+the board over to the backup supply and switches back when USB-C power returns.
 The mux status pin (`ST`) is exposed on the `TPS2116 ST` test pad and is pulled
 low whenever the backup supply is in use, allowing a probe to detect the active
 source during development/testing.
@@ -215,11 +217,11 @@ be connected to ground.
 ## 3 Firmware
 
 The firmware is fixed, all user settings (time, alarms, light looks, the lamp,
-sounds, and the LED count) live in the W25Q NOR flash and are written over USB
-at runtime. Settings survive resets (the clock's time is kept in the STM32
-backup domain), as long as the board stays powered from USB-C or the backup
-supply. A full power loss resets the clock (see the clock-unset cue above). A
-flash `wipe` returns the unit to a clean state.
+sounds and the LED count) live in the W25Q NOR flash and are written over USB at
+runtime. Settings survive resets (the clock's time is kept in the STM32 backup
+domain), as long as the board stays powered from USB-C or the backup supply. A
+full power loss resets the clock (see the clock-unset cue above). A flash `wipe`
+returns the unit to a clean state.
 
 ### 3.1 User Button Controls
 
@@ -233,12 +235,12 @@ flash `wipe` returns the unit to a clean state.
 The board enumerates as a USB CDC virtual serial port and speaks a small framed
 command protocol (`firmware/Core/Inc/usb_cmd.h`). Two hosts implement it:
 
-| Host                                                | Runs on                               | Covers                                         |
-|-----------------------------------------------------|---------------------------------------|------------------------------------------------|
-| [Web app](https://borkdlabs.github.io/hoppy_clock/) | Chrome or Edge on desktop, no install | Reading and syncing the clock                  |
-| [`software/main.py`](software/main.py)              | Any OS with Python 3                  | Everything: alarms, lights, lamp, sounds, wipe |
+| Host                                                | Runs on                               |
+|-----------------------------------------------------|---------------------------------------|
+| [`software/main.py`](software/main.py)              | Any OS with Python 3                  |
+| [Web app](https://borkdlabs.github.io/hoppy_clock/) | Chrome or Edge on desktop, no install |
 
-Both open the same serial port, and only one program may hold it at a time.
+Both open the same serial port and only one program may hold it at a time.
 
 **Connecting:** When the clock is idle and off USB it deep-sleeps (STOP2) and
 deliberately presents as *detached*, so plugging into a host shows no device at
@@ -258,12 +260,11 @@ going to sleep allows the system to return to deep sleep.
 > USB-C charger or power bank, both simply present 5 V with no reliable way to
 > distinguish them until an enumeration that only a real host answers. Waking
 > and enumerating on every plug-in would spend energy for the majority of the
-> time the port is used only to charge or power the unit, and risks staying
-> awake on a battery pack it mistook for a host. Gating USB behind a deliberate
-> button press ties enumeration to a real intent to configure, and lets the
-> clock stay in its lowest-power state whenever it is merely being powered.
-> Firmware itself is flashed over SWD (the `TC2050` header), independent of this
-> path.
+> time the port is used only to charge or power the unit and risks staying awake
+> on a battery pack it mistook for a host. Gating USB behind a deliberate button
+> press ties enumeration to a real intent to configure and lets the clock stay
+> in its lowest-power state whenever it is merely being powered. Firmware itself
+> is flashed over SWD (the `TC2050` header), independent of this path.
 
 #### 3.2.1 Web App
 
@@ -273,21 +274,11 @@ A single static page that drives the port through the
 [Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API),
 so there is nothing to install beyond the OS's own CDC driver. It needs **Chrome
 or Edge on desktop** (Windows, macOS or Linux); Firefox, Safari and mobile
-browsers do not implement Web Serial, and the page says so rather than
+browsers do not implement Web Serial and the page says so rather than
 half-working.
 
 Press *Connect* and pick the STM32 virtual COM port (`0483:5740`). Permission is
 granted per site and remembered, so later visits reopen that port on their own.
-
-What it does today:
-
-- shows the clock's time and date beside this computer's,
-- reports the drift between them, refreshed every second,
-- **Sync to this computer**, sent on the next whole-second boundary,
-- logs every command and the status that came back.
-
-Alarms, lights, the lamp and sounds are not in the page yet, use the Python tool
-for those.
 
 #### 3.2.2 Python Tool
 
@@ -305,7 +296,7 @@ python main.py <command> [options]     # add -p COM7 (or /dev/ttyACM0) to pick t
 | `set-time`                        | Sync the RTC to the host's local time                                   |
 | `add-alarm` / `set-alarm`         | Add an alarm (e.g. `--at 08:00 --days weekdays`) / replace all with one |
 | `remove-alarm N` / `clear-alarms` | Delete one alarm by index / delete all                                  |
-| `list-alarms`                     | Show alarms, lights, the lamp, and LED count                            |
+| `list-alarms`                     | Show alarms, lights, the lamp and LED count                             |
 | `set-light`                       | Define a light look (`--effect solid\|rainbow\|sweep\|breathe`)         |
 | `set-lamp`                        | Choose the on/off lamp idle looks                                       |
 | `set-led-count N`                 | Set the number of chained LEDs                                          |
@@ -345,7 +336,7 @@ boot with the button held:
 
 [`webapp/`](webapp) is plain ES modules with no build step, no bundler and no
 dependencies, it is served exactly as it sits in the repository. Web Serial only
-runs in a secure context, and `http://localhost` counts as one, so a static
+runs in a secure context and `http://localhost` counts as one, so a static
 server is enough and no HTTPS setup is needed:
 
 ```bash
@@ -358,9 +349,12 @@ Then open <http://localhost:8000> in Chrome or Edge.
 | Path                          | What it is                                               |
 |-------------------------------|----------------------------------------------------------|
 | `index.html`, `css/style.css` | Page and styling                                         |
+| `js/alarms.js`                | Packed alarm records, mirrors `manifest.h`               |
+| `js/app.js`                   | Tab switching and the wiring behind every card           |
+| `js/device.js`                | Port lifecycle, transactions, manifest read/write        |
+| `js/lights.js`                | Packed light looks, mirrors `manifest.h`                 |
+| `js/sounds.js`                | Sound slots and the decode/encode upload path            |
 | `js/protocol.js`              | Framing and CRC-8, mirrors `firmware/Core/Inc/usb_cmd.h` |
-| `js/device.js`                | Port lifecycle, request/response transactions            |
-| `js/app.js`                   | UI wiring, clock polling and the drift readout           |
 | `dev/`                        | The helpers below, stripped from the published site      |
 
 **Working without a board.** The offline checks exercise the framing and
@@ -379,7 +373,9 @@ whose RTC runs 47 s fast, so the connect flow, the drift readout and the sync
 button can all be driven dry. More in [`webapp/dev/`](webapp/dev/README.md).
 
 A protocol change touches three implementations, keep them in step:
-`firmware/Core/Inc/usb_cmd.h`, `software/main.py` and `webapp/js/protocol.js`.
+`firmware/Core/Inc/usb_cmd.h`, `software/main.py` and `webapp/js/`
+(`protocol.js` for the framing, `alarms.js`, `lights.js` and `sounds.js` for the
+record layouts).
 
 ### 4.2 Deployment
 
@@ -387,11 +383,42 @@ A protocol change touches three implementations, keep them in step:
 to GitHub Pages on every push to `main` touching `webapp/`. It runs
 `node --check` over each module and the offline checks above, copies `webapp/`
 to the site root minus `dev/`, then deploys. Pull requests build and test but do
-not publish, and the workflow can also be started by hand (*Actions -> Pages ->
+not publish and the workflow can also be started by hand (*Actions -> Pages ->
 Run workflow*).
 
 The repository's Pages source must be set to **GitHub Actions**
 (*Settings -> Pages -> Build and deployment -> Source*).
+
+---
+
+## Acknowledgements
+
+<a href="https://www.pcbway.com">
+  <img src="docs/PCBWay.svg" alt="PCBWay Logo" width="25%" />
+</a>
+
+This project is sponsored by [PCBWay](https://www.pcbway.com), whose PCB
+manufacturing services are essential in producing high-quality prototypes for
+its development. Their support ensures reliable boards that meet the project's
+demands.
+
+**Why PCBWay?**
+
+PCBWay stands out for their exceptional services and commitment to the
+community:
+
+- **PCB manufacturing**: multilayer, rigid-flex and other advanced fabrication.
+- **PCB assembly**: soldering, component sourcing and assembly.
+- **Other services**: CNC machining and 3D printing, for projects that need more
+  than a board.
+- **Fast turnaround**: quick production times that keep a project on schedule.
+- **Open source and education**: they sponsor projects and publish tutorials,
+  videos and documentation for developers and hobbyists.
+    - This commitment to education and open-source advocacy was a key factor in
+      choosing them as a partner 🙂.
+
+Their dedication to professional-grade services and fostering innovation makes
+PCBWay an invaluable partner in bringing this project to life.
 
 ---
 
