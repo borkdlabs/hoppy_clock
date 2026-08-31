@@ -13,15 +13,42 @@
 </head>
 
 <body>
-<header class="bar">
-  <h1>Hoppy Clock</h1>
-  <div class="bar__actions">
-    <span id="status" class="pill pill--idle">Disconnected</span>
-    <button id="connect" type="button" class="btn btn--primary">
-      Connect
-    </button>
+<!-- Site bar: borkd labs above, the connection state always in reach. Every
+     link here opens a new tab on purpose, since navigating away would drop
+     the serial port mid-session. -->
+<header class="topbar">
+  <div class="topbar__inner">
+    <a class="brand" href="https://borkdlabs.com" target="_blank"
+       rel="noopener">
+      borkd labs
+    </a>
+    <div class="topbar__actions">
+      <span id="status" class="pill pill--idle">Disconnected</span>
+      <button id="connect" type="button" class="btn btn--primary">
+        Connect
+      </button>
+    </div>
   </div>
 </header>
+
+<section class="hero">
+  <h1>Hoppy Clock</h1>
+  <p class="hero__blurb">
+    Web configuration tool for Hoppy Clock, an STM32-based alarm clock and RGB
+    lamp that wakes you with light and your own songs.
+  </p>
+  <p class="hero__links">
+    <a
+      class="hero__link"
+      href="https://github.com/borkdlabs/hoppy_clock"
+      target="_blank"
+      rel="noopener"
+    >Source and hardware on GitHub</a
+    >
+    <!-- Build video: add href="https://youtu.be/..." and drop is-pending. -->
+    <a class="hero__link is-pending" id="hero-video">Build video, soon</a>
+  </p>
+</section>
 
 <main>
   <!-- Shown instead of everything else on a browser without Web Serial. -->
@@ -165,7 +192,11 @@
       <section class="card" id="light-card" aria-busy="false">
         <h2>
           Light looks
-          <button id="refresh-lights" type="button" class="btn btn--ghost">
+          <button
+            id="refresh-lights"
+            type="button"
+            class="btn btn--sm btn--ghost"
+          >
             Refresh
           </button>
         </h2>
@@ -353,7 +384,11 @@
       <section class="card" id="sound-card" aria-busy="false">
         <h2>
           Sound slots
-          <button id="refresh-sounds" type="button" class="btn btn--ghost">
+          <button
+            id="refresh-sounds"
+            type="button"
+            class="btn btn--sm btn--ghost"
+          >
             Refresh
           </button>
         </h2>
@@ -522,10 +557,18 @@
         <h2>
           Stored alarms
           <span class="card__actions">
-            <button id="clear-alarms" type="button" class="btn btn--ghost">
+            <button
+              id="clear-alarms"
+              type="button"
+              class="btn btn--sm btn--danger"
+            >
               Delete all
             </button>
-            <button id="refresh-alarms" type="button" class="btn btn--ghost">
+            <button
+              id="refresh-alarms"
+              type="button"
+              class="btn btn--sm btn--ghost"
+            >
               Refresh
             </button>
           </span>
@@ -698,7 +741,7 @@
     <section class="card">
       <h2>
         Log
-        <button id="clear-log" type="button" class="btn btn--ghost">
+        <button id="clear-log" type="button" class="btn btn--sm btn--ghost">
           Clear
         </button>
       </h2>
@@ -708,7 +751,22 @@
 </main>
 
 <footer class="foot">
-  <a href="https://github.com/borkdlabs/hoppy_clock">borkdlabs/hoppy_clock</a>
+  <p class="foot__links">
+    <a
+      href="https://github.com/borkdlabs/hoppy_clock"
+      target="_blank"
+      rel="noopener"
+    >github.com/borkdlabs/hoppy_clock</a
+    >
+    <span aria-hidden="true">&middot;</span>
+    <a href="https://borkdlabs.com" target="_blank" rel="noopener"
+    >borkdlabs.com</a
+    >
+  </p>
+  <p class="foot__note">
+    The clock is driven straight from this browser over USB. Nothing you open
+    or configure here is uploaded anywhere.
+  </p>
 </footer>
 
 <script type="module" src="./js/app.js"></script>

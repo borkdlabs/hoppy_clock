@@ -359,7 +359,7 @@ function renderAlarms() {
 
     const remove = document.createElement('button');
     remove.type = 'button';
-    remove.className = 'btn btn--ghost';
+    remove.className = 'btn btn--sm btn--danger';
     remove.dataset.index = String(index);
     remove.textContent = 'Delete';
 
@@ -531,7 +531,7 @@ function renderLights() {
 
     const edit = document.createElement('button');
     edit.type = 'button';
-    edit.className = 'btn btn--ghost';
+    edit.className = 'btn btn--sm';
     edit.dataset.id = String(id);
     edit.textContent = 'Edit';
 
@@ -718,7 +718,7 @@ function renderSounds() {
 
     const play = document.createElement('button');
     play.type = 'button';
-    play.className = 'btn btn--ghost';
+    play.className = 'btn btn--sm';
     play.dataset.id = String(id);
     play.textContent = 'Play';
 

@@ -48,33 +48,100 @@ body {
 }
 
 main,
-.bar,
-.foot {
+.hero,
+.foot,
+.topbar__inner {
   max-width: 54rem;
   margin: 0 auto;
 }
 
-/* Header. */
+/* Site bar. Bleeds over the body padding so the rule under it runs the full
+   width, while its contents line up with the cards below. */
 
-.bar {
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin: 0 calc(var(--gap) * -1);
+  padding: 0.85rem var(--gap);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--gap);
   flex-wrap: wrap;
-  padding: 1.25rem 0;
 }
 
-.bar h1 {
-  margin: 0;
-  font-size: 1.35rem;
-  letter-spacing: -0.01em;
+.brand {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
 }
 
-.bar__actions {
+.brand:hover,
+.brand:focus-visible {
+  color: var(--accent);
+}
+
+.topbar__actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* What the thing is, before any of the controls for it. */
+
+.hero {
+  padding: 1.6rem 0 1.4rem;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 1.9rem;
+  letter-spacing: -0.02em;
+}
+
+.hero__blurb {
+  max-width: 42rem;
+  margin: 0.5rem 0 0;
+  color: var(--text-dim);
+}
+
+.hero__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  margin: 0.85rem 0 0;
+  font-size: 0.9rem;
+}
+
+.hero__link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.hero__link:hover,
+.hero__link:focus-visible {
+  text-decoration: underline;
+}
+
+/* A link whose destination does not exist yet. */
+.is-pending {
+  color: var(--text-dim);
+  font-weight: 400;
+  cursor: default;
+}
+
+.is-pending:hover {
+  text-decoration: none;
 }
 
 .pill {
@@ -105,7 +172,13 @@ main,
   border-color: currentcolor;
 }
 
-/* Buttons. */
+/* Buttons.
+   Tone says what the action does, and reads at a glance:
+     filled accent  the panel's main commit, at most one per panel
+     outlined       another write to the clock
+     quiet          reads and form resets, nothing leaves the page
+     red            destroys something stored
+   Size is a separate axis, so a row button can carry any tone. */
 
 .btn {
   padding: 0.45rem 0.95rem;
@@ -147,11 +220,23 @@ main,
   border-color: var(--err);
 }
 
+/* Quiet: no frame until you reach for it. */
 .btn--ghost {
-  padding: 0.1rem 0.5rem;
-  font-size: 0.78rem;
+  border-color: transparent;
+  background: none;
   font-weight: 400;
   color: var(--text-dim);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* For rows and card headings, where a full-size button would dominate. */
+.btn--sm {
+  padding: 0.15rem 0.55rem;
+  font-size: 0.78rem;
 }
 
 /* Tabs. */
@@ -598,11 +683,30 @@ body.is-connected #connect-card {
 }
 
 .foot {
-  padding-top: 0.5rem;
+  padding-top: 1.5rem;
   font-size: 0.84rem;
   text-align: center;
 }
 
+.foot__links {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 0;
+  color: var(--text-dim);
+}
+
 .foot a {
   color: var(--text-dim);
+}
+
+.foot a:hover {
+  color: var(--accent);
+}
+
+.foot__note {
+  max-width: 34rem;
+  margin: 0.4rem auto 0;
+  color: var(--text-dim);
+  opacity: 0.8;
 }
