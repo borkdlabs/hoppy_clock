@@ -25,7 +25,7 @@
 
 Manual corrections:
 
-1. The silkscreen labelling the pins on the `WS2812B breakout` connector is
+1. The silkscreen labeling the pins on the `WS2812B breakout` connector is
    incorrect (**_5 V and ground are flipped!_**). The true pinout is: 1x3 JST
    PH, Pin 1: ground, Pin 2: DOUT, Pin 3: 5 V.
     - The silkscreen represents the intended design (matching most WS2812B LED
