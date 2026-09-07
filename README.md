@@ -201,6 +201,22 @@ The mux status pin (`ST`) is exposed on the `TPS2116 ST` test pad and is pulled
 low whenever the backup supply is in use, allowing a probe to detect the active
 source during development/testing.
 
+TPS2116 4.1 V switchover threshold logic:
+
+```
+PR1 = VIN1 * R_bot / (R_top + R_bot)
+    = VIN1 * 220k / (680k + 220k)
+    = VIN1 * 0.2444
+
+VIN1(th) = 1V * (R_top + R_bot) / R_bot
+         = 1V * (680k + 220k) / 220k
+         = 4.09 V
+
+Tolerance: +-0.08V
+min: (1V - 0.08V) * 4.0909 = 3.76 V
+max: (1V + 0.08V) * 4.0909 = 4.42 V
+```
+
 External LEDs on the `WS2812B breakout` connector are powered from USB (VBUS)
 directly, not the priority power mux in order to prevent excessive battery drain
 during a power outage. The single onboard LED is on the priority power mux
