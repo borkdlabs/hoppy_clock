@@ -22,33 +22,31 @@ see [Acknowledgements](#acknowledgements).
   <summary>Table of Contents</summary>
 
 <!-- TOC -->
-
 * [hoppy_clock](#hoppy_clock)
-    * [1 Overview](#1-overview)
-        * [1.1 Bill of Materials (BOM)](#11-bill-of-materials-bom)
-        * [1.2 Block Diagram](#12-block-diagram)
-        * [1.3 Pin Configurations](#13-pin-configurations)
-        * [1.4 Clock Configurations](#14-clock-configurations)
-    * [2 Board Specifications](#2-board-specifications)
-        * [2.1 Connectors](#21-connectors)
-        * [2.2 Switches & Jumpers](#22-switches--jumpers)
-        * [2.3 LEDs](#23-leds)
-        * [2.4 Test Pads](#24-test-pads)
-        * [2.5 Power Supply](#25-power-supply)
-        * [2.6 Speaker](#26-speaker)
-    * [3 Firmware](#3-firmware)
-        * [3.1 User Button Controls](#31-user-button-controls)
-        * [3.2 USB Configuration](#32-usb-configuration)
-            * [3.2.1 Web App](#321-web-app)
-            * [3.2.2 Python Tool](#322-python-tool)
-        * [3.3 Light Looks](#33-light-looks)
-        * [3.4 Firmware Update (DFU)](#34-firmware-update-dfu)
-    * [4 Development](#4-development)
-        * [4.1 Web App](#41-web-app)
-        * [4.2 Deployment](#42-deployment)
-    * [Acknowledgements](#acknowledgements)
-    * [Third-Party Licenses](#third-party-licenses)
-
+  * [1 Overview](#1-overview)
+    * [1.1 Bill of Materials (BOM)](#11-bill-of-materials-bom)
+    * [1.2 Block Diagram](#12-block-diagram)
+    * [1.3 Pin Configurations](#13-pin-configurations)
+    * [1.4 Clock Configurations](#14-clock-configurations)
+  * [2 Board Specifications](#2-board-specifications)
+    * [2.1 Connectors](#21-connectors)
+    * [2.2 Switches & Jumpers](#22-switches--jumpers)
+    * [2.3 LEDs](#23-leds)
+    * [2.4 Test Pads](#24-test-pads)
+    * [2.5 Power Supply](#25-power-supply)
+    * [2.6 Speaker](#26-speaker)
+  * [3 Firmware](#3-firmware)
+    * [3.1 User Button Controls](#31-user-button-controls)
+    * [3.2 USB Configuration](#32-usb-configuration)
+      * [3.2.1 Web App](#321-web-app)
+      * [3.2.2 Python Tool](#322-python-tool)
+    * [3.3 Light Looks](#33-light-looks)
+    * [3.4 Firmware Update (DFU)](#34-firmware-update-dfu)
+  * [4 Development](#4-development)
+    * [4.1 Web App](#41-web-app)
+    * [4.2 Deployment](#42-deployment)
+  * [Acknowledgements](#acknowledgements)
+  * [Third-Party Licenses](#third-party-licenses)
 <!-- TOC -->
 
 </details>
@@ -74,14 +72,15 @@ see [Acknowledgements](#acknowledgements).
 - 🔊 **Sounds**: two slots, ~4 minutes each at the default 16 kHz (16-bit PCM,
   sample rate is selectable up to 48 kHz), streamed from flash. Alarms play them
   with an optional fade-in.
-- 🔋 **Low power**: the MCU sleeps between events and drops into STOP2 when fully
-  idle, waking on the next alarm or a button press (useful on backup supply).
+- 🔋 **Low power**: the MCU sleeps between events and drops into STOP2 once the
+  system is idle, waking on the next alarm or a button press (useful on backup
+  supply).
 - 🖥️ **Configuration**: nothing is hard-coded, the board takes its settings over
   USB from the [web app](https://borkdlabs.github.io/hoppy_clock/) (Chrome or
-  Edge, nothing to install) or the Python tool in [`software/`](software).
-- 🔴 **Clock-unset cue**: if the time has never been set (for example after a
-  full power loss), the onboard LED (index 0) blinks dim red and alarms blocked
-  from triggering until the clock is set.
+  Edge, nothing to install).
+- 🔴 **Clock-unset cue**: if the time has never been set (for example, after a
+  full power loss), the onboard LED (index 0) blinks dim red and alarms are
+  blocked from triggering until the clock is set.
 
 ### 1.1 Bill of Materials (BOM)
 
@@ -275,9 +274,10 @@ first. To connect:
    harmless).
 3. Run the Python tool.
 
-If the clock is already awake (in use, ringing, or an alarm just fired) it
-enumerates the moment you plug in, with no press needed. Unplugging or the host
-going to sleep allows the system to return to deep sleep.
+If the clock is already awake (in use, ringing, an alarm just fired, or the lamp
+is showing a continuously animating look), it enumerates the moment you plug in,
+with no press needed. Unplugging or the host going to sleep allows the system to
+return to deep sleep.
 
 > **Why a button press?** The clock cannot tell a data host (a PC) from a plain
 > USB-C charger or power bank, both simply present 5 V with no reliable way to
@@ -351,21 +351,53 @@ The same three settings apply to all four alike:
 
 | Setting   | Does                                                                         |
 |-----------|------------------------------------------------------------------------------|
-| `fade`    | Crossfade duration, in ms, from whatever is already lit into this look       |
+| `fade`    | Time this look takes to fade in over whatever is already lit                 |
 | `curve`   | Shape of that fade: `linear` (constant rate) or `ease` (gentle at both ends) |
 | `flicker` | Amplitude of a random brightness dip, redrawn several times a second         |
 
-The fade belongs to the look being played, and one setting covers both
-directions, because fading a look in is what fades the previous one out. Giving
-the lamp-off look a two second `ease` fade dims a running `rainbow` down over
-two seconds; giving the `rainbow` one blooms it back up out of the dark the same
-way. A fade of 0 snaps straight to the look.
+**A fade runs on entry only.** Every transition uses the fade of the look
+arriving, never of the one leaving: playing a look is the only thing that starts
+a fade, and by then the previous look is already on its way out. So the `fade`
+on a `rainbow` decides how that rainbow appears and has no say in what happens
+when something later replaces it.
 
-Flicker is a texture rather than a shape, so it is set separately from the curve
-and the two combine freely. Unlike the fade it never ends, which is what makes a
-`solid` warm white read as a candle instead of a lamp. That also means a
-flickering look is always animating, so it holds off the deep-sleep the MCU
-would otherwise drop into once a `solid` look settles.
+To fade a look both in and out, set the fade on that look **and** on whatever
+replaces it. A lamp that eases up and back down over two and a half seconds:
+
+| Look     | Effect    | Brightness | Fade | Curve  |
+|----------|-----------|------------|------|--------|
+| Lamp on  | `rainbow` | 200        | 2500 | `ease` |
+| Lamp off | `solid`   | 0          | 2500 | `ease` |
+
+Give the lamp-off look a fade of 0 instead, and it cuts to black the instant the
+button is pressed, no matter how long the rainbow's own fade is. A fade of 0
+always means "no fade, show this look now".
+
+The look being faded away from is held as a still frame, so a `rainbow` stops
+cycling the moment it is replaced and dims from whichever hues it had reached.
+
+Flicker is a texture rather than a shape, so it is set separately from the
+curve, and the two combine freely. Unlike the fade it never ends, which is what
+makes a `solid` warm white read as a candle instead of a lamp.
+
+**A continuously animating look keeps the board out of deep sleep.** Only a
+`solid` look with `flicker` 0 ever finishes: once its fade lands, it settles on
+a fixed colour, stops rendering, and lets the MCU drop into STOP2. `rainbow`,
+`sweep` and `breathe` loop for as long as they are showing, and any `flicker`
+above 0 never stops, so a look of either kind holds the board in light sleep
+instead. Two consequences follow:
+
+- **Power.** Light sleep gates the core but keeps the clocks and peripherals
+  live, so the board sits at run current rather than the microamps STOP2 draws.
+  That matters most on the backup supply, where a permanently animated lamp look
+  is a far heavier load than a settled `solid` one.
+- **USB.** A board that never deep-sleeps never detaches either, so it
+  enumerates the moment it is plugged in with no button press needed (see
+  [3.2 USB Configuration](#32-usb-configuration)). Parking the lamp on an
+  animated look is a way to keep it permanently connectable while configuring.
+
+The clock-unset warning blink holds the board awake in the same way, until the
+time is set.
 
 ### 3.4 Firmware Update (DFU)
 
