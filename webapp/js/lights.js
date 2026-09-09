@@ -4,11 +4,19 @@
  * One look is 12 packed bytes, the same layout on the wire and on flash:
  *
  *   effect | r | g | b | brightness | period_ms (u16 LE) | curve | spread |
- *   reserved[3]
+ *   fade_ms (u16 LE) | flicker
  *
  * A look is parametric rather than a frame list: the firmware renders it
  * across every LED in the chain. Alarms and the two lamp idle states just
  * reference one by id.
+ *
+ * `effect` picks what is rendered and gives `periodMs` and `spread` their
+ * meaning. `fadeMs`, `curve` and `flicker` are modifiers that apply the same
+ * way whichever effect is chosen: the look crossfades in from whatever the
+ * strip already shows over `fadeMs` shaped by `curve`, and `flicker` dips its
+ * brightness at random while it runs. Because the fade belongs to the look
+ * being played, one setting covers both directions - fading a look in is what
+ * fades the previous one out.
  */
 
 /** Size of one packed look. */
@@ -26,18 +34,26 @@ export const MAX_LEDS = 64;
 /** light_seq_t.effect values, by index. */
 export const EFFECTS = ['solid', 'rainbow', 'sweep', 'breathe'];
 
-/** light_seq_t.curve values, by index. Only SOLID reads this. */
-export const CURVES = ['linear', 'ease', 'flicker'];
+/** light_seq_t.curve values, by index. Shapes the fade for every effect. */
+export const CURVES = ['linear', 'ease'];
 
 /**
  * What `spread` means for each effect, since the field is overloaded. Null
  * where the effect ignores it entirely.
  */
 export const SPREAD_LABELS = {
-  solid: 'Flicker amount',
+  solid: null,
   rainbow: 'Hue step per LED',
   sweep: 'Band width (LEDs)',
   breathe: null,
+};
+
+/**
+ * Whether an effect animates on a cycle, so `periodMs` means something to it.
+ * A solid look holds still and ignores the field.
+ */
+export const USES_PERIOD = {
+  solid: false, rainbow: true, sweep: true, breathe: true,
 };
 
 /** The blank look the firmware stores in an unused slot. */
@@ -50,6 +66,8 @@ export const BLANK_LIGHT = Object.freeze({
   periodMs: 0,
   curve: 'linear',
   spread: 0,
+  fadeMs: 0,
+  flicker: 0,
 });
 
 /**
@@ -59,9 +77,11 @@ export const BLANK_LIGHT = Object.freeze({
  * @property {number} g Base colour green, 0..255.
  * @property {number} b Base colour blue, 0..255.
  * @property {number} brightness Master level 0..255, scales the effect.
- * @property {number} periodMs Solid: fade duration. Animated: cycle time.
- * @property {number} curve One of CURVES; the solid ramp shape.
- * @property {number} spread Flicker amount, hue step or band width.
+ * @property {number} periodMs Animated effects: cycle time. Solid ignores it.
+ * @property {number} curve One of CURVES; the shape of the fade.
+ * @property {number} spread Hue step per LED, or band width.
+ * @property {number} fadeMs Crossfade into this look, 0 = snap. Any effect.
+ * @property {number} flicker Random brightness dip, 0 = steady. Any effect.
  */
 
 /**
@@ -87,6 +107,8 @@ export function decodeLight(bytes) {
     periodMs: view.getUint16(5, true),
     curve: CURVES[bytes[7]] ?? bytes[7],
     spread: bytes[8],
+    fadeMs: view.getUint16(9, true),
+    flicker: bytes[11],
   };
 }
 
@@ -123,29 +145,47 @@ export function encodeLight(light) {
   view.setUint16(5, fit('period', light.periodMs, 65535), true);
   bytes[7] = index('curve', CURVES, light.curve);
   bytes[8] = fit('spread', light.spread, 255);
+  view.setUint16(9, fit('fade', light.fadeMs, 65535), true);
+  bytes[11] = fit('flicker', light.flicker, 255);
   return bytes;
 }
 
 /**
- * Describe how a look behaves, in the terms its effect actually uses.
+ * Describe how a look behaves, in the terms its effect actually uses, then the
+ * modifiers it shares with every other effect.
  *
  * @param {Light} light The look to describe.
- * @returns {string} e.g. "Fades over 1500 ms, ease".
+ * @returns {string} e.g. "Breathes every 3000 ms, 1500 ms ease fade".
  */
 export function describeLight(light) {
   const ms = `${light.periodMs} ms`;
+  let base;
   switch (light.effect) {
     case 'solid':
-      return light.curve === 'flicker' ? `Fades over ${ms}, flickering by ${light.spread}` : `Fades over ${ms}, ${light.curve}`;
+      base = 'Holds one colour';
+      break;
     case 'rainbow':
-      return light.spread ? `Hue cycle every ${ms}, ${light.spread} per LED` : `Hue cycle every ${ms}, whole strip as one`;
+      base = light.spread ? `Hue cycle every ${ms}, ${light.spread} per LED` : `Hue cycle every ${ms}, whole strip as one`;
+      break;
     case 'sweep':
-      return `Sweeps every ${ms}, ${light.spread} LEDs wide`;
+      base = `Sweeps every ${ms}, ${light.spread} LEDs wide`;
+      break;
     case 'breathe':
-      return `Breathes every ${ms}`;
+      base = `Breathes every ${ms}`;
+      break;
     default:
-      return `Effect ${light.effect}, ${ms}`;
+      base = `Effect ${light.effect}, ${ms}`;
+      break;
   }
+
+  const modifiers = [];
+  if (light.fadeMs) {
+    modifiers.push(`${light.fadeMs} ms ${light.curve} fade`);
+  }
+  if (light.flicker) {
+    modifiers.push(`flickering by ${light.flicker}`);
+  }
+  return [base, ...modifiers].join(', ');
 }
 
 /**

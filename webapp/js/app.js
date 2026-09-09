@@ -15,6 +15,7 @@ import {
   EFFECTS,
   MAX_LIGHTS,
   SPREAD_LABELS,
+  USES_PERIOD,
   decodeLight,
   describeLight,
   encodeLight,
@@ -117,13 +118,14 @@ const ui = {
   lightColorField: el('light-color-field'),
   lightColor: el('light-color'),
   lightBrightness: el('light-brightness'),
-  lightPeriodLabel: el('light-period-label'),
+  lightPeriodField: el('light-period-field'),
   lightPeriod: el('light-period'),
-  lightCurveField: el('light-curve-field'),
-  lightCurve: el('light-curve'),
   lightSpreadField: el('light-spread-field'),
   lightSpreadLabel: el('light-spread-label'),
   lightSpread: el('light-spread'),
+  lightFade: el('light-fade'),
+  lightCurve: el('light-curve'),
+  lightFlicker: el('light-flicker'),
   lightSave: el('light-save'),
   lightReset: el('light-reset'),
 };
@@ -568,19 +570,21 @@ function renderLampPickers() {
   }
 }
 
-/** Relabel and hide the fields the chosen effect does not use. */
+/**
+ * Relabel and hide the fields the chosen effect does not use. Only the effect's
+ * own parameters vary; the fade and flicker modifiers apply to every effect and
+ * so are always shown.
+ */
 function syncLightEffect() {
   const effect = ui.lightEffect.value;
-  const solid = effect === 'solid';
   const spreadLabel = SPREAD_LABELS[effect];
 
-  ui.lightCurveField.hidden = !solid;
   ui.lightColorField.hidden = effect === 'rainbow';
+  ui.lightPeriodField.hidden = !USES_PERIOD[effect];
   ui.lightSpreadField.hidden = !spreadLabel;
   if (spreadLabel) {
     ui.lightSpreadLabel.textContent = spreadLabel;
   }
-  ui.lightPeriodLabel.textContent = solid ? 'Fade time (ms)' : 'Cycle time (ms)';
 }
 
 /** Load a look into the editor, or the defaults when given none. */
@@ -590,8 +594,10 @@ function fillLightForm(id, light) {
   ui.lightColor.value = toHex(light);
   ui.lightBrightness.value = String(light.brightness);
   ui.lightPeriod.value = String(light.periodMs);
-  ui.lightCurve.value = light.curve;
   ui.lightSpread.value = String(light.spread);
+  ui.lightFade.value = String(light.fadeMs);
+  ui.lightCurve.value = light.curve;
+  ui.lightFlicker.value = String(light.flicker);
   ui.lightEditorSummary.textContent = id < lightRecords.length ? `Editing light ${id}` : 'Add a light look';
   syncLightEffect();
 }
@@ -603,8 +609,10 @@ function readLightForm() {
     effect: ui.lightEffect.value,
     brightness: Number(ui.lightBrightness.value),
     periodMs: Number(ui.lightPeriod.value),
-    curve: ui.lightCurve.value,
     spread: Number(ui.lightSpread.value),
+    fadeMs: Number(ui.lightFade.value),
+    curve: ui.lightCurve.value,
+    flicker: Number(ui.lightFlicker.value),
   };
 }
 

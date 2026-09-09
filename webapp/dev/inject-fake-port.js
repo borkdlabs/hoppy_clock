@@ -32,10 +32,15 @@
   // have something to show. Both 16-bit fields are little-endian.
   //
   //   alarm: flags, day_sel, h, m, s, timeout(2), sound, light, fade, rsv(2)
-  //   light: effect, r, g, b, brightness, period(2), curve, spread, rsv(3)
+  //   light: effect, r, g, b, brightness, period(2), curve, spread, fade(2),
+  //          flicker
+  //
+  // Both looks are solid, which ignores period, so their ramps live in fade: a
+  // warm lamp easing up over 1 s with a light flicker, and a dim amber ambient
+  // fading linearly over 2 s.
   const cfg = {
     alarms: [[0x01, 0b0011111, 7, 30, 0, 60, 0, 1, 2, 20, 0, 0], [0x01, 0b1100000, 9, 0, 0, 0x2c, 0x01, 0, 0, 0, 0, 0],],
-    lights: [[0, 255, 200, 120, 180, 0xe8, 0x03, 1, 0, 0, 0, 0], [0, 255, 140, 0, 20, 0xd0, 0x07, 0, 0, 0, 0, 0],],
+    lights: [[0, 255, 200, 120, 180, 0, 0, 1, 0, 0xe8, 0x03, 40], [0, 255, 140, 0, 20, 0, 0, 0, 0, 0xd0, 0x07, 0],],
     lampOn: 0,
     lampOff: 1,
     ledCount: 8,
@@ -95,7 +100,9 @@
           if (payload.length !== 4 || payload[0] >= cfg.ledCount) {
             out = frame(cmd, [1]);
           } else {
-            window.__lastLed = {index: payload[0], rgb: [...payload.subarray(1)]};
+            window.__lastLed = {
+              index: payload[0], rgb: [...payload.subarray(1)]
+            };
             out = frame(cmd, [0]);
           }
         } else if (cmd === 0x50) {

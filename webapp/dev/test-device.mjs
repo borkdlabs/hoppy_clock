@@ -9,11 +9,7 @@ const {buildFrame, crc8, CMD, SOF} = await import('../js/protocol.js');
 const {decodeAlarm, encodeAlarm} = await import('../js/alarms.js');
 const {decodeLight, encodeLight, lightColor} = await import('../js/lights.js');
 const {
-  crc32,
-  describeSound,
-  encodePcm,
-  soundSeconds,
-  synthesizeTone
+  crc32, describeSound, encodePcm, soundSeconds, synthesizeTone
 } = await import('../js/sounds.js');
 
 // A stand-in for the clock: parses requests and answers like the firmware,
@@ -56,12 +52,19 @@ function fakePort({
   };
 
   return {
-    rtc, stored, sounds, played, upload, wiped, lit,
+    rtc,
+    stored,
+    sounds,
+    played,
+    upload,
+    wiped,
+    lit,
     readable: new ReadableStream({
       start(controller) {
         enqueue = (chunk) => controller.enqueue(chunk);
       },
-    }), writable: new WritableStream({
+    }),
+    writable: new WritableStream({
       write(frame) {
         const cmd = frame[1];
         const payload = frame.subarray(3, 3 + frame[2]);
@@ -164,8 +167,10 @@ function fakePort({
           setTimeout(() => respond(cmd, [0]), commitDelayMs);
         } else respond(cmd, [1]);
       },
-    }), open: async () => {
-    }, close: async () => {
+    }),
+    open: async () => {
+    },
+    close: async () => {
     },
   };
 }
@@ -363,7 +368,9 @@ const sampleLight = (over = {}) => ({
   brightness: 160,
   periodMs: 1500,
   curve: 'ease',
-  spread: 40, ...over,
+  spread: 40,
+  fadeMs: 800,
+  flicker: 24, ...over,
 });
 
 // The packed look has to survive a round trip byte for byte.
@@ -376,6 +383,10 @@ const sampleLight = (over = {}) => ({
   check('curve is an index', record[7] === 1); // LIGHT_CURVE_EASE.
   // 1500 ms = 0x05DC, little-endian like the alarm's timeout.
   check('period_ms is little-endian', record[5] === 0xdc && record[6] === 0x05);
+  // fade_ms and flicker took over the three bytes that used to be reserved.
+  // 800 ms = 0x0320.
+  check('fade_ms is little-endian', record[9] === 0x20 && record[10] === 0x03);
+  check('flicker is the last byte', record[11] === 24);
   check('the swatch scales by brightness', lightColor(sampleLight({
     effect: 'solid', brightness: 0
   })) === 'rgb(0, 0, 0)',);
@@ -387,6 +398,16 @@ const sampleLight = (over = {}) => ({
     threw = e instanceof RangeError;
   }
   check('rejects an unknown effect', threw);
+
+  // Flicker used to be a curve; it is its own field now, so the old name must
+  // not quietly encode as some other ramp.
+  let threwCurve = false;
+  try {
+    encodeLight(sampleLight({curve: 'flicker'}));
+  } catch (e) {
+    threwCurve = e instanceof RangeError;
+  }
+  check('rejects flicker as a curve', threwCurve);
 }
 
 // Saving a look must leave the alarms alone, and grow the table when the id
@@ -533,9 +554,7 @@ const sampleLight = (over = {}) => ({
 
   const seen = [];
   await clock.uploadSound(0, {
-    format: 's16',
-    rateHz: 16000,
-    data
+    format: 's16', rateHz: 16000, data
   }, {onProgress: (sent, total) => seen.push([sent, total])},);
 
   check('the blob arrived whole', port.upload.bytes.length === data.length);
@@ -591,12 +610,7 @@ const sampleLight = (over = {}) => ({
   const left = await clock.clearAlarms();
   check('clearAlarms empties the table', left.length === 0);
   check('the device agrees', port.stored.alarms.length === 0);
-  check(
-    'and the rest of the manifest stands',
-    port.stored.lights.length === 1 &&
-      port.stored.ledCount === 8 &&
-      port.stored.buttonSound === 3,
-  );
+  check('and the rest of the manifest stands', port.stored.lights.length === 1 && port.stored.ledCount === 8 && port.stored.buttonSound === 3,);
 
   await clock.wipe();
   check('a plain wipe clears the config', port.stored.lights.length === 0);
@@ -637,10 +651,7 @@ const sampleLight = (over = {}) => ({
   check('and never reached the device', port.lit.index === 3);
 
   // Nothing about this is stored; the manifest must be untouched.
-  check(
-    'lighting an LED stores nothing',
-    port.stored.lights.length === 0 && port.stored.ledCount === 8,
-  );
+  check('lighting an LED stores nothing', port.stored.lights.length === 0 && port.stored.ledCount === 8,);
   await clock.disconnect();
 }
 

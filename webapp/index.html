@@ -292,7 +292,7 @@
               <label class="field">
                 <span class="field__label">Effect</span>
                 <select id="light-effect">
-                  <option value="solid" selected>Solid fade</option>
+                  <option value="solid" selected>Solid</option>
                   <option value="rainbow">Rainbow</option>
                   <option value="sweep">Sweep</option>
                   <option value="breathe">Breathe</option>
@@ -317,10 +317,8 @@
                 />
               </label>
 
-              <label class="field">
-                <span class="field__label" id="light-period-label">
-                  Fade time (ms)
-                </span>
+              <label class="field" id="light-period-field">
+                <span class="field__label">Cycle time (ms)</span>
                 <input
                   type="number"
                   id="light-period"
@@ -330,18 +328,9 @@
                 />
               </label>
 
-              <label class="field" id="light-curve-field">
-                <span class="field__label">Ramp</span>
-                <select id="light-curve">
-                  <option value="linear" selected>Linear</option>
-                  <option value="ease">Ease in and out</option>
-                  <option value="flicker">Flicker</option>
-                </select>
-              </label>
-
               <label class="field" id="light-spread-field">
                 <span class="field__label" id="light-spread-label">
-                  Flicker amount
+                  Hue step per LED
                 </span>
                 <input
                   type="number"
@@ -349,6 +338,38 @@
                   min="0"
                   max="255"
                   value="40"
+                />
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label class="field">
+                <span class="field__label">Fade time (ms)</span>
+                <input
+                  type="number"
+                  id="light-fade"
+                  min="0"
+                  max="65535"
+                  value="1500"
+                />
+              </label>
+
+              <label class="field">
+                <span class="field__label">Fade curve</span>
+                <select id="light-curve">
+                  <option value="linear" selected>Linear</option>
+                  <option value="ease">Ease in and out</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span class="field__label">Flicker</span>
+                <input
+                  type="number"
+                  id="light-flicker"
+                  min="0"
+                  max="255"
+                  value="0"
                 />
               </label>
             </div>
