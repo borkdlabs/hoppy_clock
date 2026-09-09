@@ -17,11 +17,11 @@
  *   Alarms[MANIFEST_MAX_ALARMS] x 12 B
  *   Lights[MANIFEST_MAX_LIGHTS] x 12 B
  *
- * A light_seq_t is a strip-aware parametric "look": a procedural effect (solid
- * fade, rainbow, sweep, breathe) rendered across all LEDs. Alarms and the two
- * lamp idle states reference one by id. crc32 is the reflected CRC-32 (poly
- * 0xEDB88320, init/final 0xFFFFFFFF, == zlib.crc32) over the image except
- * crc32.
+ * A light_seq_t is a strip-aware parametric "look": a procedural effect (solid,
+ * rainbow, sweep, breathe) rendered across all LEDs, crossfaded in over its own
+ * fade_ms. Alarms and the two lamp idle states reference one by id. crc32 is
+ * the reflected CRC-32 (poly 0xEDB88320, init/final 0xFFFFFFFF, == zlib.crc32)
+ * over the image except crc32.
  *******************************************************************************
  */
 
@@ -37,7 +37,7 @@
 /** Definitions. **************************************************************/
 
 #define MANIFEST_MAGIC 0x50504F48u // "HOPP" (little-endian on the wire).
-#define MANIFEST_VERSION 4u
+#define MANIFEST_VERSION 5u
 #define MANIFEST_MAX_ALARMS 64u
 #define MANIFEST_MAX_LIGHTS 16u
 
@@ -56,15 +56,14 @@
 #define ALARM_DAY_SUN (1u << 6)
 
 // light_seq_t.effect: how the look animates across the strip and over time.
-#define LIGHT_FX_SOLID 0u   // Fade the whole strip to one colour, then hold.
+#define LIGHT_FX_SOLID 0u   // Hold the whole strip at one colour.
 #define LIGHT_FX_RAINBOW 1u // HSV hue cycle; spread = hue step per LED. Loops.
 #define LIGHT_FX_SWEEP 2u // A lit band of (r,g,b) moving over darkness. Loops.
 #define LIGHT_FX_BREATHE 3u // (r,g,b) brightness breathes in and out. Loops.
 
-// light_seq_t.curve (SOLID only): shape of the fade to the target.
-#define LIGHT_CURVE_LINEAR 0u  // Constant-rate ramp.
-#define LIGHT_CURVE_EASE 1u    // Smooth ease-in-out ramp.
-#define LIGHT_CURVE_FLICKER 2u // Linear rise with a random flicker overlay.
+// light_seq_t.curve: shape of the fade_ms crossfade. Applies to every effect.
+#define LIGHT_CURVE_LINEAR 0u // Constant-rate ramp.
+#define LIGHT_CURVE_EASE 1u   // Smooth ease-in-out ramp (smoothstep).
 
 /** Public types. *************************************************************/
 
@@ -72,26 +71,37 @@
  * @brief A strip-aware parametric light "look" (12 bytes, packed).
  *
  * effect selects a procedural animation rendered across every LED:
- *  - SOLID:   fade the whole strip from its current colour to (r,g,b) scaled by
- *             brightness over period_ms using curve, then hold it (so an "off"
- *             look can settle on a dim ambient rather than black).
+ *  - SOLID:   hold the whole strip at (r,g,b) scaled by brightness (so an "off"
+ *             look can settle on a dim ambient rather than black). period_ms is
+ *             unused.
  *  - RAINBOW: HSV hue cycling with period_ms per turn; spread = hue step per LED
  *             (0 = whole strip one hue, >0 = a rainbow spread along the chain).
  *  - SWEEP:   a lit band of (r,g,b) width spread moving along the strip, one
  *             pass per period_ms, over darkness.
  *  - BREATHE: (r,g,b) whose brightness oscillates in and out every period_ms.
  * Animated effects loop until another look is played; SOLID settles and holds.
+ *
+ * Two modifiers apply to every effect alike:
+ *  - fade_ms/curve: playing a look crossfades from whatever the strip currently
+ *    shows into this look's frames over fade_ms, shaped by curve. One knob
+ *    covers both directions, since fading a look in is what fades the previous
+ *    one out. 0 = snap straight to the look.
+ *  - flicker: a random brightness dip of up to this amplitude, redrawn a few
+ *    times a second, multiplied over the rendered frame. 0 = steady. Unlike the
+ *    fade it never ends, so a flickering look never settles and holds the CPU
+ *    awake.
  */
 typedef struct __attribute__((packed)) {
-  uint8_t effect;      // LIGHT_FX_*.
-  uint8_t r;           // Base colour red.
-  uint8_t g;           // Base colour green.
-  uint8_t b;           // Base colour blue.
-  uint8_t brightness;  // Master level 0..255, scales the effect. 0 = off.
-  uint16_t period_ms;  // SOLID: fade duration. Animated fx: cycle period.
-  uint8_t curve;       // SOLID ramp shape: LIGHT_CURVE_*.
-  uint8_t spread;      // FLICKER amplitude / RAINBOW hue-step / SWEEP width.
-  uint8_t reserved[3]; // Zero; reserved for future use.
+  uint8_t effect;     // LIGHT_FX_*.
+  uint8_t r;          // Base colour red.
+  uint8_t g;          // Base colour green.
+  uint8_t b;          // Base colour blue.
+  uint8_t brightness; // Master level 0..255, scales the effect. 0 = off.
+  uint16_t period_ms; // Animated fx: cycle period. Unused by SOLID.
+  uint8_t curve;      // Fade ramp shape: LIGHT_CURVE_*.
+  uint8_t spread;     // RAINBOW hue-step / SWEEP width. Unused otherwise.
+  uint16_t fade_ms;   // Crossfade into this look, any effect. 0 = no fade.
+  uint8_t flicker;    // Random dip amplitude 0..255, any effect. 0 = steady.
 } light_seq_t;
 
 /**

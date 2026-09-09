@@ -17,11 +17,11 @@
  *   Alarms[MANIFEST_MAX_ALARMS] x 12 B
  *   Lights[MANIFEST_MAX_LIGHTS] x 12 B
  *
- * A light_seq_t is a strip-aware parametric "look": a procedural effect (solid
- * fade, rainbow, sweep, breathe) rendered across all LEDs. Alarms and the two
- * lamp idle states reference one by id. crc32 is the reflected CRC-32 (poly
- * 0xEDB88320, init/final 0xFFFFFFFF, == zlib.crc32) over the image except
- * crc32.
+ * A light_seq_t is a strip-aware parametric "look": a procedural effect (solid,
+ * rainbow, sweep, breathe) rendered across all LEDs, crossfaded in over its own
+ * fade_ms. Alarms and the two lamp idle states reference one by id. crc32 is
+ * the reflected CRC-32 (poly 0xEDB88320, init/final 0xFFFFFFFF, == zlib.crc32)
+ * over the image except crc32.
  *******************************************************************************
  */
 

@@ -22,30 +22,33 @@ see [Acknowledgements](#acknowledgements).
   <summary>Table of Contents</summary>
 
 <!-- TOC -->
+
 * [hoppy_clock](#hoppy_clock)
-  * [1 Overview](#1-overview)
-    * [1.1 Bill of Materials (BOM)](#11-bill-of-materials-bom)
-    * [1.2 Block Diagram](#12-block-diagram)
-    * [1.3 Pin Configurations](#13-pin-configurations)
-    * [1.4 Clock Configurations](#14-clock-configurations)
-  * [2 Board Specifications](#2-board-specifications)
-    * [2.1 Connectors](#21-connectors)
-    * [2.2 Switches & Jumpers](#22-switches--jumpers)
-    * [2.3 LEDs](#23-leds)
-    * [2.4 Test Pads](#24-test-pads)
-    * [2.5 Power Supply](#25-power-supply)
-    * [2.6 Speaker](#26-speaker)
-  * [3 Firmware](#3-firmware)
-    * [3.1 User Button Controls](#31-user-button-controls)
-    * [3.2 USB Configuration](#32-usb-configuration)
-      * [3.2.1 Web App](#321-web-app)
-      * [3.2.2 Python Tool](#322-python-tool)
-    * [3.3 Firmware Update (DFU)](#33-firmware-update-dfu)
-  * [4 Development](#4-development)
-    * [4.1 Web App](#41-web-app)
-    * [4.2 Deployment](#42-deployment)
-  * [Acknowledgements](#acknowledgements)
-  * [Third-Party Licenses](#third-party-licenses)
+    * [1 Overview](#1-overview)
+        * [1.1 Bill of Materials (BOM)](#11-bill-of-materials-bom)
+        * [1.2 Block Diagram](#12-block-diagram)
+        * [1.3 Pin Configurations](#13-pin-configurations)
+        * [1.4 Clock Configurations](#14-clock-configurations)
+    * [2 Board Specifications](#2-board-specifications)
+        * [2.1 Connectors](#21-connectors)
+        * [2.2 Switches & Jumpers](#22-switches--jumpers)
+        * [2.3 LEDs](#23-leds)
+        * [2.4 Test Pads](#24-test-pads)
+        * [2.5 Power Supply](#25-power-supply)
+        * [2.6 Speaker](#26-speaker)
+    * [3 Firmware](#3-firmware)
+        * [3.1 User Button Controls](#31-user-button-controls)
+        * [3.2 USB Configuration](#32-usb-configuration)
+            * [3.2.1 Web App](#321-web-app)
+            * [3.2.2 Python Tool](#322-python-tool)
+        * [3.3 Light Looks](#33-light-looks)
+        * [3.4 Firmware Update (DFU)](#34-firmware-update-dfu)
+    * [4 Development](#4-development)
+        * [4.1 Web App](#41-web-app)
+        * [4.2 Deployment](#42-deployment)
+    * [Acknowledgements](#acknowledgements)
+    * [Third-Party Licenses](#third-party-licenses)
+
 <!-- TOC -->
 
 </details>
@@ -65,9 +68,9 @@ see [Acknowledgements](#acknowledgements).
   volume fade-in and auto-quiet timeout.
 - 💡 **Lamp**: the single button toggles a warm lamp look on/off, the "off"
   state can settle to a dim ambient rather than fully dark.
-- ✨ **Lights**: parametric looks (`solid` fade, `rainbow`, `sweep`, `breathe`)
+- ✨ **Lights**: parametric looks (`solid`, `rainbow`, `sweep`, `breathe`)
   rendered across the onboard LED and any chained via the `WS2812B breakout`
-  connector.
+  connector, every one of them with its own fade and optional flicker.
 - 🔊 **Sounds**: two slots, ~4 minutes each at the default 16 kHz (16-bit PCM,
   sample rate is selectable up to 48 kHz), streamed from flash. Alarms play them
   with an optional fade-in.
@@ -239,6 +242,10 @@ domain), as long as the board stays powered from USB-C or the backup supply. A
 full power loss resets the clock (see the clock-unset cue above). A flash `wipe`
 returns the unit to a clean state.
 
+Stored settings carry a format version. A firmware update that changes that
+format resets them: rather than misread an older image, the board falls back to
+empty defaults, comes up on its built-in lamp look and needs reconfiguring.
+
 ### 3.1 User Button Controls
 
 | Action      | While idle                  | While an alarm is ringing |
@@ -323,7 +330,44 @@ python main.py <command> [options]     # add -p COM7 (or /dev/ttyACM0) to pick t
 
 Run `python main.py --help` (or `<command> --help`) for the full option list.
 
-### 3.3 Firmware Update (DFU)
+### 3.3 Light Looks
+
+A light look is not a stored animation but a handful of parameters the firmware
+renders live across the whole chain. Up to 16 are stored; alarms and the two
+lamp idle states each reference one by id. Every look sets a base colour and a
+master brightness, then picks an effect:
+
+| Effect    | Renders                             | Cycle time      | Spread                                     |
+|-----------|-------------------------------------|-----------------|--------------------------------------------|
+| `solid`   | The whole strip held at one colour  | -               | -                                          |
+| `rainbow` | The HSV hue wheel, cycling          | Time per turn   | Hue step per LED (0 = strip as one colour) |
+| `sweep`   | A lit band travelling over darkness | Time per pass   | Band width, in LEDs                        |
+| `breathe` | The colour swelling and receding    | Time per breath | -                                          |
+
+`solid` settles and holds as an idle. The other three loop until something else
+is played.
+
+The same three settings apply to all four alike:
+
+| Setting   | Does                                                                         |
+|-----------|------------------------------------------------------------------------------|
+| `fade`    | Crossfade duration, in ms, from whatever is already lit into this look       |
+| `curve`   | Shape of that fade: `linear` (constant rate) or `ease` (gentle at both ends) |
+| `flicker` | Amplitude of a random brightness dip, redrawn several times a second         |
+
+The fade belongs to the look being played, and one setting covers both
+directions, because fading a look in is what fades the previous one out. Giving
+the lamp-off look a two second `ease` fade dims a running `rainbow` down over
+two seconds; giving the `rainbow` one blooms it back up out of the dark the same
+way. A fade of 0 snaps straight to the look.
+
+Flicker is a texture rather than a shape, so it is set separately from the curve
+and the two combine freely. Unlike the fade it never ends, which is what makes a
+`solid` warm white read as a candle instead of a lamp. That also means a
+flickering look is always animating, so it holds off the deep-sleep the MCU
+would otherwise drop into once a `solid` look settles.
+
+### 3.4 Firmware Update (DFU)
 
 This flashes new *firmware* (not settings, those use the USB tool above).
 Normally firmware is programmed over SWD (the `TC2050` header). Without a

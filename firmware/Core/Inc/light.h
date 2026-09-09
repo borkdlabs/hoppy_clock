@@ -6,9 +6,12 @@
  * Single owner of the WS2812B LED. Everything that lights the LED (the lamp
  * button, alarm rings) funnels through here so nothing fights over it.
  *
- * light_play() starts a timed transition from the LED's current colour to a
- * sequence's target, then holds that target as the idle. light_task() renders
- * it (interpolation + optional flicker) and pushes changes to the LED.
+ * light_play() snapshots what the strip currently shows and starts the new
+ * look. light_task() renders that look's frame, applies its flicker, then
+ * crossfades from the snapshot into it over fade_ms shaped by curve. The fade
+ * is the incoming look's own setting and behaves the same for every effect, so
+ * one knob covers both directions: fading a look in is what fades the previous
+ * one out. A SOLID look settles once faded in and holds as the idle.
  *
  * The lamp is a two-state idle toggled by the button: light_lamp_toggle() plays
  * the manifest's lamp-on / lamp-off look (falling back to built-ins if none is
@@ -41,7 +44,7 @@ void light_init(void);
 void light_task(void);
 
 /**
- * @brief Start a transition from the current colour to a sequence's target.
+ * @brief Crossfade the strip from what it shows now into a sequence's look.
  *
  * @param seq Light look to play (copied; caller need not keep it).
  */
@@ -66,6 +69,9 @@ bool light_lamp_is_on(void);
 
 /**
  * @brief Whether the strip is idle (settled, no animation or warning blink).
+ *
+ * Only a fully faded-in SOLID look with no flicker settles; looping effects and
+ * flickering looks animate forever and so never report idle.
  *
  * @return true if nothing needs rendering, so the CPU may deep-sleep.
  */
