@@ -52,8 +52,10 @@ extern TIM_HandleTypeDef htim6;
 // 12-bit mid-scale: silence and the quiescent idle bias.
 #define AMP_DAC_MIDSCALE 2048u
 
-// Default sample rate. Bench test will finalize among 16000 / 22050 / 32000.
-#define AMP_DEFAULT_SAMPLE_RATE_HZ 22050u
+// Startup rate for the DAC trigger, matching the host tools' upload default
+// so an unconfigured amp and a freshly stored sound agree. Every stored sound
+// carries its own rate and overrides this at sound_start().
+#define AMP_DEFAULT_SAMPLE_RATE_HZ 16000u
 
 // Guard rails for amp_set_sample_rate().
 #define AMP_MIN_SAMPLE_RATE_HZ 1000u

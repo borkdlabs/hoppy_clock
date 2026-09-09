@@ -41,7 +41,8 @@ see [Acknowledgements](#acknowledgements).
       * [3.2.1 Web App](#321-web-app)
       * [3.2.2 Python Tool](#322-python-tool)
     * [3.3 Light Looks](#33-light-looks)
-    * [3.4 Firmware Update (DFU)](#34-firmware-update-dfu)
+    * [3.4 Sounds](#34-sounds)
+    * [3.5 Firmware Update (DFU)](#35-firmware-update-dfu)
   * [4 Development](#4-development)
     * [4.1 Web App](#41-web-app)
     * [4.2 Deployment](#42-deployment)
@@ -399,7 +400,48 @@ instead. Two consequences follow:
 The clock-unset warning blink holds the board awake in the same way, until the
 time is set.
 
-### 3.4 Firmware Update (DFU)
+### 3.4 Sounds
+
+Two slots hold one sound each, 7.5 MiB apiece, in the same NOR flash as the
+settings. Alarms reference a slot by id, and the long press plays one.
+
+**The source file's own format does not matter.** Uploading anything that is not
+already raw PCM runs it through `ffmpeg`, which decodes and resamples it to mono
+at the rate and sample format *you* pick:
+
+```bash
+ffmpeg -i song.mp3 -ac 1 -ar <rate> -f s16le|u8 -
+```
+
+A 320 kbps 44.1 kHz stereo MP3 and a 96 kbps mono one land on the board as the
+same shape of data, so there is nothing to read off a file to decide with. What
+gets stored is the raw blob plus the rate and format it was made at, the
+firmware reads those back at playtime and clocks the DAC accordingly.
+
+So the two settings are a trade between quality and how much fits in a slot:
+
+| Rate            | `s16` (2 B/sample) | `u8` (1 B/sample) |
+|-----------------|--------------------|-------------------|
+| 8000            | 8m 11s             | 16m 23s           |
+| 16000 (default) | 4m 05s             | 8m 11s            |
+| 22050           | 2m 58s             | 5m 56s            |
+| 32000           | 2m 02s             | 4m 05s            |
+| 48000 (max)     | 1m 21s             | 2m 43s            |
+
+Two things to weigh:
+
+- **The speaker is the real ceiling.** Output is a 12-bit DAC into a PAM8302A
+  driving a little speaker, so 16 kHz already covers about as much bandwidth as
+  it can reproduce. Higher rates mostly spend slot space on detail that never
+  reaches the air.
+- **`u8` halves the size but adds hiss.** Eight-bit quantization is audible on
+  anything sustained. It suits short effects and tones, not music.
+
+In practice leave both on their defaults (`s16` at 16000 Hz) and use the trim
+option to fit a long track, rather than dropping quality to make it fit. Reach
+for `u8` or a lower rate only when a long clip matters more than how it sounds.
+
+### 3.5 Firmware Update (DFU)
 
 This flashes new *firmware* (not settings, those use the USB tool above).
 Normally firmware is programmed over SWD (the `TC2050` header). Without a
