@@ -201,8 +201,22 @@
           </button>
         </h2>
 
-        <p class="note" id="light-summary">Not read yet.</p>
-        <ul class="lights" id="light-list"></ul>
+        <div class="subsection">
+          <h3 class="subsection__title">LED chain</h3>
+          <p class="note">
+            How many LEDs a look is rendered across: the onboard one plus
+            anything chained from the <code>WS2812B breakout</code> connector.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">Active LEDs</span>
+              <input type="number" id="led-count" min="1" max="64" value="1"/>
+            </label>
+            <button id="led-save" type="button" class="btn" disabled>
+              Save LED count
+            </button>
+          </div>
+        </div>
 
         <div class="subsection">
           <h3 class="subsection__title">Button press</h3>
@@ -227,53 +241,14 @@
         </div>
 
         <div class="subsection">
-          <h3 class="subsection__title">LED chain</h3>
-          <p class="note">
-            How many LEDs a look is rendered across: the onboard one plus
-            anything chained from the <code>WS2812B breakout</code> connector.
-          </p>
-          <div class="field-row">
-            <label class="field">
-              <span class="field__label">Active LEDs</span>
-              <input type="number" id="led-count" min="1" max="64" value="1"/>
-            </label>
-            <button id="led-save" type="button" class="btn" disabled>
-              Save LED count
-            </button>
-          </div>
+          <h3 class="subsection__title">Stored looks</h3>
+          <p class="note" id="light-summary">Not read yet.</p>
+          <ul class="lights" id="light-list"></ul>
         </div>
 
-        <div class="subsection">
-          <h3 class="subsection__title">Test an LED</h3>
-          <p class="note">
-            Lights one LED straight away without storing anything, for
-            checking a strip is wired and the right length. The next look,
-            alarm or lamp press paints over it, and the index has to be inside
-            the chain length above.
-          </p>
-          <div class="field-row">
-            <label class="field">
-              <span class="field__label">LED index</span>
-              <input
-                type="number"
-                id="test-led-index"
-                min="0"
-                max="63"
-                value="0"
-              />
-            </label>
-            <label class="field">
-              <span class="field__label">Colour</span>
-              <input type="color" id="test-led-color" value="#ff8000"/>
-            </label>
-            <button id="test-led-set" type="button" class="btn" disabled>
-              Light it
-            </button>
-          </div>
-        </div>
 
         <details class="adder" id="light-editor">
-          <summary id="light-editor-summary">Add a light look</summary>
+          <summary>Add or edit a light look</summary>
 
           <form id="light-form">
             <div class="field-row">
@@ -392,6 +367,35 @@
             </div>
           </form>
         </details>
+
+        <div class="subsection">
+          <h3 class="subsection__title">Test an LED</h3>
+          <p class="note">
+            Lights one LED straight away without storing anything, for
+            checking a strip is wired and the right length. The next look,
+            alarm or lamp press paints over it, and the index has to be inside
+            the chain length above.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">LED index</span>
+              <input
+                type="number"
+                id="test-led-index"
+                min="0"
+                max="63"
+                value="0"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">Colour</span>
+              <input type="color" id="test-led-color" value="#ff8000"/>
+            </label>
+            <button id="test-led-set" type="button" class="btn" disabled>
+              Light it
+            </button>
+          </div>
+        </div>
       </section>
     </div>
 
@@ -414,32 +418,6 @@
           </button>
         </h2>
 
-        <p class="note" id="sound-summary">Not read yet.</p>
-        <ul class="sounds" id="sound-list"></ul>
-
-        <div class="subsection">
-          <h3 class="subsection__title">Playback</h3>
-          <p class="note">
-            Playing a slot starts it on the clock straight away, at the volume
-            it was stored with.
-          </p>
-          <div class="field-row">
-            <label class="field">
-              <span class="field__label">Fade-in (s)</span>
-              <input
-                type="number"
-                id="sound-fade"
-                min="0"
-                max="255"
-                value="0"
-              />
-            </label>
-            <button id="sound-stop" type="button" class="btn" disabled>
-              Stop playback
-            </button>
-          </div>
-        </div>
-
         <div class="subsection">
           <h3 class="subsection__title">Long press</h3>
           <p class="note">
@@ -461,6 +439,12 @@
               Save button song
             </button>
           </div>
+        </div>
+
+        <div class="subsection">
+          <h3 class="subsection__title">Stored sounds</h3>
+          <p class="note" id="sound-summary">Not read yet.</p>
+          <ul class="sounds" id="sound-list"></ul>
         </div>
 
         <div class="subsection">
@@ -564,6 +548,31 @@
 
           <progress id="upload-progress" max="100" value="0" hidden></progress>
         </div>
+
+        <div class="subsection">
+          <h3 class="subsection__title">Test playback</h3>
+          <p class="note">
+            Playing a slot starts it on the clock straight away, at the volume
+            it was stored with.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">Fade-in (s)</span>
+              <input
+                type="number"
+                id="sound-fade"
+                min="0"
+                max="255"
+                value="0"
+              />
+            </label>
+            <button id="sound-stop" type="button" class="btn" disabled>
+              Stop playback
+            </button>
+          </div>
+        </div>
+
+
       </section>
     </div>
 

@@ -111,7 +111,6 @@ const ui = {
   uploadStatus: el('upload-status'),
   uploadProgress: el('upload-progress'),
   lightEditor: el('light-editor'),
-  lightEditorSummary: el('light-editor-summary'),
   lightForm: el('light-form'),
   lightId: el('light-id'),
   lightEffect: el('light-effect'),
@@ -598,7 +597,6 @@ function fillLightForm(id, light) {
   ui.lightFade.value = String(light.fadeMs);
   ui.lightCurve.value = light.curve;
   ui.lightFlicker.value = String(light.flicker);
-  ui.lightEditorSummary.textContent = id < lightRecords.length ? `Editing light ${id}` : 'Add a light look';
   syncLightEffect();
 }
 
