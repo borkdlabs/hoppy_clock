@@ -17,12 +17,17 @@ Examples:
 
   # Define light looks (effect + params) and the lamp idle:
   python main.py set-light 0 --effect solid --color warm --brightness 1
-  python main.py set-light 1 --effect solid --color warm --brightness 5 --curve flicker
+  python main.py set-light 1 --effect solid --color warm --brightness 5 --flicker 40
   python main.py set-lamp --on 1 --off 0         # off idle = dim ambient.
 
   # Animated effects (loop until the ring/lamp ends):
   python main.py set-light 3 --effect rainbow --period 4000 --spread 24 --brightness 5
   python main.py set-light 4 --effect breathe --color blue --period 3000 --brightness 5
+
+  # --fade/--curve run on entry only, so to ramp a look both in and out set
+  # them on that look and on whatever replaces it:
+  python main.py set-light 3 --effect rainbow --period 4000 --fade 2500 --curve ease
+  python main.py set-light 0 --effect solid --brightness 0 --fade 2500 --curve ease
 
   # Sounds default to 16-bit PCM @ 16 kHz (2 slots, ~4 min each):
   python main.py upload-sound 0 --tone 880 --seconds 1 --gain 0.05
@@ -96,10 +101,11 @@ ALARM_FLAG_MONTHLY = 0x02
 MANIFEST_MAX_ALARMS = 64  # Must match manifest.h.
 
 # Light sequence (must match manifest.h): 12 bytes, little-endian.
-# effect, r, g, b, brightness, period_ms, curve, spread, reserved(3).
-LIGHT_STRUCT = "<BBBBBHBBBBB"
+# effect, r, g, b, brightness, period_ms, curve, spread, fade_ms, flicker.
+LIGHT_STRUCT = "<BBBBBHBBHB"
 LIGHT_FX = {"solid": 0, "rainbow": 1, "sweep": 2, "breathe": 3}
-LIGHT_CURVES = {"linear": 0, "ease": 1, "flicker": 2}
+# Shapes the fade for every effect, not just solid.
+LIGHT_CURVES = {"linear": 0, "ease": 1}
 # Base colours for light looks (full-intensity hues; brightness scales them).
 BASE_COLORS = {
     "warm": (255, 200, 120),
@@ -514,14 +520,13 @@ def cmd_set_light(ser, args):
         args.period,
         curve,
         args.spread,
-        0,
-        0,
-        0,
+        args.fade,
+        args.flicker,
     )
     cfg = _read_config(ser)
     if cfg is None:
         return 1
-    off = struct.pack(LIGHT_STRUCT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    off = struct.pack(LIGHT_STRUCT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     while len(cfg["lights"]) <= args.id:  # Grow with blanks up to the id.
         cfg["lights"].append(off)
     cfg["lights"][args.id] = seq
@@ -595,15 +600,21 @@ def cmd_list_alarms(ser, args):
     curves = {v: k for k, v in LIGHT_CURVES.items()}
     print(f"{len(cfg['lights'])} light(s):")
     for i, seq in enumerate(cfg["lights"]):
-        effect, r, g, b, bright, period, curve, spread, *_ = struct.unpack(
-            LIGHT_STRUCT, seq
+        effect, r, g, b, bright, period, curve, spread, fade, flicker = (
+            struct.unpack(LIGHT_STRUCT, seq)
         )
         name = fx.get(effect, effect)
-        extra = f"{curves.get(curve, curve)} " if name == "solid" else ""
-        print(
-            f"  [{i}] {name} rgb=({r},{g},{b}) bright={bright} "
-            f"{period}ms {extra}spread={spread}"
-        )
+        # Only report the fields the effect actually reads; fade and flicker
+        # apply to every effect alike.
+        parts = [f"rgb=({r},{g},{b})", f"bright={bright}"]
+        if name != "solid":
+            parts.append(f"period={period}ms")
+        if name in ("rainbow", "sweep"):
+            parts.append(f"spread={spread}")
+        parts.append(f"fade={fade}ms {curves.get(curve, curve)}")
+        if flicker:
+            parts.append(f"flicker={flicker}")
+        print(f"  [{i}] {name} " + " ".join(parts))
     print(f"lamp: on=light {cfg['lamp_on']}  off=light {cfg['lamp_off']}")
     print(f"led-count: {cfg['led_count']}")
     print(f"button-song: sound {cfg['button_sound']}")
@@ -947,19 +958,31 @@ def build_parser() -> argparse.ArgumentParser:
         "--period",
         type=int,
         default=1500,
-        help="solid: fade ms; animated: cycle ms",
-    )
-    lt.add_argument(
-        "--curve",
-        choices=list(LIGHT_CURVES),
-        default="linear",
-        help="solid ramp shape: linear, ease, flicker",
+        help="animated: cycle ms (unused by solid)",
     )
     lt.add_argument(
         "--spread",
         type=int,
         default=40,
-        help="flicker amplitude / rainbow hue-step / sweep width",
+        help="rainbow hue-step / sweep width",
+    )
+    lt.add_argument(
+        "--fade",
+        type=int,
+        default=1500,
+        help="ms to fade this look in over whatever is lit; 0 = snap",
+    )
+    lt.add_argument(
+        "--curve",
+        choices=list(LIGHT_CURVES),
+        default="linear",
+        help="fade ramp shape: linear or ease (any effect)",
+    )
+    lt.add_argument(
+        "--flicker",
+        type=int,
+        default=0,
+        help="random brightness dip 0-255, runs forever (any effect)",
     )
     lt.set_defaults(func=cmd_set_light)
 

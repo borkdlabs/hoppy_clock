@@ -320,7 +320,7 @@ python main.py <command> [options]     # add -p COM7 (or /dev/ttyACM0) to pick t
 | `add-alarm` / `set-alarm`         | Add an alarm (e.g. `--at 08:00 --days weekdays`) / replace all with one |
 | `remove-alarm N` / `clear-alarms` | Delete one alarm by index / delete all                                  |
 | `list-alarms`                     | Show alarms, lights, the lamp and LED count                             |
-| `set-light`                       | Define a light look (`--effect solid\|rainbow\|sweep\|breathe`)         |
+| `set-light`                       | Define a light look (`--effect`, `--fade`, `--curve`, `--flicker`)      |
 | `set-lamp`                        | Choose the on/off lamp idle looks                                       |
 | `set-led-count N`                 | Set the number of chained LEDs                                          |
 | `upload-sound`                    | Store a sound from a WAV/MP3 file or a synthesized tone                 |
