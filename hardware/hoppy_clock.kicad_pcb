@@ -13852,7 +13852,7 @@
 		)
 		(knockout no)
 	)
-	(gr_text_box "Assuming PCBWay 4-layer stackup (above):\n\n(USB) 90R Coplanar Differential Pair:\n  - Signal: L1\n  - Ref: L2\n  - Trace Spacing: 0.3 mm\n  - Impedance trace to copper: 0.25 mm\n  - Trace width: 0.25 mm"
+	(gr_text_box "Assuming PCBWay 4-layer stackup (above):\n\n(USB) 90R Coplanar Differential Pair:\n  - Signal: L1\n  - Ref: L2\n  - Trace Spacing: 0.26 mm\n  - Impedance trace to copper: 0.26 mm\n  - Trace width: 0.26 mm"
 		(start 214 95)
 		(end 284 117.162412)
 		(margins 1.225 1.225 1.225 1.225)
