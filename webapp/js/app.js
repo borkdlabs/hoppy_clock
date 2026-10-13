@@ -15,7 +15,7 @@ import {
   EFFECTS,
   MAX_LIGHTS,
   SPREAD_LABELS,
-  USES_PERIOD,
+  PERIOD_LABELS,
   decodeLight,
   describeLight,
   encodeLight,
@@ -118,6 +118,7 @@ const ui = {
   lightColor: el('light-color'),
   lightBrightness: el('light-brightness'),
   lightPeriodField: el('light-period-field'),
+  lightPeriodLabel: el('light-period-label'),
   lightPeriod: el('light-period'),
   lightSpreadField: el('light-spread-field'),
   lightSpreadLabel: el('light-spread-label'),
@@ -576,10 +577,14 @@ function renderLampPickers() {
  */
 function syncLightEffect() {
   const effect = ui.lightEffect.value;
+  const periodLabel = PERIOD_LABELS[effect];
   const spreadLabel = SPREAD_LABELS[effect];
 
   ui.lightColorField.hidden = effect === 'rainbow';
-  ui.lightPeriodField.hidden = !USES_PERIOD[effect];
+  ui.lightPeriodField.hidden = !periodLabel;
+  if (periodLabel) {
+    ui.lightPeriodLabel.textContent = periodLabel;
+  }
   ui.lightSpreadField.hidden = !spreadLabel;
   if (spreadLabel) {
     ui.lightSpreadLabel.textContent = spreadLabel;
