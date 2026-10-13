@@ -56,10 +56,12 @@
 #define ALARM_DAY_SUN (1u << 6)
 
 // light_seq_t.effect: how the look animates across the strip and over time.
-#define LIGHT_FX_SOLID 0u   // Hold the whole strip at one colour.
-#define LIGHT_FX_RAINBOW 1u // HSV hue cycle; spread = hue step per LED. Loops.
-#define LIGHT_FX_SWEEP 2u // A lit band of (r,g,b) moving over darkness. Loops.
-#define LIGHT_FX_BREATHE 3u // (r,g,b) brightness breathes in and out. Loops.
+#define LIGHT_FX_SOLID 0u    // Hold the whole strip at one colour.
+#define LIGHT_FX_RAINBOW 1u  // HSV hue cycle; spread = hue step per LED. Loops.
+#define LIGHT_FX_SWEEP 2u    // Lit band of (r,g,b) moving over darkness. Loops.
+#define LIGHT_FX_BREATHE 3u  // (r,g,b) brightness breathes in and out. Loops.
+#define LIGHT_FX_WIPE 4u     // Paint (r,g,b) along the strip, then hold.
+#define LIGHT_FX_WIPE_REV 5u // WIPE starting from the far end of the chain.
 
 // light_seq_t.curve: shape of the fade_ms crossfade. Applies to every effect.
 #define LIGHT_CURVE_LINEAR 0u // Constant-rate ramp.
@@ -74,12 +76,20 @@
  *  - SOLID:   hold the whole strip at (r,g,b) scaled by brightness (so an "off"
  *             look can settle on a dim ambient rather than black). period_ms is
  *             unused.
- *  - RAINBOW: HSV hue cycling with period_ms per turn; spread = hue step per LED
- *             (0 = whole strip one hue, >0 = a rainbow spread along the chain).
+ *  - RAINBOW: HSV hue cycling with period_ms per turn; spread = hue step per
+ *             LED (0 = whole strip one hue, >0 = a rainbow spread along the
+ *             chain).
  *  - SWEEP:   a lit band of (r,g,b) width spread moving along the strip, one
  *             pass per period_ms, over darkness.
  *  - BREATHE: (r,g,b) whose brightness oscillates in and out every period_ms.
- * Animated effects loop until another look is played; SOLID settles and holds.
+ *  - WIPE:    a soft front spread LEDs wide carries (r,g,b) scaled by
+ *             brightness along the strip from LED 0 over period_ms, blending
+ *             each LED from what it showed when the look began, then holds.
+ *             From a dark strip it fills the strip up, over another look it
+ *             paints across it.
+ *  - WIPE_REV: as WIPE, travelling from the far end of the chain to LED 0.
+ * RAINBOW, SWEEP and BREATHE loop until another look is played; SOLID and the
+ * two wipes settle and hold.
  *
  * Two modifiers apply to every effect alike:
  *  - fade_ms/curve: playing a look crossfades from whatever the strip currently
@@ -97,9 +107,9 @@ typedef struct __attribute__((packed)) {
   uint8_t g;          // Base colour green.
   uint8_t b;          // Base colour blue.
   uint8_t brightness; // Master level 0..255, scales the effect. 0 = off.
-  uint16_t period_ms; // Animated fx: cycle period. Unused by SOLID.
+  uint16_t period_ms; // Loops: cycle period. WIPE: duration. Unused by SOLID.
   uint8_t curve;      // Fade ramp shape: LIGHT_CURVE_*.
-  uint8_t spread;     // RAINBOW hue-step / SWEEP width. Unused otherwise.
+  uint8_t spread;     // RAINBOW hue-step / SWEEP width / WIPE edge width.
   uint16_t fade_ms;   // Crossfade into this look, any effect. 0 = no fade.
   uint8_t flicker;    // Random dip amplitude 0..255, any effect. 0 = steady.
 } light_seq_t;
