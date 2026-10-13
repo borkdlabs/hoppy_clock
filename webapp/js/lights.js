@@ -64,18 +64,32 @@ export const PERIOD_LABELS = {
   'wipe-reverse': 'Wipe time (ms)',
 };
 
-/** The blank look the firmware stores in an unused slot. */
-export const BLANK_LIGHT = Object.freeze({
+/**
+ * Starting values for the fields whose meaning depends on the effect, loaded
+ * whenever the editor switches effect. `periodMs` and `spread` mean something
+ * different to each effect, so carrying a hue step over as an edge width is
+ * never right. `fadeMs` is reset too because a wipe is already a transition and
+ * looks best with no fade on top, while the rest want one. Fields an effect
+ * ignores are zero so the stored record stays clean.
+ */
+export const EFFECT_DEFAULTS = Object.freeze({
+  solid: {periodMs: 0, spread: 0, fadeMs: 1500},
+  rainbow: {periodMs: 4000, spread: 24, fadeMs: 1500},
+  sweep: {periodMs: 2000, spread: 3, fadeMs: 1500},
+  breathe: {periodMs: 3000, spread: 0, fadeMs: 1500},
+  wipe: {periodMs: 3000, spread: 1, fadeMs: 0},
+  'wipe-reverse': {periodMs: 3000, spread: 1, fadeMs: 0},
+});
+
+/** The look a fresh editor starts from: a warm lamp easing in. */
+export const NEW_LIGHT = Object.freeze({
   effect: 'solid',
-  r: 0,
-  g: 0,
-  b: 0,
-  brightness: 0,
-  periodMs: 0,
+  r: 255,
+  g: 200,
+  b: 120,
+  brightness: 160,
   curve: 'linear',
-  spread: 0,
-  fadeMs: 0,
-  flicker: 0,
+  flicker: 0, ...EFFECT_DEFAULTS.solid,
 });
 
 /**
