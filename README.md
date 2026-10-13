@@ -67,9 +67,10 @@ see [Acknowledgements](#acknowledgements).
   volume fade-in and auto-quiet timeout.
 - 💡 **Lamp**: the single button toggles a warm lamp look on/off, the "off"
   state can settle to a dim ambient rather than fully dark.
-- ✨ **Lights**: parametric looks (`solid`, `rainbow`, `sweep`, `breathe`)
-  rendered across the onboard LED and any chained via the `WS2812B breakout`
-  connector, every one of them with its own fade and optional flicker.
+- ✨ **Lights**: parametric looks (`solid`, `rainbow`, `sweep`, `breathe`,
+  `wipe`) rendered across the onboard LED and any chained via the
+  `WS2812B breakout` connector, every one of them with its own fade and optional
+  flicker.
 - 🔊 **Sounds**: two slots, ~4 minutes each at the default 16 kHz (16-bit PCM,
   sample rate is selectable up to 48 kHz), streamed from flash. Alarms play them
   with an optional fade-in.
@@ -338,17 +339,29 @@ renders live across the whole chain. Up to 16 are stored; alarms and the two
 lamp idle states each reference one by id. Every look sets a base colour and a
 master brightness, then picks an effect:
 
-| Effect    | Renders                             | Cycle time      | Spread                                     |
-|-----------|-------------------------------------|-----------------|--------------------------------------------|
-| `solid`   | The whole strip held at one colour  | -               | -                                          |
-| `rainbow` | The HSV hue wheel, cycling          | Time per turn   | Hue step per LED (0 = strip as one colour) |
-| `sweep`   | A lit band travelling over darkness | Time per pass   | Band width, in LEDs                        |
-| `breathe` | The colour swelling and receding    | Time per breath | -                                          |
+| Effect         | Renders                                 | Period          | Spread                                     |
+|----------------|-----------------------------------------|-----------------|--------------------------------------------|
+| `solid`        | The whole strip held at one colour      | -               | -                                          |
+| `rainbow`      | The HSV hue wheel, cycling              | Time per turn   | Hue step per LED (0 = strip as one colour) |
+| `sweep`        | A lit band travelling over darkness     | Time per pass   | Band width, in LEDs                        |
+| `breathe`      | The colour swelling and receding        | Time per breath | -                                          |
+| `wipe`         | The colour painted along from LED 0     | Time to cross   | Width of the soft front, in LEDs           |
+| `wipe-reverse` | The same, from the far end of the chain | Time to cross   | Width of the soft front, in LEDs           |
 
-`solid` settles and holds as an idle. The other three loop until something else
-is played.
+`solid` settles and holds as an idle. `rainbow`, `sweep` and `breathe` loop
+until something else is played.
 
-The same three settings apply to all four alike:
+The two wipes run once and then hold, like a `solid` that arrives along the
+strip instead of everywhere at once. Each LED blends from whatever it was
+showing when the wipe started, so over a dark strip it fills the strip up LED by
+LED, and over another look it paints the new colour across the old one. With
+three LEDs and a one-LED front, their levels step through `0 0 0`,
+`128 0 0`, `255 0 0`, `255 128 0` and on to `255 255 255`. A wider spread lets
+several LEDs ramp at once for a smoother edge. Because the wipe is already a
+transition, it is usually paired with a `fade` of 0; a lamp-off look of
+`wipe-reverse` at brightness 0 then rolls the light back down the strip.
+
+The same three settings apply to all six alike:
 
 | Setting   | Does                                                                         |
 |-----------|------------------------------------------------------------------------------|
@@ -382,11 +395,12 @@ curve, and the two combine freely. Unlike the fade it never ends, which is what
 makes a `solid` warm white read as a candle instead of a lamp.
 
 **A continuously animating look keeps the board out of deep sleep.** Only a
-`solid` look with `flicker` 0 ever finishes: once its fade lands, it settles on
-a fixed colour, stops rendering, and lets the MCU drop into STOP2. `rainbow`,
-`sweep` and `breathe` loop for as long as they are showing, and any `flicker`
-above 0 never stops, so a look of either kind holds the board in light sleep
-instead. Two consequences follow:
+`solid` look or a wipe, with `flicker` 0, ever finishes: once its fade lands
+(and a wipe has crossed the strip), it settles on a fixed colour, stops
+rendering and lets the MCU drop into STOP2. `rainbow`, `sweep` and `breathe`
+loop for as long as they are showing, and any `flicker` above 0 never stops, so
+a look of either kind holds the board in light sleep instead. Two consequences
+follow:
 
 - **Power.** Light sleep gates the core but keeps the clocks and peripherals
   live, so the board sits at run current rather than the microamps STOP2 draws.

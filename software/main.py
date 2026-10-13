@@ -24,6 +24,11 @@ Examples:
   python main.py set-light 3 --effect rainbow --period 4000 --spread 24 --brightness 5
   python main.py set-light 4 --effect breathe --color blue --period 3000 --brightness 5
 
+  # Wipes paint the colour along the strip once over --period, then hold
+  # (--spread = soft edge width in LEDs; --fade 0 since the wipe is the fade):
+  python main.py set-light 5 --effect wipe --color warm --period 3000 --spread 2 --fade 0
+  python main.py set-light 6 --effect wipe-reverse --brightness 0 --period 3000 --fade 0
+
   # --fade/--curve run on entry only, so to ramp a look both in and out set
   # them on that look and on whatever replaces it:
   python main.py set-light 3 --effect rainbow --period 4000 --fade 2500 --curve ease
@@ -103,7 +108,14 @@ MANIFEST_MAX_ALARMS = 64  # Must match manifest.h.
 # Light sequence (must match manifest.h): 12 bytes, little-endian.
 # effect, r, g, b, brightness, period_ms, curve, spread, fade_ms, flicker.
 LIGHT_STRUCT = "<BBBBBHBBHB"
-LIGHT_FX = {"solid": 0, "rainbow": 1, "sweep": 2, "breathe": 3}
+LIGHT_FX = {
+    "solid": 0,
+    "rainbow": 1,
+    "sweep": 2,
+    "breathe": 3,
+    "wipe": 4,
+    "wipe-reverse": 5,
+}
 # Shapes the fade for every effect, not just solid.
 LIGHT_CURVES = {"linear": 0, "ease": 1}
 # Base colours for light looks (full-intensity hues; brightness scales them).
@@ -609,7 +621,7 @@ def cmd_list_alarms(ser, args):
         parts = [f"rgb=({r},{g},{b})", f"bright={bright}"]
         if name != "solid":
             parts.append(f"period={period}ms")
-        if name in ("rainbow", "sweep"):
+        if name in ("rainbow", "sweep", "wipe", "wipe-reverse"):
             parts.append(f"spread={spread}")
         parts.append(f"fade={fade}ms {curves.get(curve, curve)}")
         if flicker:
@@ -942,7 +954,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--effect",
         choices=list(LIGHT_FX),
         default="solid",
-        help="solid, rainbow, sweep, or breathe",
+        help="solid, rainbow, sweep, breathe, wipe, or wipe-reverse",
     )
     lt.add_argument(
         "--color",
@@ -958,13 +970,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--period",
         type=int,
         default=1500,
-        help="animated: cycle ms (unused by solid)",
+        help="loop cycle ms, or wipe duration ms (unused by solid)",
     )
     lt.add_argument(
         "--spread",
         type=int,
         default=40,
-        help="rainbow hue-step / sweep width",
+        help="rainbow hue-step / sweep width / wipe edge width",
     )
     lt.add_argument(
         "--fade",
