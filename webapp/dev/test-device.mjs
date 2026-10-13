@@ -380,6 +380,8 @@ const sampleLight = (over = {}) => ({
   check('light record is 12 B', record.length === 12);
   check('light record round-trips', JSON.stringify(decodeLight(record)) === JSON.stringify(light),);
   check('effect is an index', record[0] === 2); // LIGHT_FX_SWEEP.
+  check('wipe is effect 4', encodeLight(sampleLight({effect: 'wipe'}))[0] === 4);
+  check('wipe-reverse is effect 5', encodeLight(sampleLight({effect: 'wipe-reverse'}))[0] === 5);
   check('curve is an index', record[7] === 1); // LIGHT_CURVE_EASE.
   // 1500 ms = 0x05DC, little-endian like the alarm's timeout.
   check('period_ms is little-endian', record[5] === 0xdc && record[6] === 0x05);

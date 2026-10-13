@@ -32,7 +32,7 @@ export const MAX_LIGHTS = 16;
 export const MAX_LEDS = 64;
 
 /** light_seq_t.effect values, by index. */
-export const EFFECTS = ['solid', 'rainbow', 'sweep', 'breathe'];
+export const EFFECTS = ['solid', 'rainbow', 'sweep', 'breathe', 'wipe', 'wipe-reverse'];
 
 /** light_seq_t.curve values, by index. Shapes the fade for every effect. */
 export const CURVES = ['linear', 'ease'];
@@ -46,14 +46,22 @@ export const SPREAD_LABELS = {
   rainbow: 'Hue step per LED',
   sweep: 'Band width (LEDs)',
   breathe: null,
+  wipe: 'Edge width (LEDs)',
+  'wipe-reverse': 'Edge width (LEDs)',
 };
 
 /**
- * Whether an effect animates on a cycle, so `periodMs` means something to it.
- * A solid look holds still and ignores the field.
+ * What `periodMs` means for each effect: a cycle for the looping ones, a
+ * one-off duration for the wipes. Null where the effect ignores it, as a solid
+ * look holds still.
  */
-export const USES_PERIOD = {
-  solid: false, rainbow: true, sweep: true, breathe: true,
+export const PERIOD_LABELS = {
+  solid: null,
+  rainbow: 'Cycle time (ms)',
+  sweep: 'Cycle time (ms)',
+  breathe: 'Cycle time (ms)',
+  wipe: 'Wipe time (ms)',
+  'wipe-reverse': 'Wipe time (ms)',
 };
 
 /** The blank look the firmware stores in an unused slot. */
@@ -172,6 +180,10 @@ export function describeLight(light) {
       break;
     case 'breathe':
       base = `Breathes every ${ms}`;
+      break;
+    case 'wipe':
+    case 'wipe-reverse':
+      base = `Wipes from ${light.effect === 'wipe' ? 'LED 0' : 'the far end'} over ${ms}, ${light.spread || 1} LED edge`;
       break;
     default:
       base = `Effect ${light.effect}, ${ms}`;
