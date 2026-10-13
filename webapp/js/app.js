@@ -11,9 +11,10 @@ import {
   MAX_ALARMS, decodeAlarm, describeDays, encodeAlarm, formatAlarmTime,
 } from './alarms.js';
 import {
-  BLANK_LIGHT,
   EFFECTS,
+  EFFECT_DEFAULTS,
   MAX_LIGHTS,
+  NEW_LIGHT,
   SPREAD_LABELS,
   PERIOD_LABELS,
   decodeLight,
@@ -591,6 +592,21 @@ function syncLightEffect() {
   }
 }
 
+/**
+ * Load the chosen effect's starting period, spread and fade, then relabel. Only
+ * runs when the user picks an effect, never when a stored look is loaded, so
+ * editing a look shows its own values until its effect is changed.
+ */
+function changeLightEffect() {
+  const defaults = EFFECT_DEFAULTS[ui.lightEffect.value];
+  if (defaults) {
+    ui.lightPeriod.value = String(defaults.periodMs);
+    ui.lightSpread.value = String(defaults.spread);
+    ui.lightFade.value = String(defaults.fadeMs);
+  }
+  syncLightEffect();
+}
+
 /** Load a look into the editor, or the defaults when given none. */
 function fillLightForm(id, light) {
   ui.lightId.value = String(id);
@@ -1051,11 +1067,11 @@ function main() {
   syncAlarmMode();
   ui.refreshLights.addEventListener('click', () => withBusy('Reading...', readAll),);
   ui.lightForm.addEventListener('submit', submitLight);
-  ui.lightEffect.addEventListener('change', syncLightEffect);
+  ui.lightEffect.addEventListener('change', changeLightEffect);
   ui.lampSave.addEventListener('click', saveLamp);
   ui.ledSave.addEventListener('click', saveLedCount);
   ui.testLedSet.addEventListener('click', lightOneLed);
-  ui.lightReset.addEventListener('click', () => fillLightForm(lightRecords.length, BLANK_LIGHT),);
+  ui.lightReset.addEventListener('click', () => fillLightForm(lightRecords.length, NEW_LIGHT),);
   ui.lightList.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-id]');
     if (button) {
@@ -1065,7 +1081,7 @@ function main() {
       ui.lightEditor.scrollIntoView({block: 'nearest'});
     }
   });
-  syncLightEffect();
+  fillLightForm(0, NEW_LIGHT);
   ui.refreshSounds.addEventListener('click', () => withBusy('Reading...', readSounds),);
   ui.soundStop.addEventListener('click', stopSound);
   ui.buttonSoundSave.addEventListener('click', saveButtonSound);
