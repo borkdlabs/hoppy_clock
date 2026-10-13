@@ -11,8 +11,9 @@
  * crossfades from the snapshot into it over fade_ms shaped by curve. The fade
  * is a property of the incoming look and works the same for every effect, so
  * one knob covers both directions: fading a look in is what fades the previous
- * one out. A SOLID look settles once the fade lands and holds as the idle;
- * animated looks (and any flickering look) keep rendering.
+ * one out. A SOLID look settles once the fade lands, and a WIPE once it has
+ * also crossed the strip, then holds as the idle; looping looks (and any
+ * flickering look) keep rendering.
  *
  * The lamp is a two-state idle toggled by the button: light_lamp_toggle() plays
  * the manifest's lamp-on / lamp-off look (falling back to built-ins if none is
@@ -214,6 +215,58 @@ static void render_sweep(uint32_t el) {
 }
 
 /**
+ * @brief Wipe the look's colour along the strip over period_ms, then hold it.
+ *
+ * A soft front spread LEDs wide (at least one) travels down the chain. Behind
+ * it each LED has blended fully from what it showed when the look began to the
+ * target; ahead of it each still shows that starting colour. Over a dark strip
+ * that fills the strip up LED by LED, e.g. three LEDs with a one-LED front step
+ * through 0,0,0 then 128,0,0 then 255,0,0 then 255,128,0 and so on.
+ *
+ * @param el Milliseconds since the look started.
+ * @param reverse Travel from the far end of the chain back to LED 0.
+ */
+static void render_wipe(uint32_t el, bool reverse) {
+  const uint16_t n = ws2812b_get_count();
+  const float width = (s_seq.spread == 0u) ? 1.0f : (float)s_seq.spread;
+  const float t = (s_seq.period_ms == 0u || el >= s_seq.period_ms)
+                      ? 1.0f
+                      : (float)el / (float)s_seq.period_ms;
+  // The front starts level with the first LED and stops once the last one is
+  // fully lit: n - 1 + width LEDs of travel in all.
+  const float front = t * ((float)n - 1.0f + width);
+  for (uint16_t i = 0u; i < n; i++) {
+    const uint16_t pos = reverse ? (uint16_t)(n - 1u - i) : i;
+    float p = (front - (float)pos) / width;
+    p = (p < 0.0f) ? 0.0f : ((p > 1.0f) ? 1.0f : p);
+    s_cur_r[i] = lerp8(s_from_r[i], s_to_r, p);
+    s_cur_g[i] = lerp8(s_from_g[i], s_to_g, p);
+    s_cur_b[i] = lerp8(s_from_b[i], s_to_b, p);
+  }
+}
+
+/**
+ * @brief Whether the effect itself has reached a frame it will hold forever.
+ *
+ * @param el Milliseconds since the look started.
+ *
+ * @return true for SOLID, and for a WIPE once it has crossed the strip.
+ */
+static bool effect_settled(uint32_t el) {
+  switch (s_seq.effect) {
+  case LIGHT_FX_RAINBOW:
+  case LIGHT_FX_SWEEP:
+  case LIGHT_FX_BREATHE:
+    return false; // Loops forever.
+  case LIGHT_FX_WIPE:
+  case LIGHT_FX_WIPE_REV:
+    return s_seq.period_ms == 0u || el >= s_seq.period_ms;
+  default:
+    return true; // SOLID, which is also what an unknown effect renders.
+  }
+}
+
+/**
  * @brief Multiply the rendered frame by the look's random flicker dip.
  *
  * Redraws the dip every LIGHT_FLICKER_PERIOD_MS and holds it in between, so the
@@ -335,6 +388,12 @@ static void render_frame(void) {
   case LIGHT_FX_BREATHE:
     render_breathe(el);
     break;
+  case LIGHT_FX_WIPE:
+    render_wipe(el, false);
+    break;
+  case LIGHT_FX_WIPE_REV:
+    render_wipe(el, true);
+    break;
   default:
     render_solid();
     break;
@@ -347,9 +406,10 @@ static void render_frame(void) {
   const float p = fade_progress(el);
   apply_fade(p);
 
-  // A faded-in SOLID is a fixed colour: stop rendering and hold it as the idle
-  // so the CPU can sleep. Looping effects and flicker have no settled frame.
-  if (p >= 1.0f && s_seq.effect == LIGHT_FX_SOLID && s_seq.flicker == 0u) {
+  // A faded-in SOLID, or a finished WIPE, is a fixed colour: stop rendering
+  // and hold it as the idle so the CPU can sleep. Looping effects and flicker
+  // have no settled frame.
+  if (p >= 1.0f && s_seq.flicker == 0u && effect_settled(el)) {
     s_active = false;
   }
 }

@@ -11,7 +11,8 @@
  * crossfades from the snapshot into it over fade_ms shaped by curve. The fade
  * is the incoming look's own setting and behaves the same for every effect, so
  * one knob covers both directions: fading a look in is what fades the previous
- * one out. A SOLID look settles once faded in and holds as the idle.
+ * one out. A SOLID look settles once faded in, and a WIPE once it has also
+ * crossed the strip, then holds as the idle.
  *
  * The lamp is a two-state idle toggled by the button: light_lamp_toggle() plays
  * the manifest's lamp-on / lamp-off look (falling back to built-ins if none is
@@ -70,8 +71,9 @@ bool light_lamp_is_on(void);
 /**
  * @brief Whether the strip is idle (settled, no animation or warning blink).
  *
- * Only a fully faded-in SOLID look with no flicker settles; looping effects and
- * flickering looks animate forever and so never report idle.
+ * Only a SOLID look, or a WIPE that has finished crossing the strip, settles,
+ * and only once fully faded in with no flicker. Looping effects and flickering
+ * looks animate forever and so never report idle.
  *
  * @return true if nothing needs rendering, so the CPU may deep-sleep.
  */
