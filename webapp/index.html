@@ -449,6 +449,26 @@
           <h3 class="subsection__title">Stored sounds</h3>
           <p class="note" id="sound-summary">Not read yet.</p>
           <ul class="sounds" id="sound-list"></ul>
+          <p class="note">
+            Play starts a slot on the clock straight away, at the gain it was
+            uploaded with. A fade-in longer than the sound is cut to its length.
+          </p>
+          <div class="field-row">
+            <label class="field">
+              <span class="field__label">Fade-in (s)</span>
+              <input
+                type="number"
+                id="sound-fade"
+                min="0"
+                max="255"
+                step="1"
+                value="0"
+              />
+            </label>
+            <button id="sound-stop" type="button" class="btn" disabled>
+              Stop playback
+            </button>
+          </div>
         </div>
 
         <div class="subsection">
@@ -551,29 +571,6 @@
           </div>
 
           <progress id="upload-progress" max="100" value="0" hidden></progress>
-        </div>
-
-        <div class="subsection">
-          <h3 class="subsection__title">Test playback</h3>
-          <p class="note">
-            Playing a slot starts it on the clock straight away, at the volume
-            it was stored with.
-          </p>
-          <div class="field-row">
-            <label class="field">
-              <span class="field__label">Fade-in (s)</span>
-              <input
-                type="number"
-                id="sound-fade"
-                min="0"
-                max="255"
-                value="0"
-              />
-            </label>
-            <button id="sound-stop" type="button" class="btn" disabled>
-              Stop playback
-            </button>
-          </div>
         </div>
 
 

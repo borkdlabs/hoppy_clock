@@ -473,6 +473,10 @@ export class HoppyClock extends EventTarget {
     if (!Number.isInteger(id) || id < 0 || id >= MAX_SOUNDS) {
       throw new DeviceError(`sound id must be 0-${MAX_SOUNDS - 1}, got ${id}`);
     }
+    // One byte on the wire: anything else would wrap or truncate silently.
+    if (!Number.isInteger(fadeS) || fadeS < 0 || fadeS > 255) {
+      throw new DeviceError(`fade-in must be 0-255 whole seconds, got ${fadeS}`);
+    }
     // The fade byte is optional in the protocol; send it only when asked for.
     await this.command(CMD.SND_PLAY, fadeS ? [id, fadeS] : [id]);
   }

@@ -531,6 +531,12 @@ const sampleLight = (over = {}) => ({
   check('play with no fade sends one byte', port.played.id === 0 && port.played.fade === null,);
   await clock.playSound(0, 15);
   check('play with a fade sends both', port.played.fade === 15);
+  // A fade that does not fit the byte must not wrap on the wire.
+  for (const fade of [0.5, 256, -1]) {
+    const err = await clock.playSound(0, fade).catch((e) => e);
+    check(`play rejects a ${fade} s fade`, err?.name === 'DeviceError');
+  }
+  check('rejected fades never reach the device', port.played.fade === 15);
   await clock.stopSound();
   check('stop reaches the device', port.played.stopped);
 
