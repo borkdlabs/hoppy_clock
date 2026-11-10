@@ -516,8 +516,10 @@ export class HoppyClock extends EventTarget {
    * second. The blob then goes out in CHUNK_BYTES frames, each acknowledged,
    * and SND_END commits it once the firmware agrees on the CRC.
    *
-   * Cancelling stops sending, which leaves the slot erased and uncommitted:
-   * the firmware only publishes an entry when SND_END verifies it.
+   * Cancelling stops sending and closes the write with an early SND_END, which
+   * the firmware rejects. That leaves the slot erased and uncommitted (an entry
+   * is only published when SND_END verifies it) and frees the firmware at once
+   * rather than after its own idle timeout.
    *
    * @param {number} id Slot id.
    * @param {{format: string, rateHz: number, data: Uint8Array}} sound The blob
@@ -557,6 +559,9 @@ export class HoppyClock extends EventTarget {
 
     for (let sent = 0; sent < total; sent += CHUNK_BYTES) {
       if (signal?.aborted) {
+        // An SND_END before all the bytes have arrived is refused, and the
+        // refusal is what closes the write, so the error is the expected reply.
+        await this.command(CMD.SND_END, [0, 0, 0, 0], 5000).catch(() => {});
         throw new DeviceError('upload cancelled');
       }
       const end = Math.min(sent + CHUNK_BYTES, total);

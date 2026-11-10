@@ -55,6 +55,13 @@
 // op and re-programming identical bytes is safe, so retry the chunk.
 #define SOUND_WRITE_RETRIES 4u
 
+// An open write is abandoned if the host goes quiet this long between frames
+// (cancelled upload, cable pulled). The host sends data frames back to back,
+// a few ms apart, so a gap this long means it is not coming back. Without this
+// the write state would stay open forever, freezing the LED strip, refusing
+// every sound (alarms included) and blocking deep sleep.
+#define SOUND_WRITE_IDLE_TIMEOUT_MS 5000u
+
 /**
  * @brief On-flash sound index image (magic + CRC + entry table).
  */
@@ -84,10 +91,11 @@ static bool s_wr_active = false;
 static uint8_t s_wr_id = 0u;
 static uint8_t s_wr_format = 0u;
 static uint16_t s_wr_rate = 0u;
-static uint32_t s_wr_base = 0u;   // Flash address of the slot.
-static uint32_t s_wr_len = 0u;    // Expected total bytes.
-static uint32_t s_wr_cursor = 0u; // Bytes written so far.
-static uint32_t s_wr_crc = 0u;    // Running CRC-32 state (pre-final-xor).
+static uint32_t s_wr_base = 0u;    // Flash address of the slot.
+static uint32_t s_wr_len = 0u;     // Expected total bytes.
+static uint32_t s_wr_cursor = 0u;  // Bytes written so far.
+static uint32_t s_wr_crc = 0u;     // Running CRC-32 state (pre-final-xor).
+static uint32_t s_wr_last_ms = 0u; // Tick of the write's last host frame.
 
 // Playback state (memory-mapped streaming, driven by the amp DMA ISR).
 static uint16_t s_ring[SOUND_RING_SAMPLES];
@@ -294,6 +302,13 @@ void sound_task(void) {
   if (s_playing && s_play_done) {
     sound_stop();
   }
+
+  // Drop a write the host abandoned. The slot stays erased and uncommitted (its
+  // index entry is only published by sound_write_end), so nothing else to undo.
+  if (s_wr_active &&
+      (HAL_GetTick() - s_wr_last_ms) > SOUND_WRITE_IDLE_TIMEOUT_MS) {
+    s_wr_active = false;
+  }
 }
 
 HAL_StatusTypeDef sound_write_begin(uint8_t id, uint8_t format,
@@ -327,6 +342,7 @@ HAL_StatusTypeDef sound_write_begin(uint8_t id, uint8_t format,
   s_wr_len = total_len;
   s_wr_cursor = 0u;
   s_wr_crc = 0xFFFFFFFFu;
+  s_wr_last_ms = HAL_GetTick(); // After the erase, which can take seconds.
   s_wr_active = true;
   return HAL_OK;
 }
@@ -351,6 +367,7 @@ HAL_StatusTypeDef sound_write_data(const uint8_t *data, uint8_t len) {
   }
   s_wr_crc = crc32_update(s_wr_crc, data, len);
   s_wr_cursor += len;
+  s_wr_last_ms = HAL_GetTick();
   return HAL_OK;
 }
 

@@ -252,6 +252,9 @@ static void handle_cfg_commit(const uint8_t *p, uint8_t len) {
     manifest_set_lamp(s_stage_lamp_on, s_stage_lamp_off);
     manifest_set_led_count(s_stage_led_count);
     manifest_set_button_sound(s_stage_btn_sound);
+    // Playback streams from memory-mapped flash in the DAC interrupt and the
+    // save drops the flash back to indirect mode, so stop any sound first.
+    sound_stop();
     if (manifest_save() != HAL_OK) {
       status = USB_CMD_STATUS_ERR;
     } else {
@@ -395,6 +398,9 @@ static void handle_wipe(const uint8_t *p, uint8_t len) {
 
   // Payload: optional full flag (scrub the audio data region too).
   const bool full = (len >= 1u) && (p[0] != 0u);
+  // Stop playback before the manifest erase takes the flash out of
+  // memory-mapped mode under the DAC interrupt (see handle_cfg_commit).
+  sound_stop();
   if (manifest_wipe() != HAL_OK || sound_wipe(full) != HAL_OK) {
     status = USB_CMD_STATUS_ERR;
   } else {
