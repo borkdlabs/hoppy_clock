@@ -80,4 +80,15 @@ button_event_t button_get_event(void);
  */
 bool button_is_down(void);
 
+/**
+ * @brief Whether the button needs the poll loop to keep running.
+ *
+ * Unlike button_is_down() this reads the pin itself, so it is already true for
+ * a press that button_update() has not debounced yet. The power manager uses it
+ * to avoid deep-sleeping on a press that has only just begun.
+ *
+ * @return true while pressed (raw or debounced) or mid-debounce.
+ */
+bool button_is_active(void);
+
 #endif

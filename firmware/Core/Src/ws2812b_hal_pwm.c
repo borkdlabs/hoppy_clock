@@ -123,3 +123,5 @@ void ws2812b_set_count(uint16_t count) {
 }
 
 uint16_t ws2812b_get_count(void) { return s_led_count; }
+
+bool ws2812b_is_busy(void) { return dma_complete_flag == 0u; }

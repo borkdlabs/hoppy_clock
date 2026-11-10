@@ -13,6 +13,7 @@
 #include "sound.h"
 #include "stm32l4xx_hal.h"
 #include "usb_device.h"
+#include "ws2812b_hal_pwm.h"
 
 /** Definitions. **************************************************************/
 
@@ -42,15 +43,31 @@ static uint32_t s_awake_hold_until = 0u;
 /**
  * @brief Whether it is safe to enter STOP2 (nothing needs the clocks running).
  *
- * False while an alarm rings, a sound plays or is being written, the button is
- * held, the LED is animating or showing the clock-unset warning, or a USB host
- * session is configured (STOP2 suspends USB and would drop an upload/config).
+ * False while an alarm has fired or rings, a sound plays or is being written,
+ * the button is pressed, the LED is animating, showing the clock-unset warning
+ * or still clocking out its last frame, or a USB host session is configured
+ * (STOP2 suspends USB and would drop an upload/config).
+ *
+ * The alarm-fired and button terms are set from interrupts, so the caller must
+ * evaluate this with interrupts masked for the answer to still hold at the WFI.
  */
 static bool deep_sleep_ok(void) {
-  if (alarm_rt_is_ringing() || sound_is_playing() || sound_is_writing()) {
+  // A fire not yet picked up by alarm_rt_task(): sleeping on it would lose the
+  // alarm, since its minute no longer matches by the next wake.
+  if (alarm_rt_is_pending() || alarm_rt_is_ringing()) {
     return false;
   }
-  if (button_is_down() || !light_is_idle()) {
+  if (sound_is_playing() || sound_is_writing()) {
+    return false;
+  }
+  // button_is_active reads the pin, so a press the 10 ms poll has not debounced
+  // yet (whose wake edge has already been spent) still keeps us awake.
+  if (button_is_active() || !light_is_idle()) {
+    return false;
+  }
+  // The look can settle (idle) with its final frame still on the wire. Stopping
+  // the timer mid-frame would leave the strip with a truncated update.
+  if (ws2812b_is_busy()) {
     return false;
   }
   // Post-wake grace: stay awake (WFI) so a host that reconnected while we slept
@@ -69,10 +86,17 @@ static bool deep_sleep_ok(void) {
 /** Public functions. *********************************************************/
 
 void power_idle(void) {
+  // Decide with interrupts masked. Otherwise, an alarm or button interrupt
+  // could run between the check and the sleep, leaving its work for a loop that
+  // has just stopped. Masked, such an interrupt stays pending instead, and a
+  // pending interrupt still ends WFI (in either sleep depth) straight away.
+  __disable_irq();
+
   if (!deep_sleep_ok()) {
     // Light sleep: gate the core until the next interrupt, but keep clocks and
     // peripherals live so USB / audio / LED / button stay fully responsive.
     __WFI();
+    __enable_irq();
     return;
   }
 
@@ -92,6 +116,9 @@ void power_idle(void) {
   // wake.
   HAL_SuspendTick();
   HAL_PWREx_EnterSTOP2Mode(PWR_STOPENTRY_WFI);
+  // Unmask straight after the wake, so the interrupt that woke us is serviced
+  // here (on the MSI clock, as it was before the masking was added).
+  __enable_irq();
   SystemClock_Config();
   PeriphCommonClock_Config();
   HAL_ResumeTick();

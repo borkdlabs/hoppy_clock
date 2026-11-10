@@ -85,3 +85,8 @@ button_event_t button_get_event(void) {
 }
 
 bool button_is_down(void) { return s_debounced; }
+
+bool button_is_active(void) {
+  // Pressed right now, or a level change still inside its debounce window.
+  return s_debounced || button_raw_pressed() || (s_raw_last != s_debounced);
+}

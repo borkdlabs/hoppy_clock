@@ -53,6 +53,16 @@ void alarm_rt_rearm(void);
 void alarm_rt_notify_fired(void);
 
 /**
+ * @brief Whether Alarm A has fired but alarm_rt_task() has not serviced it yet.
+ *
+ * The power manager checks this with interrupts masked before deep sleep, so a
+ * fire that lands between the task's last pass and the sleep is not slept on.
+ *
+ * @return true while a fire is waiting for alarm_rt_task().
+ */
+bool alarm_rt_is_pending(void);
+
+/**
  * @brief Whether an alarm is currently ringing.
  *
  * @return true while ringing (LED ramp active), false otherwise.

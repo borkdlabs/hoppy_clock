@@ -163,6 +163,8 @@ void alarm_rt_task(void) {
 
 void alarm_rt_notify_fired(void) { s_fired = true; }
 
+bool alarm_rt_is_pending(void) { return s_fired; }
+
 bool alarm_rt_is_ringing(void) { return s_ringing; }
 
 void alarm_rt_cancel(void) {

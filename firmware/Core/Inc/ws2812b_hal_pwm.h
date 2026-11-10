@@ -15,6 +15,7 @@
 /** Includes. *****************************************************************/
 
 #include "stm32l4xx_hal.h"
+#include <stdbool.h>
 
 /** STM32 port and pin configs. ***********************************************/
 
@@ -116,6 +117,17 @@ void ws2812b_set_count(uint16_t count);
  * @return Active LED count (1..LED_COUNT_MAX).
  */
 uint16_t ws2812b_get_count(void);
+
+/**
+ * @brief Whether a frame is still being clocked out to the strip.
+ *
+ * True from a successful ws2812b_update() until its DMA transfer (data plus
+ * the reset slots) completes. The timer must keep running for that long, so
+ * the power manager holds off deep sleep while this is true.
+ *
+ * @return true while a transfer is in flight.
+ */
+bool ws2812b_is_busy(void);
 
 /**
  * @brief  Sets the color of a specific WS2812B LED.
