@@ -23,31 +23,32 @@ see [Acknowledgements](#acknowledgements).
 
 <!-- TOC -->
 * [hoppy_clock](#hoppy_clock)
-  * [1 Overview](#1-overview)
-    * [1.1 Bill of Materials (BOM)](#11-bill-of-materials-bom)
-    * [1.2 Block Diagram](#12-block-diagram)
-    * [1.3 Pin Configurations](#13-pin-configurations)
-    * [1.4 Clock Configurations](#14-clock-configurations)
-  * [2 Board Specifications](#2-board-specifications)
-    * [2.1 Connectors](#21-connectors)
-    * [2.2 Switches & Jumpers](#22-switches--jumpers)
-    * [2.3 LEDs](#23-leds)
-    * [2.4 Test Pads](#24-test-pads)
-    * [2.5 Power Supply](#25-power-supply)
-    * [2.6 Speaker](#26-speaker)
-  * [3 Firmware](#3-firmware)
-    * [3.1 User Button Controls](#31-user-button-controls)
-    * [3.2 USB Configuration](#32-usb-configuration)
-      * [3.2.1 Web App](#321-web-app)
-      * [3.2.2 Python Tool](#322-python-tool)
-    * [3.3 Light Looks](#33-light-looks)
-    * [3.4 Sounds](#34-sounds)
-    * [3.5 Firmware Update (DFU)](#35-firmware-update-dfu)
-  * [4 Development](#4-development)
-    * [4.1 Web App](#41-web-app)
-    * [4.2 Deployment](#42-deployment)
-  * [Acknowledgements](#acknowledgements)
-  * [Third-Party Licenses](#third-party-licenses)
+    * [1 Overview](#1-overview)
+        * [1.1 Bill of Materials (BOM)](#11-bill-of-materials-bom)
+        * [1.2 Block Diagram](#12-block-diagram)
+        * [1.3 Pin Configurations](#13-pin-configurations)
+        * [1.4 Clock Configurations](#14-clock-configurations)
+    * [2 Board Specifications](#2-board-specifications)
+        * [2.1 Connectors](#21-connectors)
+        * [2.2 Switches & Jumpers](#22-switches--jumpers)
+        * [2.3 LEDs](#23-leds)
+        * [2.4 Test Pads](#24-test-pads)
+        * [2.5 Power Supply](#25-power-supply)
+        * [2.6 Speaker](#26-speaker)
+    * [3 Firmware](#3-firmware)
+        * [3.1 User Button Controls](#31-user-button-controls)
+        * [3.2 USB Configuration](#32-usb-configuration)
+            * [3.2.1 Web App](#321-web-app)
+            * [3.2.2 Python Tool](#322-python-tool)
+        * [3.3 Light Looks](#33-light-looks)
+        * [3.4 Sounds](#34-sounds)
+        * [3.5 Daylight Saving Time](#35-daylight-saving-time)
+        * [3.6 Firmware Update (DFU)](#36-firmware-update-dfu)
+    * [4 Development](#4-development)
+        * [4.1 Web App](#41-web-app)
+        * [4.2 Deployment](#42-deployment)
+    * [Acknowledgements](#acknowledgements)
+    * [Third-Party Licenses](#third-party-licenses)
 <!-- TOC -->
 
 </details>
@@ -77,6 +78,8 @@ see [Acknowledgements](#acknowledgements).
 - 🔋 **Low power**: the MCU sleeps between events and drops into STOP2 once the
   system is idle, waking on the next alarm or a button press (useful on backup
   supply).
+- 🕑 **Daylight saving**: the clock moves itself an hour at each changeover,
+  following the time zone rule it is handed with the time.
 - 🖥️ **Configuration**: nothing is hard-coded, the board takes its settings over
   USB from the [web app](https://borkdlabs.github.io/hoppy_clock/) (Chrome or
   Edge, nothing to install).
@@ -318,7 +321,7 @@ python main.py <command> [options]     # add -p COM7 (or /dev/ttyACM0) to pick t
 
 | Command                           | Description                                                             |
 |-----------------------------------|-------------------------------------------------------------------------|
-| `set-time`                        | Sync the RTC to the host's local time                                   |
+| `set-time`                        | Sync the RTC to the host's local time and daylight saving rule          |
 | `add-alarm` / `set-alarm`         | Add an alarm (e.g. `--at 08:00 --days weekdays`) / replace all with one |
 | `remove-alarm N` / `clear-alarms` | Delete one alarm by index / delete all                                  |
 | `list-alarms`                     | Show alarms, lights, the lamp and LED count                             |
@@ -455,7 +458,28 @@ In practice leave both on their defaults (`s16` at 16000 Hz) and use the trim
 option to fit a long track, rather than dropping quality to make it fit. Reach
 for `u8` or a lower rate only when a long clip matters more than how it sounds.
 
-### 3.5 Firmware Update (DFU)
+### 3.5 Daylight Saving Time
+
+The clock keeps local time and moves itself an hour at each daylight saving
+changeover. It has no idea where it is, so the rule comes from the host: a time
+sync (web app or `set-time`) works out the computer's time zone rule and sends
+it along, as "the Nth weekday of a month at an hour" for each changeover. Untick
+the box in the web app (or pass `--no-dst`) to sync the time alone.
+
+- The rule lives in the RTC backup domain with the time, not in the flash
+  settings. A `wipe` leaves it alone, a full power loss clears it along with the
+  time, and the next sync restores both.
+- A changeover wakes the board from STOP2 (RTC Alarm B), the same way an alarm
+  does.
+- **Clock goes forward:** an alarm set inside the skipped hour rings at the
+  jump, rather than not at all that day.
+- **Clock goes back:** an alarm set inside the repeated hour rings on the first
+  pass only.
+- Only whole-hour changes on an "Nth weekday" rule that stay within one day are
+  supported. A time zone that changes any other way (at midnight, by 30 minutes,
+  on a fixed date) is synced without a rule, and the host says so.
+
+### 3.6 Firmware Update (DFU)
 
 This flashes new *firmware* (not settings, those use the USB tool above).
 Normally firmware is programmed over SWD (the `TC2050` header). Without a
@@ -500,6 +524,7 @@ Then open <http://localhost:8000> in Chrome or Edge.
 | `js/alarms.js`                | Packed alarm records, mirrors `manifest.h`               |
 | `js/app.js`                   | Tab switching and the wiring behind every card           |
 | `js/device.js`                | Port lifecycle, transactions, manifest read/write        |
+| `js/dst.js`                   | Daylight saving rule detection, mirrors `dst.h`          |
 | `js/lights.js`                | Packed light looks, mirrors `manifest.h`                 |
 | `js/sounds.js`                | Sound slots and the decode/encode upload path            |
 | `js/protocol.js`              | Framing and CRC-8, mirrors `firmware/Core/Inc/usb_cmd.h` |
@@ -523,7 +548,7 @@ button can all be driven dry. More in [`webapp/dev/`](webapp/dev/README.md).
 A protocol change touches three implementations, keep them in step:
 `firmware/Core/Inc/usb_cmd.h`, `software/main.py` and `webapp/js/`
 (`protocol.js` for the framing, `alarms.js`, `lights.js` and `sounds.js` for the
-record layouts).
+record layouts, `dst.js` for the daylight saving rule).
 
 ### 4.2 Deployment
 
