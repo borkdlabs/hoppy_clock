@@ -23,6 +23,7 @@ function fakePort({
                   } = {}) {
   let enqueue;
   const rtc = {yy: 20, mo: 1, dd: 1, wd: 3, hh: 0, mm: 0, ss: 0};
+  const dst = new Array(9).fill(0); // Rule + flag, as SET_TIME last sent them.
 
   // What the manifest currently holds, and the staging area a BEGIN opens.
   const stored = config ?? {
@@ -77,9 +78,11 @@ function fakePort({
 
         if (cmd === CMD.PING) respond(cmd, [0]); else if (cmd === CMD.SET_TIME) {
           [rtc.yy, rtc.mo, rtc.dd, rtc.wd, rtc.hh, rtc.mm, rtc.ss] = payload;
+          // Daylight saving rule (8 B) + "on daylight time" flag, if sent.
+          dst.splice(0, 9, ...(payload.length === 16 ? payload.subarray(7) : new Array(9).fill(0)));
           respond(cmd, [0]);
         } else if (cmd === CMD.GET_TIME) {
-          respond(cmd, [0, ...Object.values(rtc)]);
+          respond(cmd, [0, ...Object.values(rtc), ...dst]);
         } else if (cmd === CMD.SET_LED) {
           // The firmware bounds the index by the active chain length.
           if (payload.length !== 4 || payload[0] >= stored.ledCount) {
@@ -197,6 +200,19 @@ const check = (name, pass, extra = '') => {
   check('syncTime round-trips', drift < 3, `drift ${drift.toFixed(1)}s`);
   check('ISO weekday sent (Sun=7, not 0)', port.rtc.wd >= 1 && port.rtc.wd <= 7, `wd=${port.rtc.wd}`,);
   check('two-digit year sent', port.rtc.yy === new Date().getFullYear() % 100);
+
+  const off = await clock.getDst();
+  check('a plain sync leaves daylight saving off', off !== null && off.rule === null && !off.active);
+
+  const rule = {
+    start: {month: 3, week: 5, weekday: 7, hour: 2},
+    end: {month: 10, week: 5, weekday: 7, hour: 3},
+  };
+  await clock.setTime(new Date(), {rule, active: true});
+  const dst = await clock.getDst();
+  check('daylight saving rule round-trips', JSON.stringify(dst) === JSON.stringify({
+    rule, active: true
+  }), JSON.stringify(dst),);
 
   // Concurrent callers must not interleave frames on the wire.
   const results = await Promise.all([clock.getTime(), clock.getTime(), clock.getTime(),]);

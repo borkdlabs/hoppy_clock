@@ -26,6 +26,7 @@
 
   let enqueue;
   let synced = false;
+  let dst = new Array(9).fill(0); // No daylight saving rule until a sync.
 
   // A manifest to edit, in the packed layout the firmware stores (manifest.h).
   // Two alarms and two light looks, so the alarm, light and lamp cards all
@@ -90,12 +91,14 @@
           out = frame(cmd, [0]);
         } else if (cmd === 0x10) {
           [rtc.yy, rtc.mo, rtc.dd, rtc.wd, rtc.hh, rtc.mm, rtc.ss] = payload;
+          // Daylight saving rule (8 B) + "on daylight time" flag, if sent.
+          dst = payload.length === 16 ? [...payload.subarray(7)] : new Array(9).fill(0);
           synced = true;
           window.__lastSetTime = [...payload];
           out = frame(cmd, [0]);
         } else if (cmd === 0x11) {
           tick();
-          out = frame(cmd, [0, rtc.yy, rtc.mo, rtc.dd, rtc.wd, rtc.hh, rtc.mm, rtc.ss,]);
+          out = frame(cmd, [0, rtc.yy, rtc.mo, rtc.dd, rtc.wd, rtc.hh, rtc.mm, rtc.ss, ...dst,]);
         } else if (cmd === 0x20) {
           if (payload.length !== 4 || payload[0] >= cfg.ledCount) {
             out = frame(cmd, [1]);

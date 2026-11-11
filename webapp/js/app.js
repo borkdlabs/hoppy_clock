@@ -10,6 +10,7 @@ import {DeviceError, HoppyClock, isSupported, USB_FILTER} from './device.js';
 import {
   MAX_ALARMS, decodeAlarm, describeDays, encodeAlarm, formatAlarmTime,
 } from './alarms.js';
+import {describeRule, detectDst} from './dst.js';
 import {
   EFFECTS,
   EFFECT_DEFAULTS,
@@ -129,12 +130,67 @@ const ui = {
   lightFlicker: el('light-flicker'),
   lightSave: el('light-save'),
   lightReset: el('light-reset'),
+  dstAuto: el('dst-auto'),
+  dstNote: el('dst-note'),
+  dstDevice: el('dst-device'),
 };
 
 const clock = new HoppyClock();
 
 /** Where the chosen tab is remembered between visits. */
 const TAB_KEY = 'hoppy-clock.tab';
+
+/** Where the daylight saving checkbox is remembered between visits. */
+const DST_KEY = 'hoppy-clock.dst';
+
+/**
+ * The daylight saving rule to send with a time, honouring the checkbox.
+ *
+ * @param {Date} now The moment being sent.
+ * @returns {{rule: import('./dst.js').DstRule|null, active: boolean}} The
+ *     rule and whether `now` is on daylight time; no rule when unticked or
+ *     when this time zone has none the clock can follow.
+ */
+function dstFor(now) {
+  if (!ui.dstAuto.checked) {
+    return {rule: null, active: false};
+  }
+  const {rule, active} = detectDst(now);
+  return {rule, active};
+}
+
+/** Say what a sync will tell the clock about daylight saving. */
+function renderDstNote() {
+  if (!ui.dstAuto.checked) {
+    ui.dstNote.textContent = 'The clock will hold the time it is given, and need a sync after each change.';
+    return;
+  }
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const found = detectDst();
+  if (found.kind === 'ok') {
+    ui.dstNote.textContent = `This computer's time zone (${zone}) goes ${describeRule(found.rule)}. A sync sends that rule with the time and the clock then follows it on its own.`;
+  } else if (found.kind === 'none') {
+    ui.dstNote.textContent = `This computer's time zone (${zone}) has no daylight saving, so there is nothing to adjust.`;
+  } else {
+    ui.dstNote.textContent = `This computer's time zone (${zone}) changes in a way the clock cannot follow, so it will need a sync after each change.`;
+  }
+}
+
+/** Read back and show the daylight saving rule the clock is running on. */
+async function readDst() {
+  try {
+    const dst = await clock.getDst();
+    if (dst === null) {
+      ui.dstDevice.textContent = 'On the clock: firmware without daylight saving support.';
+    } else if (dst.rule === null) {
+      ui.dstDevice.textContent = 'On the clock: no automatic adjustment.';
+    } else {
+      ui.dstDevice.textContent = `On the clock: ${describeRule(dst.rule)}. It is on ${dst.active ? 'daylight' : 'standard'} time now.`;
+    }
+  } catch (err) {
+    log(`could not read the daylight saving rule: ${err.message}`, 'err');
+  }
+}
 
 /**
  * Show one tab's panel and hide the rest.
@@ -268,6 +324,7 @@ function refresh() {
     ui.drift.textContent = '-';
     ui.drift.className = 'readout__value';
     ui.driftNote.textContent = '';
+    ui.dstDevice.textContent = '';
   }
 }
 
@@ -968,6 +1025,7 @@ async function connect(port) {
     await clock.ping();
     log('connected, PING -> OK', 'ok');
     await poll();
+    await readDst();
     await readAll();
     await readSounds();
   });
@@ -999,10 +1057,11 @@ async function toggleConnection() {
 async function syncNow() {
   await withBusy('Syncing...', async () => {
     try {
-      const readback = await clock.syncTime();
+      const readback = await clock.syncTime(dstFor);
       lastReading = {at: Date.now(), time: readback};
       render();
       log(`SET_TIME -> OK, clock now reads ${timeFmt.format(readback)}`, 'ok');
+      await readDst();
     } catch (err) {
       const detail = err instanceof DeviceError && err.status !== undefined ? ` (status ${err.status})` : '';
       log(`sync failed: ${err.message}${detail}`, 'err');
@@ -1050,6 +1109,20 @@ function main() {
 
   ui.connect.addEventListener('click', toggleConnection);
   ui.sync.addEventListener('click', syncNow);
+  try {
+    ui.dstAuto.checked = localStorage.getItem(DST_KEY) !== 'off';
+  } catch {
+    // Storage unavailable; leave it ticked.
+  }
+  ui.dstAuto.addEventListener('change', () => {
+    try {
+      localStorage.setItem(DST_KEY, ui.dstAuto.checked ? 'on' : 'off');
+    } catch {
+      // Storage unavailable; the choice lasts for this visit only.
+    }
+    renderDstNote();
+  });
+  renderDstNote();
   ui.clearLog.addEventListener('click', () => ui.log.replaceChildren());
   ui.refreshAlarms.addEventListener('click', () => withBusy('Reading...', readAll),);
   ui.alarmForm.addEventListener('submit', submitAlarm);
