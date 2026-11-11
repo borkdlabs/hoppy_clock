@@ -11,6 +11,7 @@ Examples:
   python main.py -p COM3 ping               # Ping on a specific port.
   python main.py -p /dev/ttyACM0 get-time   # Read the clock (Linux port).
   python main.py set-time                   # Sync device to local "now".
+  python main.py set-time --no-dst          # ...without daylight saving.
   python main.py set-led 0 60 0 0           # LED index 0 -> red (r g b, 0-255).
   python main.py set-led 0 green            # LED index 0 -> named colour.
   python main.py set-led-count 12           # Set LED count to 12.
@@ -57,6 +58,7 @@ Examples:
 """
 
 import argparse
+import calendar
 import datetime
 import math
 import os
@@ -236,6 +238,130 @@ def _time_payload(now: datetime.datetime) -> bytes:
     )
 
 
+# Daylight saving rule. The clock keeps local time and moves itself an hour
+# twice a year on a rule sent with the time: each changeover as "the Nth
+# <weekday> of <month> at <hour>". The OS only gives the UTC offset at an
+# instant, so the rule is recovered by finding where that offset changes over
+# the next few years.
+
+DST_WEEK_LAST = 5  # dst_edge_t.week: the last <weekday> of the month.
+DST_RULE_BYTES = 8  # Two edges of month, week, weekday, hour.
+DST_YEARS = 6  # Enough to tell "the 4th" from "the last" weekday of a month.
+DST_STEP_S = 15 * 60  # Zones change on a quarter hour of UTC at the finest.
+DAY_S = 86400
+
+_MONTHS = (
+    "January February March April May June July August September October "
+    "November December"
+).split()
+_WEEKDAYS = "Monday Tuesday Wednesday Thursday Friday Saturday Sunday".split()
+_WEEKS = "first second third fourth last".split()
+
+
+def _utc_offset(ts: int) -> int:
+    """Minutes the local zone is ahead of UTC at an epoch second."""
+    return time.localtime(ts).tm_gmtoff // 60
+
+
+def _dst_transitions(year: int) -> list:
+    """Offset changes in a year: (first second on the new offset, before, after)."""
+    found = []
+    day = calendar.timegm((year, 1, 1, 0, 0, 0))
+    end = calendar.timegm((year + 1, 1, 1, 0, 0, 0))
+    before = _utc_offset(day)
+    while day < end:
+        after = _utc_offset(day + DAY_S)
+        if after != before:
+            # Somewhere in this day: walk it for the first step that changed.
+            at = day + DST_STEP_S
+            while _utc_offset(at) == before:
+                at += DST_STEP_S
+            found.append((at, before, after))
+            before = after
+        day += DAY_S
+    return found
+
+
+def _dst_wall(at: int, before: int) -> dict:
+    """A change as the wall clock showed it, in the offset it is leaving."""
+    wall = time.gmtime(at + before * 60)
+    return {
+        "month": wall.tm_mon,
+        "date": wall.tm_mday,
+        "weekday": wall.tm_wday + 1,  # Mon=1 .. Sun=7.
+        "hour": wall.tm_hour,
+        "minute": wall.tm_min,
+        "last": wall.tm_mday + 7
+        > calendar.monthrange(wall.tm_year, wall.tm_mon)[1],
+    }
+
+
+def _dst_edge(seen: list):
+    """Reduce one changeover, seen across several years, to (m, wk, wd, h)."""
+    first = seen[0]
+    if first["minute"] != 0 or any(
+        s[k] != first[k]
+        for s in seen
+        for k in ("month", "weekday", "hour", "minute")
+    ):
+        return None
+    nth = (first["date"] + 6) // 7
+    if all((s["date"] + 6) // 7 == nth for s in seen):
+        week = nth
+    elif all(s["last"] for s in seen):
+        week = DST_WEEK_LAST
+    else:
+        return None  # A fixed date, or something stranger.
+    return (first["month"], week, first["weekday"], first["hour"])
+
+
+def detect_dst(now: datetime.datetime):
+    """This computer's daylight saving rule, for the moment being sent.
+
+    Returns (rule, active, why): rule is (start, end) with each edge a
+    (month, week, weekday, hour) tuple, or None if there is none to send, in
+    which case why says so. active is whether now is on daylight time.
+    """
+    starts, ends, daylight = [], [], None
+    for i in range(DST_YEARS):
+        changes = _dst_transitions(now.year + i)
+        if not changes and i == 0:
+            return None, False, "this time zone has no daylight saving"
+        # The clock moves by exactly one hour, once each way a year.
+        forward = [c for c in changes if c[2] - c[1] == 60]
+        back = [c for c in changes if c[2] - c[1] == -60]
+        if len(changes) != 2 or len(forward) != 1 or len(back) != 1:
+            return None, False, "this time zone changes in an unsupported way"
+        starts.append(_dst_wall(forward[0][0], forward[0][1]))
+        ends.append(_dst_wall(back[0][0], back[0][1]))
+        if daylight is None:
+            daylight = forward[0][2]
+
+    start, end = _dst_edge(starts), _dst_edge(ends)
+    # The hour limits are the firmware's: both jumps must stay inside one day.
+    if (
+        start is None
+        or end is None
+        or start[3] > 22
+        or end[3] < 1
+        or start[0] == end[0]
+    ):
+        return None, False, "this time zone changes in an unsupported way"
+    active = _utc_offset(int(now.timestamp())) == daylight
+    return (start, end), active, ""
+
+
+def _dst_describe(rule) -> str:
+    def edge(e):
+        month, week, weekday, hour = e
+        return (
+            f"the {_WEEKS[week - 1]} {_WEEKDAYS[weekday - 1]} of "
+            f"{_MONTHS[month - 1]} at {hour:02d}:00"
+        )
+
+    return f"forward an hour on {edge(rule[0])}, back on {edge(rule[1])}"
+
+
 # Command handlers: each takes the open serial port and parsed args.
 
 
@@ -246,8 +372,21 @@ def cmd_ping(ser, args):
 
 
 def cmd_set_time(ser, args):
-    r = txn(ser, CMD_SET_TIME, _time_payload(datetime.datetime.now()))
+    now = datetime.datetime.now()
+    rule, active, why = (
+        (None, False, "--no-dst") if args.no_dst else detect_dst(now)
+    )
+    # Time, then the rule (all zero = no automatic adjustment) and whether the
+    # time being sent is on daylight time.
+    payload = _time_payload(now)
+    payload += bytes(rule[0] + rule[1]) if rule else bytes(DST_RULE_BYTES)
+    payload += bytes([1 if active else 0])
+    r = txn(ser, CMD_SET_TIME, payload)
     print("SET_TIME ->", _status(r))
+    if rule:
+        print(f"  daylight saving: {_dst_describe(rule)}")
+    else:
+        print(f"  daylight saving: no automatic adjustment ({why})")
     return 0 if r and ok(r[1]) else 1
 
 
@@ -259,6 +398,17 @@ def cmd_get_time(ser, args):
             f"GET_TIME -> 20{yr:02d}-{mo:02d}-{dd:02d} (wd {wd}) "
             f"{hh:02d}:{mm:02d}:{ss:02d}"
         )
+        # Newer firmware follows with the daylight saving rule and its state.
+        if len(r[1]) >= 8 + DST_RULE_BYTES + 1:
+            edges = tuple(r[1][8 : 8 + DST_RULE_BYTES])
+            if edges[0] == 0:
+                print("  daylight saving: no automatic adjustment")
+            else:
+                frame = "daylight" if r[1][8 + DST_RULE_BYTES] else "standard"
+                print(
+                    f"  daylight saving: {_dst_describe((edges[:4], edges[4:]))}"
+                    f" (on {frame} time now)"
+                )
         return 0
     print("GET_TIME ->", _status(r))
     return 1
@@ -882,9 +1032,13 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     sub.add_parser("ping", help="ping the device").set_defaults(func=cmd_ping)
-    sub.add_parser("set-time", help="set the RTC to local now").set_defaults(
-        func=cmd_set_time
+    st = sub.add_parser("set-time", help="set the RTC to local now")
+    st.add_argument(
+        "--no-dst",
+        action="store_true",
+        help="do not have the clock adjust for daylight saving by itself",
     )
+    st.set_defaults(func=cmd_set_time)
     sub.add_parser("get-time", help="read the RTC back").set_defaults(
         func=cmd_get_time
     )
