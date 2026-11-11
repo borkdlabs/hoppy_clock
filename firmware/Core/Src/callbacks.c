@@ -20,6 +20,13 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc) {
   alarm_rt_notify_fired();
 }
 
+// Alarm B marks a daylight saving changeover. It takes the same path as an
+// alarm fire: alarm_rt_task() moves the clock, then re-arms from the new time.
+void HAL_RTCEx_AlarmBEventCallback(RTC_HandleTypeDef *hrtc) {
+  (void)hrtc;
+  alarm_rt_notify_fired();
+}
+
 /** ADC. */
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {

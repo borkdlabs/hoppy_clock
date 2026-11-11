@@ -22,6 +22,7 @@
 
 #include "usb_cmd.h"
 #include "alarm_rt.h"
+#include "dst.h"
 #include "light.h"
 #include "manifest.h"
 #include "rtc.h"
@@ -72,6 +73,11 @@ _Static_assert(1u + sizeof(alarm_record_t) <= USB_CMD_MAX_PAYLOAD,
                "alarm config frame exceeds USB_CMD_MAX_PAYLOAD");
 _Static_assert(1u + sizeof(light_seq_t) <= USB_CMD_MAX_PAYLOAD,
                "light config frame exceeds USB_CMD_MAX_PAYLOAD");
+
+// SET_TIME payload sizes: the seven time fields alone, or those followed by a
+// daylight saving rule and its "on daylight time now" flag.
+#define SET_TIME_LEN 7u
+#define SET_TIME_LEN_DST (SET_TIME_LEN + sizeof(dst_rule_t) + 1u)
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
@@ -125,14 +131,27 @@ static void send_frame(uint8_t cmd, const uint8_t *payload, uint8_t len) {
 static void handle_set_time(const uint8_t *p, uint8_t len) {
   uint8_t status = USB_CMD_STATUS_OK;
 
-  // Payload: year, month, date, weekday, hours, minutes, seconds.
-  if (len != 7u || p[0] > 99u || p[1] < 1u || p[1] > 12u || p[2] < 1u ||
-      p[2] > 31u || p[3] < 1u || p[3] > 7u || p[4] > 23u || p[5] > 59u ||
-      p[6] > 59u) {
+  // Payload: year, month, date, weekday, hours, minutes, seconds, then
+  // optionally a daylight saving rule (8 B) and an "on daylight time" flag.
+  // Without them the rule stays zeroed, which turns automatic adjustment off.
+  dst_rule_t rule = {0};
+  bool dst_active = false;
+  if (len == SET_TIME_LEN_DST) {
+    memcpy(&rule, &p[SET_TIME_LEN], sizeof(rule));
+    dst_active = p[SET_TIME_LEN + sizeof(rule)] != 0u;
+  }
+
+  if ((len != SET_TIME_LEN && len != SET_TIME_LEN_DST) || p[0] > 99u ||
+      p[1] < 1u || p[1] > 12u || p[2] < 1u || p[2] > 31u || p[3] < 1u ||
+      p[3] > 7u || p[4] > 23u || p[5] > 59u || p[6] > 59u ||
+      !dst_rule_valid(&rule)) {
     status = USB_CMD_STATUS_ERR;
   } else {
     set_date(p[0], p[1], p[2], p[3]);
     set_time(p[4], p[5], p[6]);
+    // After the time: the rule is settled against it (and set_time clears the
+    // RTC's daylight flag).
+    dst_configure(&rule, dst_active);
     alarm_rt_rearm(); // "Now" moved; the next-alarm time may have changed.
   }
 
@@ -140,10 +159,13 @@ static void handle_set_time(const uint8_t *p, uint8_t len) {
 }
 
 static void handle_get_time(void) {
-  uint8_t resp[8];
+  uint8_t resp[1u + SET_TIME_LEN_DST];
+  dst_rule_t rule;
   resp[0] = USB_CMD_STATUS_OK;
   get_date_time_fields(&resp[1], &resp[2], &resp[3], &resp[4], &resp[5],
                        &resp[6], &resp[7]);
+  resp[1u + SET_TIME_LEN + sizeof(rule)] = dst_get(&rule) ? 1u : 0u;
+  memcpy(&resp[1u + SET_TIME_LEN], &rule, sizeof(rule));
   send_frame(USB_CMD_GET_TIME, resp, sizeof(resp));
 }
 
