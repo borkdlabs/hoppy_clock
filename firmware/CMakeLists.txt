@@ -52,6 +52,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         Core/Src/alarm_rt.c
         Core/Src/button_hal_gpio.c
         Core/Src/callbacks.c
+        Core/Src/dst.c
         Core/Src/init.c
         Core/Src/light.c
         Core/Src/manifest.c

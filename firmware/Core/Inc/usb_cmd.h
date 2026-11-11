@@ -32,10 +32,15 @@
 #define USB_CMD_MAX_PAYLOAD 64u
 
 // Command IDs.
-#define USB_CMD_PING 0x01u     // No payload, replies [status].
-#define USB_CMD_SET_TIME 0x10u // Payload: year,month,date,weekday,h,m,s (7 B).
-#define USB_CMD_GET_TIME 0x11u // No payload, replies [status + same 7 fields].
-#define USB_CMD_SET_LED 0x20u  // Payload: index,r,g,b (4 B), replies [status].
+#define USB_CMD_PING 0x01u // No payload, replies [status].
+// SET_TIME payload: year,month,date,weekday,h,m,s (7 B), optionally followed by
+// a daylight saving rule (dst_rule_t, 8 B: start month,week,weekday,hour then
+// end month,week,weekday,hour) and an "on daylight time now" flag (1 B), 16 B
+// in all. The 7 B form turns automatic adjustment off, as does start month 0.
+#define USB_CMD_SET_TIME 0x10u
+// GET_TIME: no payload, replies [status + the 7 time fields + rule + flag].
+#define USB_CMD_GET_TIME 0x11u
+#define USB_CMD_SET_LED 0x20u // Payload: index,r,g,b (4 B), replies [status].
 
 // Manifest config (alarms + light looks + lamp idle ids). Bigger than one
 // frame, so it stages entry-by-entry then commits atomically: CFG_BEGIN, any

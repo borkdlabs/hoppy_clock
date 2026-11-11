@@ -48,7 +48,10 @@ void alarm_rt_task(void);
 void alarm_rt_rearm(void);
 
 /**
- * @brief Flag that RTC Alarm A has fired (called from its ISR callback).
+ * @brief Flag that an RTC alarm has fired (called from the ISR callbacks).
+ *
+ * Alarm A is the next alarm, Alarm B the next daylight saving changeover. Both
+ * are serviced by the same pass of alarm_rt_task().
  */
 void alarm_rt_notify_fired(void);
 

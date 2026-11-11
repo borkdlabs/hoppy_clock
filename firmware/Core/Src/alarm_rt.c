@@ -20,6 +20,7 @@
 
 #include "alarm_rt.h"
 #include "alarm.h"
+#include "dst.h"
 #include "light.h"
 #include "manifest.h"
 #include "rtc.h"
@@ -35,6 +36,15 @@ static volatile bool s_fired = false;
 static bool s_ringing = false;
 static uint32_t s_ring_start_ms = 0u;
 static uint32_t s_ring_timeout_ms = 0u; // 0 = no auto-quiet (cancel only).
+static uint16_t s_ring_index = 0u;      // Alarm table index that is ringing.
+
+// The hour that runs a second time after the clock goes back. Its alarms
+// already rang on the first pass, so fires inside it are dropped. Kept in RAM:
+// a reset during that one hour forgets it and such an alarm rings again.
+static bool s_repeat = false;
+static uint8_t s_repeat_month = 0u;
+static uint8_t s_repeat_date = 0u;
+static uint8_t s_repeat_hour = 0u;
 
 /** Private functions. ********************************************************/
 
@@ -56,7 +66,29 @@ static void stop_ring(void) {
 }
 
 /**
- * @brief Begin ringing for whichever enabled alarm matches now, then re-arm.
+ * @brief Whether an alarm should ring for this fire.
+ *
+ * Normally that is a plain match against now. Right after the clock has gone
+ * forward, an alarm set inside the hour that was skipped (skipped_hour, else
+ * -1) also counts, so it rings at the jump instead of not at all that day.
+ */
+static bool ring_matches(const alarm_record_t *a, const alarm_time_t *now,
+                         int8_t skipped_hour) {
+  if (alarm_record_matches(a, now)) {
+    return true;
+  }
+  if (skipped_hour < 0 || a->hour != (uint8_t)skipped_hour) {
+    return false;
+  }
+  alarm_time_t at = *now; // Same day, at the alarm's own (skipped) time.
+  at.hour = a->hour;
+  at.minute = a->minute;
+  return alarm_record_matches(a, &at);
+}
+
+/**
+ * @brief Service a fire of either RTC alarm: apply a due daylight saving
+ * change, begin ringing for whichever enabled alarm matches, then re-arm.
  */
 static void start_ring(void) {
   // Never ring on the default 2000 calendar: if the clock isn't set, drop this
@@ -67,15 +99,42 @@ static void start_ring(void) {
     return;
   }
 
+  // Move the clock first, so alarms are matched against the corrected time. An
+  // alarm due on the same second as a change back then waits for that hour to
+  // come round again, rather than ringing an hour early.
+  const dst_step_t step = dst_service();
+
   alarm_time_t now;
   read_now(&now);
 
+  int8_t skipped_hour = -1;
+  if (step == DST_STEP_FORWARD) {
+    skipped_hour = (int8_t)now.hour - 1;
+    s_repeat = false;
+  } else if (step == DST_STEP_BACK) {
+    s_repeat = true;
+    s_repeat_month = now.month;
+    s_repeat_date = now.date;
+    s_repeat_hour = now.hour;
+  }
+  // The repeated hour ends with the hour: any later fire clears it.
+  if (s_repeat && (now.month != s_repeat_month || now.date != s_repeat_date ||
+                   now.hour != s_repeat_hour)) {
+    s_repeat = false;
+  }
+
   const manifest_t *m = manifest_get();
-  for (uint16_t i = 0u; i < m->header.alarm_count; i++) {
+  for (uint16_t i = 0u; !s_repeat && i < m->header.alarm_count; i++) {
     const alarm_record_t *a = &m->alarms[i];
-    if (!alarm_record_matches(a, &now)) {
+    if (!ring_matches(a, &now, skipped_hour)) {
       continue;
     }
+    // Both RTC alarms can fire for the one moment (a change forward landing on
+    // an alarm's time). Don't restart a ring this alarm has already begun.
+    if (s_ringing && s_ring_index == i) {
+      break;
+    }
+    s_ring_index = i;
     s_ring_timeout_ms = (uint32_t)a->timeout_s * 1000u;
     s_ring_start_ms = HAL_GetTick();
     s_ringing = true;
@@ -113,6 +172,10 @@ static void update_ring(void) {
 void alarm_rt_init(void) {
   s_fired = false;
   s_ringing = false;
+  s_repeat = false;
+  // Catch up on a daylight saving change that came due while the board was
+  // not running to service it, and arm Alarm B for the next one.
+  (void)dst_service();
   alarm_rt_rearm();
 }
 
