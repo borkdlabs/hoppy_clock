@@ -14,6 +14,10 @@ import {MAX_LEDS, MAX_LIGHTS} from './lights.js';
 import {
   CHUNK_BYTES, FORMATS, MAX_SOUNDS, SLOT_BYTES, crc32, decodeSound,
 } from './sounds.js';
+import {RULE_BYTES, decodeRule, encodeRule} from './dst.js';
+
+/** Bytes of date and time in SET_TIME and, after the status, in GET_TIME. */
+const TIME_BYTES = 7;
 
 /** STM32 Virtual COM Port, from firmware/USB_DEVICE/App/usbd_desc.c. */
 export const USB_FILTER = {usbVendorId: 0x0483, usbProductId: 0x5740};
@@ -217,7 +221,7 @@ export class HoppyClock extends EventTarget {
    */
   async getTime() {
     const data = await this.command(CMD.GET_TIME);
-    if (data.length < 7) {
+    if (data.length < TIME_BYTES) {
       throw new DeviceError('GET_TIME: short response');
     }
     const [yy, month, day, , hours, minutes, seconds] = data;
@@ -225,25 +229,50 @@ export class HoppyClock extends EventTarget {
   }
 
   /**
-   * Write the RTC.
+   * Read the daylight saving rule the clock is running on.
+   *
+   * @returns {Promise<{rule: import('./dst.js').DstRule|null,
+   *     active: boolean}|null>} The stored rule (null when adjustment is off)
+   *     and whether the clock is on daylight time now, or null from firmware
+   *     too old to report either.
+   */
+  async getDst() {
+    const data = await this.command(CMD.GET_TIME);
+    if (data.length < TIME_BYTES + RULE_BYTES + 1) {
+      return null;
+    }
+    const rule = decodeRule(data.subarray(TIME_BYTES, TIME_BYTES + RULE_BYTES));
+    return {rule, active: rule !== null && data[TIME_BYTES + RULE_BYTES] !== 0};
+  }
+
+  /**
+   * Write the RTC, and the daylight saving rule it should follow from there.
    *
    * @param {Date} when The time to set, read in host local time.
+   * @param {{rule: import('./dst.js').DstRule|null, active: boolean}} [dst]
+   *     The rule, and whether `when` is on daylight time. Left out, the clock
+   *     makes no automatic adjustment.
    * @returns {Promise<void>}
    */
-  async setTime(when) {
+  async setTime(when, dst = {rule: null, active: false}) {
     // The firmware wants an ISO weekday (Mon=1 .. Sun=7); JS counts Sun=0.
     const weekday = when.getDay() === 0 ? 7 : when.getDay();
-    await this.command(CMD.SET_TIME, [when.getFullYear() % 100, when.getMonth() + 1, when.getDate(), weekday, when.getHours(), when.getMinutes(), when.getSeconds(),]);
+    await this.command(CMD.SET_TIME, [when.getFullYear() % 100, when.getMonth() + 1, when.getDate(), weekday, when.getHours(), when.getMinutes(), when.getSeconds(), ...encodeRule(dst.rule), dst.rule && dst.active ? 1 : 0,]);
   }
 
   /**
    * Sync the RTC to this computer, then read it back.
    *
+   * @param {(now: Date) => {rule: import('./dst.js').DstRule|null,
+   *     active: boolean}} [dstAt] Gives the daylight saving rule and state for
+   *     the moment being sent. Left out, the clock makes no automatic
+   *     adjustment.
    * @returns {Promise<Date>} The device time as read back after the write.
    */
-  async syncTime() {
+  async syncTime(dstAt) {
     await awaitSecondBoundary();
-    await this.setTime(new Date());
+    const now = new Date();
+    await this.setTime(now, dstAt?.(now));
     return this.getTime();
   }
 
@@ -561,7 +590,8 @@ export class HoppyClock extends EventTarget {
       if (signal?.aborted) {
         // An SND_END before all the bytes have arrived is refused, and the
         // refusal is what closes the write, so the error is the expected reply.
-        await this.command(CMD.SND_END, [0, 0, 0, 0], 5000).catch(() => {});
+        await this.command(CMD.SND_END, [0, 0, 0, 0], 5000).catch(() => {
+        });
         throw new DeviceError('upload cancelled');
       }
       const end = Math.min(sent + CHUNK_BYTES, total);

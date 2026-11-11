@@ -406,6 +406,10 @@ code {
   margin: 0;
 }
 
+.dst {
+  margin-top: 1rem;
+}
+
 /* Row lists: alarms, light looks and sound slots share one shape. */
 
 .alarms,
